@@ -1,0 +1,33 @@
+<?php
+require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/database.php';
+
+$bhcName = getSetting($conn, 'bhc_name', 'Barangay Health Center');
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Queue Display -- SmartQMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Inter:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/display.css">
+</head>
+<body>
+  <div id="display-board">
+    <header class="board-header">
+      <h1><?= htmlspecialchars($bhcName) ?></h1>
+      <div class="datetime" id="live-clock"></div>
+    </header>
+    <main class="window-grid" id="window-grid"></main>
+    <footer>
+      <div class="ticker">Next: <span id="next-ticker">Loading...</span></div>
+      <div class="last-updated" id="last-updated"></div>
+    </footer>
+  </div>
+  <script>
+    window.SMARTQMS_STATUS_URL = '<?= APP_URL ?>/modules/queue/status.php';
+  </script>
+  <script src="<?= APP_URL ?>/assets/js/display.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+# SmartQMS -- Apache Configuration
+Options -Indexes
+
+# PHP error handling (disable in production)
+# php_flag display_errors Off
+
+# Prevent direct access to config and ml folders
+<FilesMatch "^(database\.php|config\.php)$">
+  Order Allow,Deny
+  Deny from all
+</FilesMatch>
