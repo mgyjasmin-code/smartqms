@@ -1,21 +1,34 @@
-SmartQMS -- Database Setup
-===========================
-The full database schema is in: database/smartqms_final.sql
+SmartQMS Database Setup
+=======================
 
-HOW TO IMPORT:
-1. Open phpMyAdmin at http://localhost/phpmyadmin
-2. Click "Import" tab
-3. Select database/smartqms_final.sql
-4. Click "Go"
+Fresh local install
+-------------------
+1. Start Apache and MySQL in XAMPP.
+2. Open http://localhost/phpmyadmin.
+3. Create or select the smartqms database.
+4. Import database/smartqms_final.sql.
 
-This will create:
-  OK The smartqms database
-  OK All 12 tables
-  OK 3 pre-built views
-  OK Default admin account (change password after first login!)
-  OK 8 default health services
-  OK 15 default system settings
+The fresh schema includes:
+- SmartQMS tables
+- Auth throttling table
+- Email job queue table
+- Report views
+- Default health services
+- Default system settings
+- Local demo admin account
 
-Default admin login:
-  Phone: 09000000000
-  Password: Admin123! (change after first login)
+Local demo admin login:
+  Email: admin@smartqms.local
+  Password: smartQMSadmin!
+
+This password is for local team/demo machines only. Change it before any shared
+or production-like use.
+
+Existing local install
+----------------------
+1. Back up your current smartqms database.
+2. Run database/upgrade_stabilization_2026_07_10.sql against the existing DB.
+3. Confirm the local demo admin login works.
+
+The upgrade script adds missing runtime schema, refreshes report views, ensures
+display/ML settings exist, and updates the local demo admin password hash.

@@ -1,500 +1,218 @@
-# SmartQMS v3
+# SmartQMS
 
-**Web-Based Smart Queue Management System**
-with Machine Learning-Based Waiting Time Prediction Using Random Forest Algorithm
+Web-Based Smart Queue Management System with ML-assisted waiting time prediction for Barangay Health Centers.
 
-Built for Barangay Health Centers in the Philippines.
-
----
-
-## What This System Does
-
-SmartQMS replaces physical paper-based queuing at barangay health centers with a
-web-based system that:
-
-- Lets clients join the queue online and receive a digital ticket with QR code
-- Predicts how long each client will wait using a **Random Forest ML model**
-- Gives priority to **Senior Citizens and PWDs** automatically
-- Sends **SMS and browser notifications** when a client's turn is near
-- Shows a **real-time display board** on a TV in the waiting area (no login needed)
-- Gives the admin a **full analytics dashboard** with 10 report types
-- Lets admin **configure health services** per barangay installation
-
----
+SmartQMS lets clients register, join a queue, receive a QR ticket, track queue status, and get near-turn notifications. Staff manage service windows and ticket flow. Admin users configure services, staff, windows, reports, display-board access, email, and SMS settings.
 
 ## Tech Stack
 
-| Layer      | Technology                                |
-|------------|-------------------------------------------|
-| Frontend   | HTML, Bootstrap 5, JavaScript             |
-| Backend    | PHP 8.x                                   |
-| Database   | MySQL 8.x (via XAMPP / phpMyAdmin)        |
-| ML Model   | Python 3.10+, scikit-learn, Flask         |
-| SMS API    | Semaphore (free tier — semaphore.co)      |
-| Fonts      | Poppins + Inter (Google Fonts)            |
-
----
-
-## User Roles
-
-| Role          | How account is created          | Login           |
-|---------------|---------------------------------|-----------------|
-| Client        | Self-registration (web form)    | Phone + Password|
-| Service Staff | Admin creates account manually  | Phone + Password|
-| Administrator | Pre-seeded in database          | Phone + Password|
-
-All three roles use the **same login page** (`index.php`).
-The system detects the role from the database and redirects automatically.
-
----
+| Layer | Technology |
+| --- | --- |
+| Frontend | PHP views, Bootstrap 5, vanilla JavaScript |
+| Backend | PHP 8.x |
+| Database | MySQL/MariaDB through XAMPP |
+| ML API | Python 3.10+, Flask, scikit-learn |
+| Email | PHPMailer SMTP or local log mode |
+| SMS | Semaphore API or simulated log mode |
+| QR | `endroid/qr-code` via Composer |
 
 ## Quick Start
 
-### Requirements
+### 1. Requirements
 
-- XAMPP (PHP 8.x + MySQL 8.x + Apache)
-- Python 3.10 or higher
-- Git (optional, for version control)
-- A modern web browser
+- XAMPP with Apache, PHP 8.x, and MySQL/MariaDB
+- Composer
+- Python 3.10+ for the optional ML service
+- A modern browser
 
----
+### 2. Install PHP Dependencies
 
-### Step 1 — Run the Setup Script
-
-Open a terminal and navigate to your XAMPP htdocs folder:
+From the project root:
 
 ```bash
-cd C:/xampp/htdocs
+cd C:/xampp/htdocs/smartqms
+composer install
 ```
 
-Run the setup script:
+The `vendor/` directory is generated locally and should not be committed.
 
-```bash
-python setup_smartqms_v3.py
-```
+### 3. Import the Database
 
-This creates all **20 folders** and **67 files** automatically.
+Fresh install:
 
----
+1. Start Apache and MySQL in XAMPP.
+2. Open `http://localhost/phpmyadmin`.
+3. Create or select the `smartqms` database.
+4. Import `database/smartqms_final.sql`.
 
-### Step 2 — Set Up the Database
+Existing local install:
 
-1. Start **XAMPP** — make sure Apache and MySQL are running
-2. Open **phpMyAdmin**: `http://localhost/phpmyadmin`
-3. Click **Import** tab
-4. Select the file: `smartqms/database/smartqms_final.sql`
-5. Click **Go**
+1. Back up your current `smartqms` database.
+2. Import/run `database/upgrade_stabilization_2026_07_10.sql` against the existing database.
 
-This creates the `smartqms` database with all 12 tables, 3 views, and default data.
+### 4. Configure Local Database Connection
 
----
-
-### Step 3 — Configure Database Connection
-
-Open `smartqms/config/database.php` and update your MySQL password:
+Create or edit `config/database.php`:
 
 ```php
-define('DB_PASS', '');  // Set your MySQL root password here
+<?php
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+define('DB_NAME', 'smartqms');
+define('DB_CHARSET', 'utf8mb4');
+
+$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+$conn->set_charset(DB_CHARSET);
+
+if ($conn->connect_error) {
+    http_response_code(500);
+    die(json_encode(['error' => 'Database connection failed.']));
+}
+?>
 ```
 
-> **Important:** `database.php` is excluded from GitHub via `.gitignore`
-> because it contains your password. Each team member sets up their own copy.
+`config/database.php` is intentionally ignored because every team member may have different local credentials.
 
----
+### 5. Local Admin Login
 
-### Step 4 — Set Up the ML Environment
+For local team/demo machines, the seed database includes this administrator account:
 
-Open a **new terminal** (keep it open while developing):
+```text
+Email: admin@smartqms.local
+Password: smartQMSadmin!
+```
+
+These credentials are for local development and demos only. Change the admin password before using this system on any shared, public, or production-like machine.
+
+### 6. Open the App
+
+```text
+http://localhost/smartqms
+```
+
+Use the local admin login above, then configure:
+
+- Health center name, address, and contact details
+- Health services
+- Queue hours and void timeout
+- Display-board token
+- Staff accounts
+- Service windows
+- Optional email and SMS settings
+
+## Email OTP Modes
+
+SmartQMS sends OTP codes through the email job queue.
+
+Default mode is local log mode. OTP emails are written to:
+
+```text
+storage/logs/email_outbox.log
+```
+
+For SMTP mode, create `config/email.local.php` from `config/email.example.php`, then set:
+
+```php
+define('EMAIL_DELIVERY_MODE', 'smtp');
+define('EMAIL_SMTP_USERNAME', 'your-email@gmail.com');
+define('EMAIL_SMTP_PASSWORD', 'your-gmail-app-password');
+```
+
+`config/email.local.php` is ignored by Git and must not be committed.
+
+## SMS Modes
+
+SMS is controlled in Admin Settings.
+
+- `sms_enabled = 0`: SMS attempts are simulated and logged to `sms_logs`.
+- `sms_enabled = 1` with a Semaphore API key: SMS messages are sent through Semaphore and still logged.
+
+Near-turn alerts are generated when a waiting ticket has 2 or fewer tickets ahead. The system inserts a browser notification and sends/logs SMS when a phone number is available.
+
+## Display Board
+
+The display board is public only through a token-protected URL:
+
+```text
+http://localhost/smartqms/display.php?token=YOUR_TOKEN
+```
+
+Set `display_board_token` in Admin Settings before using the TV display. The live queue JSON endpoint rejects untokened anonymous requests.
+
+## ML Waiting Time Prediction
+
+The PHP app works even if the Flask ML service is not running. When the model API is unavailable, SmartQMS uses a PHP fallback estimate based on queue length, active windows, and average service duration.
+
+Optional ML setup:
 
 ```bash
 cd C:/xampp/htdocs/smartqms/ml
 pip install -r requirements.txt
-```
-
-Add your training dataset to `ml/dataset/`:
-
-```
-ml/dataset/kaggle_queue_data.csv    <- Kaggle healthcare queue dataset
-```
-
-> See the **Dataset** section below for which Kaggle dataset to use.
-
-Train the model and compare algorithms:
-
-```bash
+python generate_dataset.py
 python compare_algorithms.py
-```
-
-This tests 4 algorithms (Linear Regression, Decision Tree, Gradient Boosting,
-Random Forest), saves results to the database for Report 8, and saves the
-best model as `model.pkl`.
-
-Start the Flask prediction API:
-
-```bash
 python app.py
 ```
 
-Keep this terminal open. The API runs at `http://localhost:5000`.
+The Flask API runs at:
 
----
-
-### Step 5 — Open the System
-
-```
-http://localhost/smartqms
+```text
+http://localhost:5000
 ```
 
-**Default admin login:**
-
-```
-Phone    : 09000000000
-Password : Admin123!
-```
-
-> Change the default admin password after first login. To set a new admin password, generate a bcrypt hash in PHP:
-> ```php
-> echo password_hash('YourPassword123', PASSWORD_BCRYPT);
-> ```
-> Then update the `password_hash` column for the admin user in phpMyAdmin.
-
----
-
-### Step 6 — Configure for Your Barangay
-
-Log in as admin and complete first-time setup:
-
-1. Go to **System Settings > Health Center Info** — set barangay name and address
-2. Go to **System Settings > Health Services** — enable/disable services for your barangay
-3. Go to **System Settings > Queue Config** — set void timeout, queue hours, max queue
-4. Go to **System Settings > SMS** — add Semaphore API key (optional)
-5. Go to **Service Windows** — create windows and assign staff
-6. Go to **User Management > Add Staff** — create staff accounts
-
----
-
-## Display Board (TV Screen)
-
-The queue display board is a **separate public URL** — no login required.
-Staff opens it on a TV browser and leaves it running.
-
-**URL format:**
-```
-http://localhost/smartqms/display.php?token=YOUR_TOKEN
-```
-
-The token is set in **Admin > System Settings > Display Board**.
-Default token: `changeme_random_token` — **change this before going live.**
-
----
-
-## Dataset
-
-The ML model is trained on queue data with these columns:
-
-| Column                | Description                              |
-|-----------------------|------------------------------------------|
-| `queue_length`        | Number of tickets ahead at issue time    |
-| `hour_of_day`         | Hour when ticket was issued (0-23)       |
-| `day_of_week`         | Day (0=Sun, 1=Mon ... 6=Sat)             |
-| `service_type_encoded`| Numeric code of the health service (1-8) |
-| `client_type_encoded` | 0=regular, 1=senior, 2=pwd              |
-| `active_windows`      | Number of open service windows           |
-| `avg_service_time`    | Rolling average service time in minutes  |
-| `actual_wait_minutes` | Target variable (what the model predicts)|
-
-**Recommended Kaggle datasets:**
-
-1. Search: `"hospital queue waiting time"` on kaggle.com
-2. Search: `"healthcare patient wait time prediction"`
-3. Alternative: `"bank teller queue simulation dataset"`
-
-If no dataset is available, generate synthetic data:
-
-```bash
-cd ml/
-python generate_dataset.py
-```
-
-This creates `dataset/synthetic_queue_data.csv` with 5,000 realistic rows
-based on barangay health center patterns (peak hours 8-11AM, 8 service types,
-15% priority clients).
-
----
-
-## Folder Structure
-
-```
-smartqms/
-|-- config/
-|   |-- database.php           <- DB connection (NOT in GitHub)
-|   `-- config.php             <- App constants, helpers, session
-|-- modules/
-|   |-- auth/
-|   |   |-- login.php          <- Unified login, auto-detects role
-|   |   |-- logout.php
-|   |   |-- register.php       <- Client self-registration
-|   |   `-- verify_otp.php     <- SMS OTP verification
-|   |-- queue/
-|   |   |-- join_queue.php     <- One-active-ticket check + ML call
-|   |   |-- ticket.php         <- Ticket data fetcher
-|   |   |-- status.php         <- Live queue JSON (AJAX endpoint)
-|   |   |-- get_prediction.php <- PHP-to-Flask ML proxy
-|   |   |-- qr_generate.php    <- QR code image generator
-|   |   `-- void_checker.php   <- Auto-void expired tickets
-|   |-- service_window/
-|   |   |-- call_next.php      <- Priority-ordered queue call
-|   |   |-- complete_ticket.php<- Logs actual wait + service time
-|   |   |-- window_status.php  <- Open/close window
-|   |   `-- skip_ticket.php
-|   |-- notifications/
-|   |   |-- send_alert.php     <- Triggers at 2 tickets ahead
-|   |   |-- get_notifications.php <- AJAX unread notifications
-|   |   `-- sms_sender.php     <- Semaphore API wrapper
-|   |-- feedback/
-|   |   `-- submit_feedback.php<- Post-service 1-5 star rating
-|   |-- reports/
-|   |   |-- queue_summary.php          <- Report 01
-|   |   |-- predicted_vs_actual.php    <- Report 02
-|   |   |-- peak_hour.php              <- Report 03
-|   |   |-- counter_performance.php    <- Report 04
-|   |   |-- turnaround_time.php        <- Report 05
-|   |   |-- no_show.php                <- Report 06
-|   |   |-- staff_productivity.php     <- Report 07
-|   |   |-- ml_accuracy.php            <- Report 08
-|   |   |-- daily_monthly_stats.php    <- Report 09
-|   |   |-- satisfaction.php           <- Report 10
-|   |   `-- export_csv.php             <- Generic CSV export
-|   `-- settings/
-|       |-- system_settings.php        <- Read/write system_settings table
-|       `-- health_services_mgmt.php   <- Manage service dropdown
-|-- ml/
-|   |-- train_model.py         <- Random Forest training
-|   |-- compare_algorithms.py  <- LR vs DT vs GBM vs RF comparison
-|   |-- generate_dataset.py    <- Synthetic data generator (backup)
-|   |-- app.py                 <- Flask API server (/predict)
-|   |-- predict.py             <- Standalone test script
-|   |-- model.pkl              <- Saved model (NOT in GitHub)
-|   |-- requirements.txt
-|   `-- dataset/
-|       |-- kaggle_queue_data.csv
-|       `-- queue_logs.csv     <- System-generated data (grows over time)
-|-- views/
-|   |-- client/
-|   |   |-- index.php          <- Dashboard (no ticket / active ticket)
-|   |   |-- ticket.php         <- Ticket with QR code + wait time
-|   |   |-- queue_status.php   <- Live status page
-|   |   `-- feedback.php       <- Post-service star rating
-|   |-- staff/
-|   |   |-- dashboard.php      <- Current ticket + action buttons
-|   |   |-- window.php         <- Queue list with priority rows
-|   |   `-- activity_log.php   <- Timeline of today's actions
-|   |-- admin/
-|   |   |-- dashboard.php      <- KPI cards + charts + interpretation
-|   |   |-- users.php          <- Manage all accounts
-|   |   |-- add_staff.php      <- Create staff accounts
-|   |   |-- windows.php        <- Configure service windows
-|   |   |-- reports.php        <- All 10 reports with sub-menu
-|   |   |-- ml_logs.php        <- Predicted vs actual logs
-|   |   |-- settings.php       <- System settings (5 sections)
-|   |   `-- activity_log.php   <- System-wide activity log
-|   `-- display/
-|       `-- board.php          <- TV display board view
-|-- assets/
-|   |-- css/
-|   |   |-- style.css          <- Main stylesheet
-|   |   `-- display.css        <- Display board dark theme
-|   |-- js/
-|   |   |-- main.js            <- Polling, notifications, validation
-|   |   `-- display.js         <- Display board auto-refresh
-|   |-- img/                   <- Logo and image assets
-|   `-- qr/                    <- Generated QR code images
-|-- database/
-|   |-- smartqms_final.sql     <- Full schema (12 tables + 3 views)
-|   `-- README.txt
-|-- index.php                  <- Entry point + unified login page
-|-- display.php                <- Public display board (token-protected)
-|-- .htaccess
-|-- .gitignore
-`-- README.md
-```
-
----
-
-## Database Tables
-
-| Table                | Purpose                                              |
-|----------------------|------------------------------------------------------|
-| `users`              | All accounts — clients, staff, admin (one table)     |
-| `staff`              | Staff-specific info — department, shift, added_by    |
-| `health_services`    | Admin-configurable service dropdown per barangay     |
-| `service_windows`    | Service counters — linked to staff and service type  |
-| `queue_tickets`      | Core entity — every queue transaction                |
-| `wait_time_logs`     | ML training data — predicted vs actual per ticket    |
-| `ml_comparison_logs` | Algorithm comparison results (feeds Report 8)        |
-| `system_settings`    | All admin-configurable key-value settings            |
-| `notifications`      | Browser and SMS notifications per ticket             |
-| `sms_logs`           | All SMS attempts (sent, failed, or simulated)        |
-| `feedback`           | Post-service ratings 1-5 stars (feeds Report 10)     |
-| `activity_logs`      | Every significant user action with timestamp         |
-
----
-
-## ML Model
-
-**Algorithm:** Random Forest Regressor (scikit-learn)
-
-**Why Random Forest over Linear Regression:**
-
-- Queue wait time is non-linear — multiple factors interact simultaneously
-- Random Forest handles non-linear relationships naturally
-- Resistant to overfitting through bagging (multiple trees averaged)
-- Proven lowest RMSE in healthcare queue studies (6.69 min vs baseline)
-- Provides feature importance scores for reporting
-
-**Features used for prediction:**
-
-```
-queue_length, hour_of_day, day_of_week, service_type_encoded,
-client_type_encoded, active_windows, avg_service_time
-```
-
-**Evaluation metrics (Chapter 4):**
-
-- MAE — Mean Absolute Error (minutes)
-- RMSE — Root Mean Square Error (minutes)
-- R2 — Coefficient of Determination (0 to 1)
-- MAPE — Mean Absolute Percentage Error (%)
-- K-Fold CV — 10-fold Cross-Validation score
-
----
+Report 8, ML Accuracy, is populated by `ml/compare_algorithms.py`.
 
 ## Reports
 
-All 10 reports are in Admin > Reports (expandable sidebar sub-menu):
+Admin Reports are database-backed and support date filters plus CSV export:
 
-| # | Report Name                        | Key Data Source           |
-|---|------------------------------------|---------------------------|
-| 1 | Queue Summary                      | `queue_tickets`           |
-| 2 | Predicted vs Actual Wait Time      | `wait_time_logs`          |
-| 3 | Peak Hour Analysis                 | `queue_tickets.issued_at` |
-| 4 | Service Counter Performance        | `wait_time_logs + windows`|
-| 5 | Customer Turnaround Time           | `queue_tickets`           |
-| 6 | No-Show Report                     | `queue_tickets (voided)`  |
-| 7 | Staff Productivity                 | `wait_time_logs + staff`  |
-| 8 | Machine Learning Accuracy          | `ml_comparison_logs`      |
-| 9 | Daily and Monthly Statistics       | `queue_tickets (grouped)` |
-|10 | Customer Satisfaction              | `feedback`                |
+1. Queue Summary
+2. Predicted vs Actual Wait
+3. Peak Hour Analysis
+4. Service Counter Performance
+5. Customer Turnaround Time
+6. No-Show Report
+7. Staff Productivity
+8. ML Accuracy Report
+9. Daily and Monthly Stats
+10. Satisfaction Report
 
-All reports support date range filters and CSV export.
+If a report has no matching rows, SmartQMS shows an explicit empty state instead of sample or fake data.
 
----
+## Demo Checklist
 
-## Git Workflow for Team
+Use this flow to verify a local machine:
 
-Each member works on their own branch. Only the leader merges to `main`.
+1. Import `database/smartqms_final.sql`.
+2. Run `composer install`.
+3. Open `http://localhost/smartqms`.
+4. Log in with `admin@smartqms.local` / `smartQMSadmin!`.
+5. Add one staff account.
+6. Create or assign a service window.
+7. Set a display-board token.
+8. Register a client and verify OTP from `storage/logs/email_outbox.log`.
+9. Join the queue and confirm a QR ticket is generated.
+10. Log in as staff, open the window, call next, complete, and submit feedback.
+11. Check Admin Dashboard, Reports, CSV export, and Display Board.
 
-**Branch assignments:**
-
-```
-main                  <- protected, leader merges here every Friday
-dev/leader-frontend   <- you (leader + frontend)
-dev/member2-frontend  <- member 2 (frontend support)
-dev/member3-backend   <- member 3 (backend + DB + ML bridge)
-dev/member4-backend   <- member 4 (backend + reports, async tasks)
-```
-
-**Daily commands:**
+## Verification Commands
 
 ```bash
-# Start of day
-git pull origin main
-
-# After finishing a task
-git add .
-git commit -m "feat: build login page UI with Bootstrap"
-git push origin dev/your-branch
-
-# Leader only -- every Friday after code review
-git checkout main
-git merge dev/member3-backend
-git push origin main
-git checkout dev/leader-frontend
+php -l index.php
+composer validate --no-check-publish
 ```
 
----
+For a full PHP syntax sweep in PowerShell:
 
-## SMS Setup (Semaphore)
-
-1. Sign up at **semaphore.co** (free credits on signup)
-2. Get your API key from the dashboard
-3. Log in to SmartQMS as admin
-4. Go to **System Settings > SMS Configuration**
-5. Enter your API key and sender name (e.g. `BHCQMS`)
-6. Click **Send Test SMS** to verify
-
-If no API key is configured, the system logs all SMS as `simulated`
-in the `sms_logs` table. Show this table to your panel as proof
-the SMS feature is architecturally complete.
-
----
-
-## Priority Queue Rules
-
-Senior Citizens and PWDs always get served before regular clients:
-
-```sql
--- Staff calls next ticket using this order
-SELECT * FROM queue_tickets
-WHERE status = 'waiting' AND service_id = ?
-ORDER BY priority_level DESC, issued_at ASC
-LIMIT 1
+```powershell
+Get-ChildItem -Recurse -Filter *.php -File |
+  Where-Object { $_.FullName -notmatch '\\vendor\\' } |
+  ForEach-Object { php -l $_.FullName }
 ```
 
-`priority_level = 1` for Senior and PWD, `priority_level = 0` for Regular.
-Among same priority level, earlier arrival is served first (FIFO).
+## Important Security Notes
 
----
-
-## Void Ticket System
-
-When staff clicks **Call Next**, the ticket's `called_at` timestamp is saved.
-JavaScript polls `void_checker.php` every 30 seconds.
-
-If `NOW() - called_at >= void_timeout_minutes`:
-
-- Ticket status is set to `voided`
-- `voided_reason` is set to `"Client did not appear within timeout"`
-- Entry added to `notifications` and `activity_logs`
-- Staff dashboard updates automatically
-
-Admin sets the timeout in **System Settings > Queue Configuration** (default: 10 minutes).
-
----
-
-## Environment Notes
-
-- `config/database.php` — excluded from GitHub, each member creates their own
-- `ml/model.pkl` — excluded from GitHub, regenerated by `compare_algorithms.py`
-- `assets/qr/*.png` — excluded from GitHub, generated at runtime
-- Run `python app.py` in a separate terminal while developing
-- Display board URL requires the token from System Settings
-
----
-
-## Panelist Revisions Addressed
-
-| Revision                          | Status   | Implementation                              |
-|-----------------------------------|----------|---------------------------------------------|
-| Reference number and QR code      | Done     | `queue_tickets.reference_number` + QR file  |
-| SMS authentication (OTP)          | Done     | `users.otp_code` + `verify_otp.php`         |
-| Voiding late appointee            | Done     | Admin-configurable `void_timeout_minutes`   |
-| Dashboard with interpretation     | Done     | Auto-generated text below each chart        |
-| Training data requirement         | Done     | Kaggle dataset + Chapter 3 documentation    |
-| Algorithm comparison              | Done     | `compare_algorithms.py` + Report 8         |
-
----
-
-*SmartQMS v3 — Capstone Project*
-*Web-Based Smart Queue Management System with ML-Based Waiting Time Prediction*
-*Using Random Forest Algorithm | Barangay Health Center*
+- Do not commit `config/database.php`, `config/email.local.php`, logs, sessions, datasets, model files, generated QR images, or `vendor/`.
+- Change the local demo admin password before any non-local use.
+- Keep the display-board token random and private.
+- Keep email and SMS API credentials out of the repository.

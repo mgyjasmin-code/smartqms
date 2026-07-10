@@ -6,20 +6,31 @@
  */
 require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once __DIR__ . '/../notifications/send_alert.php';
 requireLogin(ROLE_STAFF);
 header('Content-Type: application/json');
+
+requirePostRequest(true);
+requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and try again.', true);
 
 $ticketId = (int) ($_POST['ticket_id'] ?? 0);
 if ($ticketId <= 0) {
     jsonResponse(false, ['error' => 'Missing ticket id.'], 422);
 }
 
-$stmt = $conn->prepare("SELECT * FROM queue_tickets WHERE ticket_id=? AND status='serving' LIMIT 1");
-$stmt->bind_param('i', $ticketId);
+$staffId = getCurrentStaffId($conn);
+$window = $staffId ? getStaffWindow($conn, $staffId) : null;
+if (!$window) {
+    jsonResponse(false, ['error' => 'No active window assigned to this staff account.'], 404);
+}
+$windowId = (int) $window['window_id'];
+
+$stmt = $conn->prepare("SELECT * FROM queue_tickets WHERE ticket_id=? AND status='serving' AND window_id=? LIMIT 1");
+$stmt->bind_param('ii', $ticketId, $windowId);
 $stmt->execute();
 $ticket = $stmt->get_result()->fetch_assoc();
 if (!$ticket) {
-    jsonResponse(false, ['error' => 'Serving ticket not found.'], 404);
+    jsonResponse(false, ['error' => 'Serving ticket not found for your assigned window.'], 404);
 }
 
 $conn->begin_transaction();
@@ -36,6 +47,11 @@ try {
     }
     logActivity($conn, 'ticket_skipped', 'Skipped ticket ' . $ticket['ticket_number'], $ticketId);
     $conn->commit();
+    try {
+        processNearTurnAlerts($conn, (int) $ticket['service_id']);
+    } catch (Throwable $alertError) {
+        // Alert generation should not block ticket skipping.
+    }
     jsonResponse(true);
 } catch (Throwable $e) {
     $conn->rollback();

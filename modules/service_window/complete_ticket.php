@@ -6,8 +6,12 @@
  */
 require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once __DIR__ . '/../notifications/send_alert.php';
 requireLogin(ROLE_STAFF);
 header('Content-Type: application/json');
+
+requirePostRequest(true);
+requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and try again.', true);
 
 $staffId = getCurrentStaffId($conn);
 $ticketId = (int) ($_POST['ticket_id'] ?? 0);
@@ -15,12 +19,18 @@ if (!$staffId || $ticketId <= 0) {
     jsonResponse(false, ['error' => 'Missing staff or ticket.'], 422);
 }
 
-$stmt = $conn->prepare("SELECT * FROM queue_tickets WHERE ticket_id=? AND status='serving' LIMIT 1");
-$stmt->bind_param('i', $ticketId);
+$window = getStaffWindow($conn, $staffId);
+if (!$window) {
+    jsonResponse(false, ['error' => 'No active window assigned to this staff account.'], 404);
+}
+$windowId = (int) $window['window_id'];
+
+$stmt = $conn->prepare("SELECT * FROM queue_tickets WHERE ticket_id=? AND status='serving' AND window_id=? LIMIT 1");
+$stmt->bind_param('ii', $ticketId, $windowId);
 $stmt->execute();
 $ticket = $stmt->get_result()->fetch_assoc();
 if (!$ticket) {
-    jsonResponse(false, ['error' => 'Serving ticket not found.'], 404);
+    jsonResponse(false, ['error' => 'Serving ticket not found for your assigned window.'], 404);
 }
 
 $conn->begin_transaction();
@@ -41,7 +51,6 @@ try {
     $log->execute();
 
     $open = 'open';
-    $windowId = (int) ($ticket['window_id'] ?? 0);
     if ($windowId > 0) {
         $win = $conn->prepare("UPDATE service_windows SET status=? WHERE window_id=?");
         $win->bind_param('si', $open, $windowId);
@@ -59,6 +68,11 @@ try {
 
     logActivity($conn, 'ticket_completed', 'Completed ticket ' . $ticket['ticket_number'], $ticketId);
     $conn->commit();
+    try {
+        processNearTurnAlerts($conn, (int) $ticket['service_id']);
+    } catch (Throwable $alertError) {
+        // Alert generation should not block ticket completion.
+    }
     jsonResponse(true, ['data' => ['ticket_id' => $ticketId, 'actual_wait_min' => $waitMin, 'actual_service_dur' => $serviceSec]]);
 } catch (Throwable $e) {
     $conn->rollback();

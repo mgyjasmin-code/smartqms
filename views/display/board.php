@@ -3,6 +3,8 @@ require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/database.php';
 
 $bhcName = getSetting($conn, 'bhc_name', 'Barangay Health Center');
+$displayToken = trim((string) ($_GET['token'] ?? ''));
+$statusUrl = APP_URL . '/modules/queue/status.php?token=' . rawurlencode($displayToken);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,7 +28,7 @@ $bhcName = getSetting($conn, 'bhc_name', 'Barangay Health Center');
     </footer>
   </div>
   <script>
-    window.SMARTQMS_STATUS_URL = '<?= APP_URL ?>/modules/queue/status.php';
+    window.SMARTQMS_STATUS_URL = '<?= htmlspecialchars($statusUrl, ENT_QUOTES) ?>';
   </script>
   <script src="<?= APP_URL ?>/assets/js/display.js"></script>
 </body>

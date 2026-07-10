@@ -28,18 +28,23 @@ if ($window) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <?= csrfMetaTag() ?>
   <title>Staff Dashboard -- SmartQMS</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
 </head>
-<body>
-  <main class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<body class="staff-page">
+  <main class="container py-4 staff-shell">
+    <div class="staff-topbar">
       <div>
         <h1 class="h3 mb-1">Staff Window</h1>
         <p class="text-muted mb-0"><?= htmlspecialchars($_SESSION['name'] ?? 'Staff') ?></p>
       </div>
-      <a class="btn btn-outline-secondary" href="<?= APP_URL ?>/modules/auth/logout.php">Logout</a>
+      <button class="btn btn-outline-secondary" type="button" data-confirm-logout>
+        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+        Logout
+      </button>
     </div>
 
     <?php if (!$window): ?>
@@ -93,9 +98,38 @@ if ($window) {
       </section>
     <?php endif; ?>
   </main>
+
+  <div class="logout-modal" data-logout-modal hidden>
+    <div class="logout-modal-backdrop" data-logout-cancel></div>
+    <section class="logout-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title" aria-describedby="logout-modal-copy" tabindex="-1">
+      <button class="logout-modal-close" type="button" data-logout-cancel aria-label="Close logout confirmation">
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+      </button>
+      <div class="logout-modal-icon" aria-hidden="true">
+        <i class="bi bi-box-arrow-right"></i>
+      </div>
+      <h2 id="logout-modal-title">Log out of staff dashboard?</h2>
+      <p id="logout-modal-copy">You will return to the sign-in screen and need to sign in again before managing your service window.</p>
+      <div class="logout-modal-actions">
+        <button class="logout-modal-button logout-modal-button-secondary" type="button" data-logout-cancel>Cancel</button>
+        <form action="<?= APP_URL ?>/modules/auth/logout.php" method="POST" class="m-0">
+          <?= csrfInput() ?>
+          <button class="logout-modal-button logout-modal-button-primary" type="submit" data-logout-confirm>Log out</button>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <script src="<?= assetUrl('assets/js/main.js') ?>"></script>
   <script>
     async function postAction(url, body = null) {
-      const response = await fetch(url, { method: 'POST', body });
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+      const response = await fetch(url, {
+        method: 'POST',
+        body,
+        credentials: 'same-origin',
+        headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {}
+      });
       const data = await response.json();
       if (!data.success) alert(data.error || 'Action failed.');
       location.reload();

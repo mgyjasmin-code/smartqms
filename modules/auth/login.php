@@ -6,61 +6,85 @@
  */
 require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once __DIR__ . '/auth_utils.php';
 
-if (!isset($_POST['phone_number'], $_POST['password'])) {
-    header('Location: ' . APP_URL . '/index.php?error=invalid');
-    exit();
+requirePostRequest(false, 'index.php', 'login', [], 'Please sign in using the form.');
+
+$loginId = trim($_POST['login_id'] ?? '');
+$password = $_POST['password'] ?? '';
+$oldInput = ['login_id' => $loginId];
+$fieldErrors = [];
+
+requireValidCsrf('index.php', 'login', $oldInput);
+
+if ($loginId === '') {
+    $fieldErrors['login_id'] = 'Email address is required.';
+} elseif (!filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
+    $fieldErrors['login_id'] = 'Enter a valid email address.';
 }
 
-$phone    = trim($_POST['phone_number']);
-$password = $_POST['password'];
+if ($password === '') {
+    $fieldErrors['password'] = 'Password is required.';
+}
 
-$phone = normalizePhone($phone);
+if ($fieldErrors) {
+    redirectWithFormFeedback('index.php', 'login', $fieldErrors, $oldInput);
+}
 
-$stmt = $conn->prepare("SELECT * FROM users WHERE phone_number = ? LIMIT 1");
-$stmt->bind_param('s', $phone);
+$email = strtolower($loginId);
+$loginThrottle = authThrottleStatus($conn, 'login', $email, LOGIN_ATTEMPT_LIMIT, LOGIN_ATTEMPT_WINDOW_SECONDS);
+if (!$loginThrottle['allowed']) {
+    redirectWithFormFeedback('index.php', 'login', [], $oldInput, authThrottleMessage((int) $loginThrottle['retry_after']));
+}
+
+$stmt = $conn->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
+$stmt->bind_param('s', $email);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
+$invalidLoginMessage = 'Email or password is incorrect.';
 
-if (!$user || !password_verify($password, $user['password_hash'])) {
-    redirectTo('index.php', ['error' => 'Invalid phone number or password.']);
+if (!$user) {
+    recordAuthAttempt($conn, 'login', $email, LOGIN_ATTEMPT_LIMIT, LOGIN_ATTEMPT_WINDOW_SECONDS);
+    redirectWithFormFeedback('index.php', 'login', [], $oldInput, $invalidLoginMessage);
+}
+
+if (!password_verify($password, $user['password_hash'])) {
+    recordAuthAttempt($conn, 'login', $email, LOGIN_ATTEMPT_LIMIT, LOGIN_ATTEMPT_WINDOW_SECONDS);
+    redirectWithFormFeedback('index.php', 'login', [], $oldInput, $invalidLoginMessage);
 }
 
 if ((int) $user['is_active'] !== 1) {
-    redirectTo('index.php', ['error' => 'This account has been deactivated.']);
+    recordAuthAttempt($conn, 'login', $email, LOGIN_ATTEMPT_LIMIT, LOGIN_ATTEMPT_WINDOW_SECONDS);
+    redirectWithFormFeedback('index.php', 'login', [], $oldInput, 'This account cannot sign in right now.');
 }
 
-if ((int) $user['is_verified'] !== 1) {
-    $_SESSION['pending_user_id'] = (int) $user['user_id'];
-    redirectTo('views/client/verify_otp.php', ['error' => 'Please verify your phone number before signing in.']);
-}
+clearAuthAttempts($conn, 'login', $email);
 
-session_regenerate_id(true);
-$_SESSION['user_id'] = (int) $user['user_id'];
-$_SESSION['role'] = $user['role'];
-$_SESSION['name'] = trim($user['first_name'] . ' ' . $user['last_name']);
-$_SESSION['phone'] = $user['phone_number'];
-
-if ($user['role'] === ROLE_STAFF) {
-    $staffStmt = $conn->prepare("SELECT staff_id FROM staff WHERE user_id = ? LIMIT 1");
-    $staffStmt->bind_param('i', $_SESSION['user_id']);
-    $staffStmt->execute();
-    $staff = $staffStmt->get_result()->fetch_assoc();
-    if ($staff) {
-        $_SESSION['staff_id'] = (int) $staff['staff_id'];
+if ($user['role'] === ROLE_CLIENT) {
+    if ((int) $user['is_verified'] !== 1) {
+        $_SESSION['pending_user_id'] = (int) $user['user_id'];
+        setOtpSession('register', (int) $user['user_id']);
+        $queued = issueOtp($conn, (int) $user['user_id'], 'Your SmartQMS verification code is', 'otp');
+        if (!$queued) {
+            redirectWithFormFeedback('views/client/verify_otp.php', 'verify_otp', [], [], 'Could not send OTP email right now. Please try resending the code.');
+        }
+        $_SESSION['otp_last_sent_at'] = time();
+        redirectTo('views/client/verify_otp.php', [
+            'msg' => 'otp_sent',
+            'notice' => 'verify_before_login',
+        ]);
     }
+
+    $_SESSION['pending_login_user_id'] = (int) $user['user_id'];
+    setOtpSession('login', (int) $user['user_id']);
+    $queued = issueOtp($conn, (int) $user['user_id'], 'Your SmartQMS login code is', 'otp');
+    if (!$queued) {
+        redirectWithFormFeedback('index.php', 'login', [], $oldInput, 'Could not send OTP email right now. Please make sure your account has a valid email address.');
+    }
+    $_SESSION['otp_last_sent_at'] = time();
+    redirectTo('views/client/verify_otp.php', ['msg' => 'login_otp_sent']);
 }
 
-$update = $conn->prepare("UPDATE users SET last_login_at = NOW() WHERE user_id = ?");
-$update->bind_param('i', $_SESSION['user_id']);
-$update->execute();
-logActivity($conn, 'login', 'User signed in');
-
-if ($_SESSION['role'] === ROLE_ADMIN) {
-    redirectTo('views/admin/dashboard.php');
-}
-if ($_SESSION['role'] === ROLE_STAFF) {
-    redirectTo('views/staff/dashboard.php');
-}
-redirectTo('views/client/index.php');
+completeLogin($conn, $user);
+redirectAfterLogin($_SESSION['role']);
 ?>

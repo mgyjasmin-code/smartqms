@@ -4,8 +4,25 @@ Options -Indexes
 # PHP error handling (disable in production)
 # php_flag display_errors Off
 
-# Prevent direct access to config and ml folders
+# Prevent direct access to sensitive local artifacts if they are ever placed
+# under the web root.
+<FilesMatch "\.(sql|sqlite|db|bak|env|ini|log|pkl|pyc|csv|docx)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order Allow,Deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Prevent direct access to sensitive config entrypoints.
 <FilesMatch "^(database\.php|config\.php)$">
-  Order Allow,Deny
-  Deny from all
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order Allow,Deny
+    Deny from all
+  </IfModule>
 </FilesMatch>

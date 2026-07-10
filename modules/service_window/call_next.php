@@ -10,8 +10,12 @@
  */
 require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once __DIR__ . '/../notifications/send_alert.php';
 requireLogin(ROLE_STAFF);
 header('Content-Type: application/json');
+
+requirePostRequest(true);
+requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and try again.', true);
 
 $staffId = getCurrentStaffId($conn);
 if (!$staffId) {
@@ -59,6 +63,11 @@ try {
     $winUpdate->execute();
     logActivity($conn, 'ticket_called', 'Called ticket ' . $ticket['ticket_number'], $ticketId);
     $conn->commit();
+    try {
+        processNearTurnAlerts($conn, $serviceId);
+    } catch (Throwable $alertError) {
+        // Alert generation should not block queue operations.
+    }
 
     $ticket['status'] = 'serving';
     $ticket['window_id'] = $windowId;

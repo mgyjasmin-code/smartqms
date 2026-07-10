@@ -14,6 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     jsonResponse(true, ['data' => $rows]);
 }
 
+requirePostRequest(true);
+requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and try again.', true);
+
 $action = $_POST['action'] ?? '';
 
 if ($action === 'add') {
@@ -21,7 +24,20 @@ if ($action === 'add') {
     $name = trim($_POST['service_name'] ?? '');
     $encoded = (int) ($_POST['service_encoded'] ?? 0);
     if ($code === '' || $name === '' || $encoded <= 0) {
-        jsonResponse(false, ['error' => 'Service code, name, and encoded value are required.'], 422);
+        $fieldErrors = [];
+        if ($code === '') {
+            $fieldErrors['service_code'] = 'Service code is required.';
+        }
+        if ($name === '') {
+            $fieldErrors['service_name'] = 'Service name is required.';
+        }
+        if ($encoded <= 0) {
+            $fieldErrors['service_encoded'] = 'Encoded value is required.';
+        }
+        jsonResponse(false, [
+            'error' => 'Please correct the highlighted fields.',
+            'field_errors' => $fieldErrors,
+        ], 422);
     }
     $priority = (int) ($_POST['priority_only'] ?? 0);
     $order = (int) ($_POST['display_order'] ?? 0);
@@ -40,7 +56,17 @@ if ($action === 'edit') {
     $priority = (int) ($_POST['priority_only'] ?? 0);
     $order = (int) ($_POST['display_order'] ?? 0);
     if ($id <= 0 || $name === '') {
-        jsonResponse(false, ['error' => 'Service id and name are required.'], 422);
+        $fieldErrors = [];
+        if ($id <= 0) {
+            $fieldErrors['service_id'] = 'Service id is required.';
+        }
+        if ($name === '') {
+            $fieldErrors['service_name'] = 'Service name is required.';
+        }
+        jsonResponse(false, [
+            'error' => 'Please correct the highlighted fields.',
+            'field_errors' => $fieldErrors,
+        ], 422);
     }
     $stmt = $conn->prepare("UPDATE health_services SET service_name=?, description=NULLIF(?, ''), priority_only=?, display_order=? WHERE service_id=?");
     $stmt->bind_param('ssiii', $name, $description, $priority, $order, $id);
