@@ -19,7 +19,7 @@ $stmt = $conn->prepare("SELECT setting_val FROM system_settings WHERE setting_ke
 $stmt->execute();
 $savedToken = $stmt->get_result()->fetch_assoc()['setting_val'] ?? '';
 
-if (empty($token) || $token !== $savedToken) {
+if (empty($token) || empty($savedToken) || !hash_equals($savedToken, $token)) {
     http_response_code(403);
     die('<h2 style="font-family:sans-serif;text-align:center;margin-top:100px;color:#D85A30;">
          403 -- Invalid or missing display board token.<br>

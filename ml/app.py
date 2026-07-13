@@ -65,4 +65,5 @@ def health():
 if __name__ == '__main__':
     load_model()
     print("SmartQMS ML API running at http://localhost:5000")
-    app.run(debug=True, port=5000)
+    debug_mode = os.environ.get('FLASK_DEBUG') == '1'
+    app.run(host='127.0.0.1', debug=debug_mode, port=5000)

@@ -6,8 +6,14 @@
  */
 require_once '../../config/config.php';
 require_once '../../config/database.php';
-requireLogin(ROLE_CLIENT);
 header('Content-Type: application/json');
+
+if (!isLoggedIn() || ($_SESSION['role'] ?? '') !== ROLE_CLIENT) {
+    jsonResponse(false, ['error' => 'Client sign-in is required.'], 403);
+}
+
+requirePostRequest(true);
+requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and try again.', true);
 
 $userId = (int) $_SESSION['user_id'];
 $stmt = $conn->prepare("SELECT notif_id, ticket_id, message, type, sent_at FROM notifications WHERE user_id=? AND is_read=0 ORDER BY sent_at DESC");

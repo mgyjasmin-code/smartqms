@@ -10,12 +10,24 @@ require_once '../../config/database.php';
 requireLogin(ROLE_CLIENT);
 header('Content-Type: application/json');
 
+requirePostRequest(true);
+requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and try again.', true);
+
 $ticketId = (int) ($_POST['ticket_id'] ?? 0);
 $rating = (int) ($_POST['rating'] ?? 0);
 $comment = trim($_POST['comment'] ?? '');
 
-if ($ticketId <= 0 || $rating < 1 || $rating > 5) {
-    jsonResponse(false, ['error' => 'Ticket and a 1-5 rating are required.'], 422);
+if ($rating < 1 || $rating > 5) {
+    jsonResponse(false, [
+        'error' => 'Please correct the highlighted field.',
+        'field_errors' => [
+            'rating' => 'Choose a rating from 1 to 5.',
+        ],
+    ], 422);
+}
+
+if ($ticketId <= 0) {
+    jsonResponse(false, ['error' => 'Ticket is required before submitting feedback.'], 422);
 }
 
 $stmt = $conn->prepare("SELECT * FROM queue_tickets WHERE ticket_id=? AND user_id=? AND status='completed' LIMIT 1");

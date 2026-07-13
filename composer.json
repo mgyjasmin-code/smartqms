@@ -1,0 +1,10 @@
+{
+    "name": "smartqms/app",
+    "description": "SmartQMS barangay health center queue management system.",
+    "license": "proprietary",
+    "require": {
+        "phpmailer/phpmailer": "^7.1",
+        "endroid/qr-code": "^5.1",
+        "twbs/bootstrap": "5.0.2"
+    }
+}

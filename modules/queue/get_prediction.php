@@ -8,20 +8,94 @@ require_once '../../config/config.php';
 require_once '../../config/database.php';
 header('Content-Type: application/json');
 
+if (!isLoggedIn()) {
+    jsonResponse(false, ['message' => 'Sign in before requesting queue predictions.'], 401);
+}
+
 $features = [];
 
 $ticketId = (int) requestValue('ticket_id', 0);
 if ($ticketId > 0) {
-    $stmt = $conn->prepare("SELECT queue_length, hour_of_day, day_of_week, service_type_encoded, client_type_encoded, active_windows, avg_service_time, predicted_wait_min FROM wait_time_logs WHERE ticket_id=?");
+    $stmt = $conn->prepare("
+        SELECT wl.queue_length, wl.hour_of_day, wl.day_of_week, wl.service_type_encoded,
+               wl.client_type_encoded, wl.active_windows, wl.avg_service_time,
+               wl.predicted_wait_min, qt.user_id, qt.window_id
+        FROM wait_time_logs wl
+        JOIN queue_tickets qt ON qt.ticket_id = wl.ticket_id
+        WHERE wl.ticket_id=?
+        LIMIT 1
+    ");
     $stmt->bind_param('i', $ticketId);
     $stmt->execute();
     $row = $stmt->get_result()->fetch_assoc();
+
+    if (!$row) {
+        jsonResponse(false, ['message' => 'Ticket prediction was not found.'], 404);
+    }
+
+    $allowed = false;
+    if (($_SESSION['role'] ?? '') === ROLE_ADMIN) {
+        $allowed = true;
+    } elseif (($_SESSION['role'] ?? '') === ROLE_CLIENT) {
+        $allowed = (int) $row['user_id'] === (int) $_SESSION['user_id'];
+    } elseif (($_SESSION['role'] ?? '') === ROLE_STAFF) {
+        $staffId = getCurrentStaffId($conn);
+        $window = $staffId ? getStaffWindow($conn, $staffId) : null;
+        $allowed = $window && (int) $row['window_id'] === (int) $window['window_id'];
+    }
+
+    if (!$allowed) {
+        jsonResponse(false, ['message' => 'Ticket prediction is not available for this account.'], 403);
+    }
+
     if ($row && $row['predicted_wait_min'] !== null) {
         jsonResponse(true, ['predicted_wait_minutes' => (float) $row['predicted_wait_min']]);
     }
     if ($row) {
         $features = $row;
     }
+}
+
+$serviceId = (int) requestValue('service_id', 0);
+if ($serviceId > 0) {
+    $clientType = (string) requestValue('client_type', 'regular');
+    $snapshot = queuePredictionSnapshot($conn, $serviceId, $clientType);
+    if (!$snapshot) {
+        jsonResponse(false, ['message' => 'Choose an active health service.'], 422);
+    }
+
+    $features = $snapshot['features'];
+    $fallback = (float) $snapshot['fallback_wait_min'];
+    $prediction = $fallback;
+    $source = 'fallback';
+
+    $ch = curl_init(ML_API_URL);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 2,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_POSTFIELDS => json_encode($features),
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($response && $httpCode === 200) {
+        $decoded = json_decode($response, true);
+        if (isset($decoded['predicted_wait_minutes'])) {
+            $prediction = (float) $decoded['predicted_wait_minutes'];
+            $source = 'ml';
+        }
+    }
+
+    jsonResponse(true, [
+        'predicted_wait_minutes' => $prediction,
+        'queue_length' => (int) $snapshot['queue_length'],
+        'active_windows' => (int) $snapshot['active_windows'],
+        'avg_service_time' => (float) $snapshot['avg_service_time'],
+        'source' => $source,
+    ]);
 }
 
 foreach (['queue_length', 'hour_of_day', 'day_of_week', 'service_type_encoded', 'client_type_encoded', 'active_windows', 'avg_service_time'] as $field) {

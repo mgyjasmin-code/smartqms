@@ -23,10 +23,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and try again.', true);
+
     $key = trim($_POST['setting_key'] ?? '');
     $value = trim($_POST['setting_val'] ?? '');
     if ($key === '') {
-        jsonResponse(false, ['error' => 'Missing setting key.'], 422);
+        jsonResponse(false, [
+            'error' => 'Please correct the highlighted field.',
+            'field_errors' => [
+                'setting_key' => 'Setting key is required.',
+            ],
+        ], 422);
     }
     $stmt = $conn->prepare("UPDATE system_settings SET setting_val=?, updated_by=? WHERE setting_key=?");
     $stmt->bind_param('sis', $value, $_SESSION['user_id'], $key);

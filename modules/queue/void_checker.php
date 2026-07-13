@@ -14,15 +14,30 @@ require_once '../../config/config.php';
 require_once '../../config/database.php';
 header('Content-Type: application/json');
 
+if (!isLoggedIn() || ($_SESSION['role'] ?? '') !== ROLE_STAFF) {
+    jsonResponse(false, ['error' => 'Staff sign-in is required.'], 403);
+}
+
+requirePostRequest(true);
+requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and try again.', true);
+
+$staffId = getCurrentStaffId($conn);
+$window = $staffId ? getStaffWindow($conn, $staffId) : null;
+if (!$window) {
+    jsonResponse(false, ['error' => 'No active window assigned to this staff account.'], 404);
+}
+
+$windowId = (int) $window['window_id'];
 $timeout = max(1, (int) getSetting($conn, 'void_timeout_minutes', '10'));
 $stmt = $conn->prepare("
     SELECT *
     FROM queue_tickets
     WHERE status='serving'
+      AND window_id=?
       AND called_at IS NOT NULL
       AND TIMESTAMPDIFF(MINUTE, called_at, NOW()) >= ?
 ");
-$stmt->bind_param('i', $timeout);
+$stmt->bind_param('ii', $windowId, $timeout);
 $stmt->execute();
 $tickets = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 

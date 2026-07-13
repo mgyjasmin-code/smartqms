@@ -8,6 +8,23 @@ require_once '../../config/config.php';
 require_once '../../config/database.php';
 header('Content-Type: application/json');
 
+function hasValidDisplayStatusToken(mysqli $conn): bool {
+    $token = trim((string) ($_GET['token'] ?? ''));
+    if ($token === '') {
+        return false;
+    }
+
+    $stmt = $conn->prepare("SELECT setting_val FROM system_settings WHERE setting_key = 'display_board_token' LIMIT 1");
+    $stmt->execute();
+    $savedToken = (string) ($stmt->get_result()->fetch_assoc()['setting_val'] ?? '');
+
+    return $savedToken !== '' && hash_equals($savedToken, $token);
+}
+
+if (!isLoggedIn() && !hasValidDisplayStatusToken($conn)) {
+    jsonResponse(false, ['error' => 'Queue status is not available for this request.'], 403);
+}
+
 $windows = $conn->query("
     SELECT sw.window_id, sw.window_name, sw.status, hs.service_name,
            qt.ticket_id, qt.ticket_number, qt.reference_number, qt.client_type

@@ -2,52 +2,68 @@
 require_once '../../config/config.php';
 require_once '../../config/database.php';
 
-$error = $_GET['error'] ?? '';
+$feedback = consumeFormFeedback('verify_otp');
 $msg = $_GET['msg'] ?? '';
-$pendingUserId = (int) ($_SESSION['pending_user_id'] ?? 0);
-$latestOtp = '';
-
-if ($pendingUserId) {
-    $stmt = $conn->prepare("SELECT otp_code FROM users WHERE user_id = ? LIMIT 1");
-    $stmt->bind_param('i', $pendingUserId);
-    $stmt->execute();
-    $latestOtp = $stmt->get_result()->fetch_assoc()['otp_code'] ?? '';
-}
+$flow = $_SESSION['otp_flow'] ?? 'register';
+$title = $flow === 'login' ? 'Verify Login' : 'Verify Email';
+$copy = $flow === 'login'
+    ? 'Enter the 6-digit code sent to your registered email to finish signing in.'
+    : 'Enter the 6-digit code sent to your email to finish registration.';
+$lastSent = (int) ($_SESSION['otp_last_sent_at'] ?? 0);
+$resendCooldown = $lastSent ? max(0, OTP_RESEND_COOLDOWN_SECONDS - (time() - $lastSent)) : 0;
+$resendLabel = $resendCooldown > 0 ? 'Resend OTP in ' . gmdate('i:s', $resendCooldown) : 'Resend OTP';
+$shouldDispatchEmail = in_array($msg, ['otp_sent', 'login_otp_sent', 'otp_resent'], true);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <?= csrfMetaTag() ?>
   <title>Verify OTP -- SmartQMS</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
 </head>
-<body class="d-flex align-items-center justify-content-center" style="min-height:100vh; background:#F4F4F4;">
-  <main class="card p-4" style="width:100%; max-width:420px;">
-    <h2 class="mb-2" style="font-family:Poppins; font-weight:600;">Verify Phone</h2>
-    <p class="text-muted" style="font-size:13px;">Enter the 6-digit code sent to your phone.</p>
+<body class="auth-page">
+  <main class="auth-shell auth-shell-login d-flex flex-column justify-content-center align-items-center">
+    <section class="auth-card">
+      <header class="auth-hero auth-hero-compact">
+        <h1><?= htmlspecialchars($title) ?></h1>
+        <p><?= htmlspecialchars($copy) ?></p>
+      </header>
 
-    <?php if ($error): ?>
-      <div class="alert alert-danger py-2"><?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
-    <?php if ($msg === 'otp_sent'): ?>
-      <div class="alert alert-success py-2">OTP sent. SMS may be simulated during local setup.</div>
-    <?php endif; ?>
-    <?php if ($latestOtp): ?>
-      <div class="alert alert-info py-2" style="font-size:13px;">Demo OTP: <strong><?= htmlspecialchars($latestOtp) ?></strong></div>
-    <?php endif; ?>
+      <div class="auth-body">
+        <?php if ($feedback['form_error']): ?>
+          <div class="auth-alert auth-alert-error" role="alert"><?= htmlspecialchars($feedback['form_error']) ?></div>
+        <?php endif; ?>
+        <?php if ($shouldDispatchEmail): ?>
+          <span hidden data-email-dispatch="<?= postActionUrl('modules/notifications/dispatch_email_jobs.php') ?>"></span>
+        <?php endif; ?>
 
-    <form action="<?= postActionUrl('modules/auth/verify_otp.php') ?>" method="POST">
-      <label class="form-label">OTP Code</label>
-      <input class="form-control text-center" name="otp_code" maxlength="6" pattern="\d{6}" required style="font-size:28px; letter-spacing:8px;">
-      <button class="btn btn-primary w-100 mt-3" type="submit">Verify</button>
-    </form>
+        <form action="<?= postActionUrl('modules/auth/verify_otp.php') ?>" method="POST" class="auth-form auth-form-stable-errors js-auth-form" novalidate>
+          <?= csrfInput() ?>
+          <div class="form-row-single">
+            <label class="auth-label required" for="otp_code">OTP Code</label>
+            <input id="otp_code" class="auth-input auth-otp-input<?= fieldInvalidClass($feedback, 'otp_code') ?>" name="otp_code" inputmode="numeric"
+                   maxlength="6" pattern="\d{6}" placeholder="123456" required autocomplete="one-time-code" data-validate="otp"<?= fieldAriaInvalid($feedback, 'otp_code') ?>>
+            <div class="field-error" aria-live="polite"><?= htmlspecialchars(fieldError($feedback, 'otp_code')) ?></div>
+          </div>
+          <button class="auth-submit" type="submit" data-loading-text="Verifying...">Verify OTP</button>
+        </form>
 
-    <p class="text-center mt-3 mb-0" style="font-size:13px;">
-      <a href="<?= APP_URL ?>/index.php">Back to sign in</a>
-    </p>
+        <form action="<?= postActionUrl('modules/auth/resend_otp.php') ?>" method="POST" class="auth-resend">
+          <?= csrfInput() ?>
+          <button class="auth-link-button" type="submit" data-otp-resend data-ready-text="Resend OTP" data-wait-text="Resend OTP in" data-remaining="<?= (int) $resendCooldown ?>" <?= $resendCooldown > 0 ? 'disabled' : '' ?>>
+            <?= htmlspecialchars($resendLabel) ?>
+          </button>
+        </form>
+
+        <div class="auth-divider"></div>
+        <p class="auth-switch"><a href="<?= APP_URL ?>/index.php">Back to sign in</a></p>
+      </div>
+    </section>
   </main>
+  <script src="<?= assetUrl('assets/js/main.js') ?>"></script>
 </body>
 </html>

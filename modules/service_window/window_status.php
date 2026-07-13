@@ -9,6 +9,9 @@ require_once '../../config/database.php';
 requireLogin(ROLE_STAFF);
 header('Content-Type: application/json');
 
+requirePostRequest(true);
+requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and try again.', true);
+
 $status = $_POST['status'] ?? '';
 if (!in_array($status, ['open', 'busy', 'closed'], true)) {
     jsonResponse(false, ['error' => 'Invalid status.'], 422);

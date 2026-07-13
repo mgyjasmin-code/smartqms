@@ -14,54 +14,44 @@
  */
 require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once __DIR__ . '/qr_generate.php';
+require_once __DIR__ . '/../notifications/send_alert.php';
 requireLogin(ROLE_CLIENT);
 
-$userId = (int) $_SESSION['user_id'];
-if (getActiveTicket($conn, $userId)) {
-    redirectTo('views/client/ticket.php', ['msg' => 'active']);
-}
+requirePostRequest(false, 'views/client/index.php', 'join_queue');
 
 $serviceId = (int) ($_POST['service_id'] ?? 0);
 $clientType = $_POST['client_type'] ?? 'regular';
 if (!in_array($clientType, ['regular', 'senior', 'pwd'], true)) {
     $clientType = 'regular';
 }
+$oldInput = [
+    'service_id' => (string) $serviceId,
+    'client_type' => $clientType,
+];
+
+requireValidCsrf('views/client/index.php', 'join_queue', $oldInput);
+
+$userId = (int) $_SESSION['user_id'];
+if (getActiveTicket($conn, $userId)) {
+    redirectTo('views/client/ticket.php', ['msg' => 'active']);
+}
+
 $priorityLevel = in_array($clientType, ['senior', 'pwd'], true) ? 1 : 0;
-
-$serviceStmt = $conn->prepare("SELECT * FROM health_services WHERE service_id=? AND is_active=1 LIMIT 1");
-$serviceStmt->bind_param('i', $serviceId);
-$serviceStmt->execute();
-$service = $serviceStmt->get_result()->fetch_assoc();
-if (!$service) {
-    redirectTo('views/client/index.php', ['error' => 'Choose an active health service.']);
+$snapshot = queuePredictionSnapshot($conn, $serviceId, $clientType);
+if (!$snapshot) {
+    redirectWithFormFeedback('views/client/index.php', 'join_queue', [
+        'service_id' => 'Choose an active health service.',
+    ], $oldInput);
 }
+
+$service = $snapshot['service'];
+$priorityLevel = (int) $snapshot['priority_level'];
+
 if ((int) $service['priority_only'] === 1 && $priorityLevel === 0) {
-    redirectTo('views/client/index.php', ['error' => 'That service is reserved for Senior/PWD clients.']);
-}
-
-$countStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM queue_tickets WHERE status='waiting' AND service_id=?");
-$countStmt->bind_param('i', $serviceId);
-$countStmt->execute();
-$queueLength = (int) ($countStmt->get_result()->fetch_assoc()['cnt'] ?? 0);
-
-$winStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM service_windows WHERE is_active=1 AND status IN ('open','busy') AND (service_id=? OR service_id IS NULL)");
-$winStmt->bind_param('i', $serviceId);
-$winStmt->execute();
-$activeWindows = max(1, (int) ($winStmt->get_result()->fetch_assoc()['cnt'] ?? 1));
-
-$avgStmt = $conn->prepare("
-    SELECT AVG(wl.actual_service_dur)/60 AS avg_min
-    FROM wait_time_logs wl
-    JOIN queue_tickets qt ON qt.ticket_id=wl.ticket_id
-    WHERE qt.service_id=? AND wl.actual_service_dur IS NOT NULL
-    ORDER BY wl.logged_at DESC
-    LIMIT 20
-");
-$avgStmt->bind_param('i', $serviceId);
-$avgStmt->execute();
-$avgServiceTime = (float) ($avgStmt->get_result()->fetch_assoc()['avg_min'] ?? 5);
-if ($avgServiceTime <= 0) {
-    $avgServiceTime = 5.0;
+    redirectWithFormFeedback('views/client/index.php', 'join_queue', [
+        'client_type' => 'That service is reserved for Senior/PWD clients.',
+    ], $oldInput);
 }
 
 $referenceNumber = generateRefNumber($conn);
@@ -76,20 +66,20 @@ try {
     $insert->execute();
     $ticketId = $conn->insert_id;
 
-    $hour = (int) date('G');
-    $day = (int) date('w');
-    $clientEncoded = clientTypeEncoded($clientType);
-    $predicted = fallbackWaitEstimate($queueLength, $activeWindows, $avgServiceTime, $priorityLevel);
+    $qrPath = generateQR($referenceNumber, (string) $ticketId);
+    $qrUpdate = $conn->prepare("UPDATE queue_tickets SET qr_code_path = ? WHERE ticket_id = ?");
+    $qrUpdate->bind_param('si', $qrPath, $ticketId);
+    $qrUpdate->execute();
 
-    $payload = [
-        'queue_length' => $queueLength,
-        'hour_of_day' => $hour,
-        'day_of_week' => $day,
-        'service_type_encoded' => (int) $service['service_encoded'],
-        'client_type_encoded' => $clientEncoded,
-        'active_windows' => $activeWindows,
-        'avg_service_time' => $avgServiceTime,
-    ];
+    $payload = $snapshot['features'];
+    $hour = (int) $payload['hour_of_day'];
+    $day = (int) $payload['day_of_week'];
+    $clientEncoded = (int) $payload['client_type_encoded'];
+    $queueLength = (int) $payload['queue_length'];
+    $activeWindows = (int) $payload['active_windows'];
+    $avgServiceTime = (float) $payload['avg_service_time'];
+    $predicted = (float) $snapshot['fallback_wait_min'];
+
     $ch = curl_init(ML_API_URL);
     curl_setopt_array($ch, [
         CURLOPT_POST => true,
@@ -119,9 +109,14 @@ try {
 
     logActivity($conn, 'ticket_created', 'Client joined queue', $ticketId);
     $conn->commit();
+    try {
+        processNearTurnAlerts($conn, $serviceId);
+    } catch (Throwable $alertError) {
+        // Alert generation should not block ticket creation.
+    }
     redirectTo('views/client/ticket.php');
 } catch (Throwable $e) {
     $conn->rollback();
-    redirectTo('views/client/index.php', ['error' => 'Could not create queue ticket.']);
+    redirectWithFormFeedback('views/client/index.php', 'join_queue', [], $oldInput, 'Could not create queue ticket.');
 }
 ?>
