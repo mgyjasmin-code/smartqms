@@ -1,26 +1,19 @@
 <?php
 require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once __DIR__ . '/../../modules/settings/settings_store.php';
 requireLogin(ROLE_ADMIN);
 
 $success = '';
 $feedback = consumeFormFeedback('admin_settings');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireValidCsrf('views/admin/settings.php', 'admin_settings');
-    foreach ($_POST['settings'] ?? [] as $key => $value) {
-        $stmt = $conn->prepare("UPDATE system_settings SET setting_val=?, updated_by=? WHERE setting_key=?");
-        $stmt->bind_param('sis', $value, $_SESSION['user_id'], $key);
-        $stmt->execute();
-    }
+    updateAdminSettings($conn, $_POST['settings'] ?? [], (int) $_SESSION['user_id']);
     logActivity($conn, 'settings_updated', 'Updated system settings');
     $success = 'Settings saved.';
 }
 
-$settings = [];
-$result = $conn->query("SELECT * FROM system_settings ORDER BY section, setting_id");
-while ($row = $result->fetch_assoc()) {
-    $settings[$row['section'] ?? 'other'][] = $row;
-}
+$settings = groupSystemSettingsForHtml(adminSystemSettings($conn));
 
 $pageTitle = 'Settings';
 $pageHeading = 'System Settings';

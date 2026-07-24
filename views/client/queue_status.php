@@ -14,13 +14,20 @@ $activeWait = $activeTicket && $activeTicket['predicted_wait_min'] !== null
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <?= csrfMetaTag() ?>
   <title>Queue Status -- SmartQMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
 </head>
-<body class="client-page">
-  <main class="client-shell">
+<body class="client-page" data-client-root
+      data-client-notification-url="<?= htmlspecialchars(postActionUrl('modules/notifications/get_notifications.php'), ENT_QUOTES) ?>">
+  <a class="skip-link" href="#main-content">Skip to live queue status</a>
+  <main id="main-content" class="client-shell" tabindex="-1"
+        data-queue-status-root data-status-url="<?= APP_URL ?>/modules/queue/status.php" data-refresh-interval="10000">
     <div class="client-subnav">
       <a href="index.php" class="btn btn-link px-0">
         <i class="bi bi-arrow-left" aria-hidden="true"></i>
@@ -45,24 +52,24 @@ $activeWait = $activeTicket && $activeTicket['predicted_wait_min'] !== null
     </section>
 
     <?php if ($activeTicket): ?>
-      <section class="client-panel queue-current-strip">
+      <section class="client-panel queue-current-strip" data-viewer-ticket>
         <div>
           <p class="panel-kicker">Your Ticket</p>
-          <h2><?= htmlspecialchars($activeTicket['ticket_number']) ?></h2>
-          <span><?= htmlspecialchars($activeTicket['service_name']) ?></span>
+          <h2 data-viewer-ticket-number><?= htmlspecialchars($activeTicket['ticket_number']) ?></h2>
+          <span data-viewer-ticket-service><?= htmlspecialchars($activeTicket['service_name']) ?></span>
         </div>
         <div class="queue-current-metrics">
           <div>
             <span>Status</span>
-            <strong><?= htmlspecialchars(ucfirst($activeTicket['status'])) ?></strong>
+            <strong><span class="status-badge badge-<?= htmlspecialchars($activeTicket['status']) ?>" data-viewer-ticket-status><?= htmlspecialchars($activeTicket['status']) ?></span></strong>
           </div>
           <div>
             <span>People Ahead</span>
-            <strong><?= (int) $activePeopleAhead ?></strong>
+            <strong data-viewer-ticket-ahead><?= (int) $activePeopleAhead ?></strong>
           </div>
           <div>
             <span>Estimated Wait</span>
-            <strong><?= htmlspecialchars($activeWait) ?></strong>
+            <strong data-viewer-ticket-wait><?= htmlspecialchars($activeWait) ?></strong>
           </div>
         </div>
         <a class="btn btn-outline-primary" href="ticket.php">
@@ -102,89 +109,7 @@ $activeWait = $activeTicket && $activeTicket['predicted_wait_min'] !== null
       </aside>
     </section>
   </main>
-
-  <script>
-    const statusUrl = '<?= APP_URL ?>/modules/queue/status.php';
-    const windowsEl = document.querySelector('[data-window-status]');
-    const nextEl = document.querySelector('[data-next-tickets]');
-    const updatedEl = document.querySelector('[data-status-updated]');
-
-    function escapeHtml(value) {
-      return String(value ?? '').replace(/[&<>"']/g, char => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-      }[char]));
-    }
-
-    function statusClass(status) {
-      return ['open', 'busy', 'closed'].includes(status) ? status : 'closed';
-    }
-
-    function renderWindows(windows) {
-      if (!windows.length) {
-        windowsEl.innerHTML = '<div class="queue-empty-state">No service windows are configured yet.</div>';
-        return;
-      }
-
-        windowsEl.innerHTML = windows.map(windowInfo => {
-          const ticket = windowInfo.ticket_number || '--';
-          const service = windowInfo.service_name || 'No service assigned';
-          const status = windowInfo.status || 'closed';
-          const clientType = windowInfo.client_type ? `<span class="status-mini-badge">${escapeHtml(windowInfo.client_type)}</span>` : '';
-          return `
-          <article class="window-status-card">
-            <div class="window-status-card-head">
-              <span>${escapeHtml(windowInfo.window_name || 'Window')}</span>
-              <strong class="window-state window-state-${statusClass(status)}">${escapeHtml(status.toUpperCase())}</strong>
-            </div>
-            <div class="window-ticket">${escapeHtml(ticket)}</div>
-            <p>${escapeHtml(service)}</p>
-            ${clientType}
-          </article>
-        `;
-      }).join('');
-    }
-
-    function renderNextTickets(tickets) {
-      if (!tickets.length) {
-        nextEl.innerHTML = '<div class="queue-empty-state">No waiting tickets right now.</div>';
-        return;
-      }
-
-      nextEl.innerHTML = tickets.map((ticket, index) => {
-        const priority = ['senior', 'pwd'].includes(ticket.client_type || '');
-        return `
-        <article class="next-ticket-row${priority ? ' is-priority' : ''}">
-          <span>${index + 1}</span>
-          <div>
-            <strong>${escapeHtml(ticket.ticket_number)}</strong>
-            <small>${escapeHtml(ticket.service_name)} &middot; ${escapeHtml(ticket.client_type)}</small>
-          </div>
-        </article>
-      `;
-      }).join('');
-    }
-
-    async function loadQueueStatus() {
-      try {
-        const response = await fetch(statusUrl, { credentials: 'same-origin' });
-        const payload = await response.json();
-        if (!payload.success) throw new Error('Status unavailable');
-        renderWindows(payload.data.windows || []);
-        renderNextTickets(payload.data.next || []);
-        updatedEl.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      } catch (error) {
-        windowsEl.innerHTML = '<div class="queue-empty-state">Could not load queue status.</div>';
-        nextEl.innerHTML = '<div class="queue-empty-state">Please refresh the page.</div>';
-        updatedEl.textContent = 'Update failed';
-      }
-    }
-
-    loadQueueStatus();
-    setInterval(loadQueueStatus, 10000);
-  </script>
+  <script src="<?= assetUrl('assets/js/main.js') ?>"></script>
+  <script src="<?= assetUrl('assets/js/client.js') ?>"></script>
 </body>
 </html>

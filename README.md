@@ -43,7 +43,7 @@ Fresh install:
 1. Start Apache and MySQL in XAMPP.
 2. Open `http://localhost/phpmyadmin`.
 3. Create or select the `smartqms` database.
-4. Import `database/smartqms_final.sql`.
+4. Import `database/smartqms_final_v4.sql`.
 
 Existing local install:
 
@@ -154,6 +154,18 @@ python compare_algorithms.py
 python app.py
 ```
 
+The ML scripts use one canonical dataset contract and write the reproducible
+development dataset to `ml/dataset/synthetic_queue_data.csv`. The older
+five-column `queue_data.csv` is not compatible with the application model and
+is intentionally not used for training.
+
+Run the validator and Flask contract tests with:
+
+```bash
+cd C:/xampp/htdocs/smartqms/ml
+python -m unittest test_app.py
+```
+
 The Flask API runs at:
 
 ```text
@@ -183,7 +195,7 @@ If a report has no matching rows, SmartQMS shows an explicit empty state instead
 
 Use this flow to verify a local machine:
 
-1. Import `database/smartqms_final.sql`.
+1. Import `database/smartqms_final_v4.sql`.
 2. Run `composer install`.
 3. Open `http://localhost/smartqms`.
 4. Log in with `admin@smartqms.local` / `smartQMSadmin!`.
@@ -197,6 +209,15 @@ Use this flow to verify a local machine:
 
 ## Verification Commands
 
+The dependency-free PHP characterization suite currently registers 71 tests
+and uses only an isolated database whose name ends in `_test` or `_testing`.
+Copy `tests/config.example.php` to the ignored `tests/config.local.php`,
+configure that database, and run:
+
+```powershell
+php tests/php/run.php
+```
+
 ```bash
 php -l index.php
 composer validate --no-check-publish
@@ -209,6 +230,39 @@ Get-ChildItem -Recurse -Filter *.php -File |
   Where-Object { $_.FullName -notmatch '\\vendor\\' } |
   ForEach-Object { php -l $_.FullName }
 ```
+
+JavaScript syntax checks:
+
+```powershell
+node --check assets/js/main.js
+node --check assets/js/client.js
+node --check assets/js/staff.js
+node --check assets/js/admin.js
+node --check assets/js/display.js
+node tests/js/run.js
+```
+
+## Refactored Architecture
+
+- `config/config.php` initializes runtime/session settings, security headers,
+  constants, and the shared compatibility bootstrap.
+- `modules/shared/` owns cross-feature HTTP, security, validation, activity,
+  settings, asset, and schema-compatibility procedures.
+- Feature folders own their queries and transactional workflows: `auth`,
+  `queue`, `service_window`, `settings`, `notifications`, and `reports`.
+- PHP entry points remain thin procedural controllers; existing routes and
+  public function names remain compatible.
+- `assets/js` uses named event lifecycle initializers; `assets/css` retains the
+  existing role-specific styles with consolidated theme tokens.
+
+See the [architecture guide](docs/ARCHITECTURE.md) for bootstrap behavior,
+module ownership, sessions, queue/staff state transitions, JavaScript and CSS
+extension points, test safety, and ML restoration.
+
+See the
+[consolidated incremental refactoring plan](docs/SMARTQMS_INCREMENTAL_REFACTORING_PLAN.md)
+for batch ownership, compatibility constraints, verification history, and
+deferred follow-up work.
 
 ## Important Security Notes
 

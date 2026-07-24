@@ -7,30 +7,60 @@ $stmt = $conn->prepare("SELECT action, details, logged_at FROM activity_logs WHE
 $stmt->bind_param('i', $_SESSION['user_id']);
 $stmt->execute();
 $logs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+function staffActivityIcon(string $action): string {
+    $action = strtolower($action);
+    if (str_contains($action, 'complete')) return 'check2-circle';
+    if (str_contains($action, 'skip')) return 'skip-forward';
+    if (str_contains($action, 'void')) return 'x-circle';
+    if (str_contains($action, 'window')) return 'door-open';
+    if (str_contains($action, 'call')) return 'telephone-outbound';
+    return 'activity';
+}
+
+function staffActivityLabel(string $action): string {
+    return ucwords(str_replace('_', ' ', $action));
+}
+
+$pageTitle = 'Activity Log';
+$pageHeading = 'Activity Log';
+$pageSubtitle = 'Review your latest queue and service-window actions.';
+$activePage = 'activity';
+include __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Activity Log -- SmartQMS</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/style.css">
-</head>
-<body>
-  <main class="container py-4">
-    <a href="dashboard.php" class="btn btn-link px-0">Back to dashboard</a>
-    <div class="card p-4">
-      <h1 class="h4">My Activity</h1>
-      <table class="table">
-        <thead><tr><th>Action</th><th>Details</th><th>Time</th></tr></thead>
-        <tbody>
-          <?php foreach ($logs as $log): ?>
-            <tr><td><?= htmlspecialchars($log['action']) ?></td><td><?= htmlspecialchars($log['details'] ?? '') ?></td><td><?= htmlspecialchars($log['logged_at']) ?></td></tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
+
+<section class="staff-activity-card">
+  <div class="staff-section-heading">
+    <div>
+      <p class="staff-section-kicker">Latest 50 Records</p>
+      <h2>My Activity</h2>
     </div>
-  </main>
-</body>
-</html>
+    <a class="btn btn-outline-primary" href="dashboard.php"><i class="bi bi-arrow-left" aria-hidden="true"></i> Dashboard</a>
+  </div>
+
+  <?php if ($logs): ?>
+    <ol class="staff-timeline">
+      <?php foreach ($logs as $log): ?>
+        <li class="staff-timeline-item">
+          <span class="staff-timeline-icon"><i class="bi bi-<?= htmlspecialchars(staffActivityIcon((string) $log['action'])) ?>" aria-hidden="true"></i></span>
+          <div class="staff-timeline-content">
+            <div>
+              <h3><?= htmlspecialchars(staffActivityLabel((string) $log['action'])) ?></h3>
+              <time datetime="<?= htmlspecialchars(date(DATE_ATOM, strtotime((string) $log['logged_at']))) ?>">
+                <?= htmlspecialchars(date('M j, Y · g:i A', strtotime((string) $log['logged_at']))) ?>
+              </time>
+            </div>
+            <p><?= htmlspecialchars($log['details'] ?: 'No additional details were recorded.') ?></p>
+          </div>
+        </li>
+      <?php endforeach; ?>
+    </ol>
+  <?php else: ?>
+    <div class="staff-empty-inline">
+      <span><i class="bi bi-clock-history" aria-hidden="true"></i></span>
+      <div><h3>No activity recorded yet</h3><p>Your queue and window actions will appear here after you start serving clients.</p></div>
+    </div>
+  <?php endif; ?>
+</section>
+
+<?php include __DIR__ . '/includes/footer.php'; ?>

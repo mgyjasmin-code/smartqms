@@ -49,6 +49,24 @@ $waitRows = reportFetchAll($conn, "
     ORDER BY report_date
 ", 'ss', [$sevenDaysAgo, $today]);
 $latestWait = $waitRows ? $waitRows[count($waitRows) - 1] : null;
+$hourChart = [
+    'type' => 'bar',
+    'labels' => array_column($hourRows, 'hour_label'),
+    'datasets' => [[
+        'label' => 'Tickets',
+        'data' => array_map(static fn($row) => (int) $row['tickets'], $hourRows),
+    ]],
+    'unit' => 'tickets',
+];
+$waitChart = [
+    'type' => 'line',
+    'labels' => array_column($waitRows, 'report_date'),
+    'datasets' => [
+        ['label' => 'Predicted wait', 'data' => array_map(static fn($row) => (float) $row['predicted_wait_min'], $waitRows)],
+        ['label' => 'Actual wait', 'data' => array_map(static fn($row) => (float) $row['actual_wait_min'], $waitRows)],
+    ],
+    'unit' => 'minutes',
+];
 
 $pageTitle = 'Admin Dashboard';
 $pageHeading = 'Operational Analytics';
@@ -91,13 +109,16 @@ include __DIR__ . '/includes/header.php';
     </header>
     <div class="admin-chart-body">
       <?php if ($hourRows): ?>
-        <div class="admin-bar-chart" role="img" aria-label="Hourly ticket volume for today.">
-          <div class="admin-bars" aria-hidden="true">
-            <?php foreach ($hourRows as $row): ?>
-              <?php $height = max(8, min(100, ((int) $row['tickets'] / $hourMax) * 100)); ?>
-              <span class="admin-bar" style="--bar-height: <?= (int) $height ?>%"><span><?= htmlspecialchars($row['hour_label']) ?></span></span>
-            <?php endforeach; ?>
-          </div>
+        <div class="admin-chart-canvas-wrap">
+          <canvas data-admin-chart="admin-hour-chart-data" role="img" aria-label="Hourly ticket volume for today. Exact values are available in the table after the chart."></canvas>
+        </div>
+        <script type="application/json" id="admin-hour-chart-data"><?= json_encode($hourChart, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+        <div class="admin-table-wrap admin-chart-table-alternative">
+          <table class="admin-data-table">
+            <caption class="visually-hidden">Hourly ticket volume values</caption>
+            <thead><tr><th>Hour</th><th>Tickets</th></tr></thead>
+            <tbody><?php foreach ($hourRows as $row): ?><tr><td><?= htmlspecialchars($row['hour_label']) ?></td><td><?= (int) $row['tickets'] ?></td></tr><?php endforeach; ?></tbody>
+          </table>
         </div>
         <div class="admin-insight">
           <i data-lucide="info" aria-hidden="true"></i>
@@ -115,6 +136,10 @@ include __DIR__ . '/includes/header.php';
     </header>
     <div class="admin-chart-body">
       <?php if ($waitRows): ?>
+        <div class="admin-chart-canvas-wrap">
+          <canvas data-admin-chart="admin-wait-chart-data" role="img" aria-label="Predicted and actual average wait times over the last seven days. Exact values are available in the table after the chart."></canvas>
+        </div>
+        <script type="application/json" id="admin-wait-chart-data"><?= json_encode($waitChart, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
         <div class="admin-table-wrap">
           <table class="admin-data-table">
             <thead>

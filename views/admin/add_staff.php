@@ -1,173 +1,189 @@
 <?php
 require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once __DIR__ . '/../../modules/admin/staff_accounts.php';
 requireLogin(ROLE_ADMIN);
 
 $fieldErrors = [];
-$oldInput = [
-    'first_name' => '',
-    'last_name' => '',
-    'phone_number' => '',
-    'email' => '',
-    'department' => '',
-    'shift' => '',
-];
+$oldInput = staffAccountDefaults();
 $formError = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $firstName = trim($_POST['first_name'] ?? '');
-    $lastName = trim($_POST['last_name'] ?? '');
-    $phone = normalizePhone($_POST['phone_number'] ?? '');
-    $email = strtolower(trim($_POST['email'] ?? ''));
-    $password = $_POST['password'] ?? '';
-    $department = trim($_POST['department'] ?? '');
-    $shift = trim($_POST['shift'] ?? '');
+    $input = staffAccountInput($_POST);
+    $firstName = $input['first_name'];
+    $lastName = $input['last_name'];
+    $email = $input['email'];
     $oldInput = [
         'first_name' => $firstName,
         'last_name' => $lastName,
-        'phone_number' => $phone,
         'email' => $email,
-        'department' => $department,
-        'shift' => $shift,
     ];
 
     if (!isValidCsrfToken()) {
         $formError = 'Security check failed. Please refresh the page and try again.';
     }
 
-    if ($formError === '' && $firstName === '') {
-        $fieldErrors['first_name'] = 'First name is required.';
-    }
-    if ($formError === '' && $lastName === '') {
-        $fieldErrors['last_name'] = 'Last name is required.';
-    }
-    if ($formError === '' && $phone === '') {
-        $fieldErrors['phone_number'] = 'Phone number is required.';
-    } elseif ($formError === '' && !isValidPhMobile($phone)) {
-        $fieldErrors['phone_number'] = 'Enter a valid Philippine mobile number (e.g. 09171234567).';
-    }
-    if ($formError === '' && $email === '') {
-        $fieldErrors['email'] = 'Email is required.';
-    } elseif ($formError === '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $fieldErrors['email'] = 'Enter a valid email address.';
-    }
-    if ($formError === '' && $password === '') {
-        $fieldErrors['password'] = 'Password is required.';
-    } elseif ($formError === '' && strlen($password) < 8) {
-        $fieldErrors['password'] = 'Password must be at least 8 characters.';
-    }
+    $fieldErrors = $formError === '' ? validateStaffAccountInput($input) : [];
 
-    if ($formError !== '') {
-        $fieldErrors = [];
-    } elseif ($fieldErrors) {
-        $formError = '';
-    } else {
-        $exists = $conn->prepare("SELECT user_id, phone_number, email FROM users WHERE phone_number = ? OR email = ? LIMIT 1");
-        $exists->bind_param('ss', $phone, $email);
-        $exists->execute();
-        $existing = $exists->get_result()->fetch_assoc();
-        if ($existing) {
-            if (($existing['phone_number'] ?? '') === $phone) {
-                $fieldErrors['phone_number'] = 'That phone number is already registered.';
-            }
-            if (($existing['email'] ?? '') === $email) {
-                $fieldErrors['email'] = 'That email is already registered.';
-            }
+    if ($formError === '' && !$fieldErrors) {
+        if (staffEmailExists($conn, $email)) {
+            $fieldErrors['email'] = 'That email is already registered.';
         } else {
-            $conn->begin_transaction();
             try {
-                $hash = password_hash($password, PASSWORD_BCRYPT);
-                $role = ROLE_STAFF;
-                $verified = 1;
-                $userStmt = $conn->prepare("INSERT INTO users (first_name, last_name, phone_number, email, password_hash, role, is_verified) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $userStmt->bind_param('ssssssi', $firstName, $lastName, $phone, $email, $hash, $role, $verified);
-                $userStmt->execute();
-                $userId = $conn->insert_id;
-                $staffStmt = $conn->prepare("INSERT INTO staff (user_id, department, shift, added_by) VALUES (?, NULLIF(?, ''), NULLIF(?, ''), ?)");
-                $staffStmt->bind_param('issi', $userId, $department, $shift, $_SESSION['user_id']);
-                $staffStmt->execute();
-                logActivity($conn, 'staff_created', 'Created staff account for ' . $phone);
-                $conn->commit();
-                $success = 'Staff account created.';
-                $oldInput = [
-                    'first_name' => '',
-                    'last_name' => '',
-                    'phone_number' => '',
-                    'email' => '',
-                    'department' => '',
-                    'shift' => '',
-                ];
+                createStaffAccount($conn, $input, (int) $_SESSION['user_id']);
+                $success = 'Staff account created. The staff member can now sign in and operate an assigned service window.';
+                $oldInput = staffAccountDefaults();
             } catch (Throwable $e) {
-                $conn->rollback();
-                $formError = 'Could not create staff account.';
+                $formError = 'Could not create staff account. Please try again.';
             }
         }
     }
 }
+
 $feedback = [
     'field_errors' => $fieldErrors,
     'old' => $oldInput,
     'form_error' => $formError,
 ];
+
+$staffRows = listStaffAccounts($conn);
+
+$pageTitle = 'Staff Accounts';
+$pageHeading = 'Staff Accounts';
+$pageSubtitle = 'Register staff members who can call the next ticket, mark clients complete, and manage their assigned service window.';
+$activePage = 'staff';
+$adminBodyClass = 'admin-management-page admin-staff-page';
+include __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Add Staff -- SmartQMS</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/style.css">
-</head>
-<body>
-  <main class="container py-4">
-    <a href="dashboard.php" class="btn btn-link px-0">Back to dashboard</a>
-    <div class="card p-4" style="max-width:760px;">
-      <h1 class="h4 mb-3">Add Staff</h1>
-      <?php if ($feedback['form_error']): ?><div class="alert alert-danger" role="alert"><?= htmlspecialchars($feedback['form_error']) ?></div><?php endif; ?>
-      <?php if ($success): ?><div class="alert alert-success"><?= htmlspecialchars($success) ?></div><?php endif; ?>
-      <form method="POST" class="js-validated-form" novalidate>
+<section class="admin-management-shell">
+  <?php if ($feedback['form_error']): ?>
+    <div class="admin-alert is-danger" role="alert">
+      <i data-lucide="circle-alert" aria-hidden="true"></i>
+      <span><?= htmlspecialchars($feedback['form_error']) ?></span>
+    </div>
+  <?php endif; ?>
+
+  <?php if ($success): ?>
+    <div class="admin-alert is-success" role="status">
+      <i data-lucide="check-circle-2" aria-hidden="true"></i>
+      <span><?= htmlspecialchars($success) ?></span>
+    </div>
+  <?php endif; ?>
+
+  <div class="admin-management-grid">
+    <article class="admin-card admin-management-form-card">
+      <header class="admin-management-card-header">
+        <div>
+          <p class="admin-section-kicker">Register Staff</p>
+          <h2>Create operator account</h2>
+        </div>
+        <span class="admin-management-icon"><i data-lucide="user-plus" aria-hidden="true"></i></span>
+      </header>
+
+      <form class="admin-settings-form js-validated-form" method="POST" novalidate>
         <?= csrfInput() ?>
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label" for="first_name">First Name</label>
-            <input id="first_name" class="form-control<?= fieldInvalidClass($feedback, 'first_name') ?>" name="first_name" value="<?= htmlspecialchars(oldFormValue($feedback, 'first_name'), ENT_QUOTES) ?>" required data-validate="required"<?= fieldAriaInvalid($feedback, 'first_name') ?>>
+        <div class="admin-form-grid">
+          <div class="admin-field">
+            <label for="first_name">First Name</label>
+            <input id="first_name" class="admin-input<?= fieldInvalidClass($feedback, 'first_name') ?>" name="first_name"
+                   value="<?= htmlspecialchars(oldFormValue($feedback, 'first_name'), ENT_QUOTES) ?>"
+                   autocomplete="given-name" required data-validate="required"<?= fieldAriaInvalid($feedback, 'first_name') ?>>
             <div class="field-error" aria-live="polite"><?= htmlspecialchars(fieldError($feedback, 'first_name')) ?></div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label" for="last_name">Last Name</label>
-            <input id="last_name" class="form-control<?= fieldInvalidClass($feedback, 'last_name') ?>" name="last_name" value="<?= htmlspecialchars(oldFormValue($feedback, 'last_name'), ENT_QUOTES) ?>" required data-validate="required"<?= fieldAriaInvalid($feedback, 'last_name') ?>>
+
+          <div class="admin-field">
+            <label for="last_name">Last Name</label>
+            <input id="last_name" class="admin-input<?= fieldInvalidClass($feedback, 'last_name') ?>" name="last_name"
+                   value="<?= htmlspecialchars(oldFormValue($feedback, 'last_name'), ENT_QUOTES) ?>"
+                   autocomplete="family-name" required data-validate="required"<?= fieldAriaInvalid($feedback, 'last_name') ?>>
             <div class="field-error" aria-live="polite"><?= htmlspecialchars(fieldError($feedback, 'last_name')) ?></div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label" for="phone_number">Phone</label>
-            <input id="phone_number" class="form-control<?= fieldInvalidClass($feedback, 'phone_number') ?>" name="phone_number" value="<?= htmlspecialchars(oldFormValue($feedback, 'phone_number'), ENT_QUOTES) ?>" placeholder="09171234567" required data-validate="phone"<?= fieldAriaInvalid($feedback, 'phone_number') ?>>
-            <div class="field-error" aria-live="polite"><?= htmlspecialchars(fieldError($feedback, 'phone_number')) ?></div>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label" for="email">Email</label>
-            <input id="email" class="form-control<?= fieldInvalidClass($feedback, 'email') ?>" type="email" name="email" value="<?= htmlspecialchars(oldFormValue($feedback, 'email'), ENT_QUOTES) ?>" required data-validate="email"<?= fieldAriaInvalid($feedback, 'email') ?>>
+
+          <div class="admin-field admin-field-wide">
+            <label for="email">Email</label>
+            <input id="email" class="admin-input<?= fieldInvalidClass($feedback, 'email') ?>" type="email" name="email"
+                   value="<?= htmlspecialchars(oldFormValue($feedback, 'email'), ENT_QUOTES) ?>"
+                   autocomplete="email" required data-validate="email"<?= fieldAriaInvalid($feedback, 'email') ?>>
             <div class="field-error" aria-live="polite"><?= htmlspecialchars(fieldError($feedback, 'email')) ?></div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label" for="password">Password</label>
-            <input id="password" class="form-control<?= fieldInvalidClass($feedback, 'password') ?>" type="password" name="password" minlength="8" required data-validate="password"<?= fieldAriaInvalid($feedback, 'password') ?>>
+
+          <div class="admin-field admin-field-wide">
+            <label for="password">Temporary Password</label>
+            <input id="password" class="admin-input<?= fieldInvalidClass($feedback, 'password') ?>" type="password" name="password"
+                   minlength="8" autocomplete="new-password" required data-validate="password"<?= fieldAriaInvalid($feedback, 'password') ?>>
+            <p class="admin-field-helper">Use at least 8 characters. Staff can sign in with this email and password.</p>
             <div class="field-error" aria-live="polite"><?= htmlspecialchars(fieldError($feedback, 'password')) ?></div>
           </div>
-          <div class="col-md-3">
-            <label class="form-label" for="department">Department</label>
-            <input id="department" class="form-control" name="department" value="<?= htmlspecialchars(oldFormValue($feedback, 'department'), ENT_QUOTES) ?>">
-          </div>
-          <div class="col-md-3">
-            <label class="form-label" for="shift">Shift</label>
-            <input id="shift" class="form-control" name="shift" value="<?= htmlspecialchars(oldFormValue($feedback, 'shift'), ENT_QUOTES) ?>">
-          </div>
         </div>
-        <button class="btn btn-primary mt-4" type="submit">Create Staff</button>
+
+        <div class="admin-form-actions">
+          <button class="admin-action-button is-dark" type="submit" data-loading-text="Creating staff...">
+            <i data-lucide="user-check" aria-hidden="true"></i>
+            <span>Create Staff</span>
+          </button>
+          <a class="admin-action-button" href="windows.php">
+            <i data-lucide="panel-top" aria-hidden="true"></i>
+            <span>Assign Window</span>
+          </a>
+        </div>
       </form>
-    </div>
-  </main>
-  <script src="<?= assetUrl('assets/js/main.js') ?>"></script>
-</body>
-</html>
+    </article>
+
+    <article class="admin-card admin-table-card admin-management-table-card" data-admin-paginated-region>
+      <header class="admin-management-card-header">
+        <div>
+          <p class="admin-section-kicker">Operators</p>
+          <h2>Registered staff</h2>
+        </div>
+        <span class="admin-pill"><?= number_format(count($staffRows)) ?> total</span>
+      </header>
+
+      <div class="admin-table-wrap">
+        <table class="admin-data-table admin-management-table" data-admin-paginated-table data-page-size="8" data-pagination-label="staff accounts">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Assigned Window</th>
+              <th>Service</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($staffRows as $staff): ?>
+              <?php
+                $staffName = trim((string) $staff['first_name'] . ' ' . (string) $staff['last_name']);
+                $isActive = (int) $staff['is_active'] === 1;
+                $windowStatus = (string) ($staff['window_status'] ?? '');
+              ?>
+              <tr>
+                <td data-label="Name"><strong><?= htmlspecialchars($staffName) ?></strong></td>
+                <td data-label="Email"><?= htmlspecialchars($staff['email']) ?></td>
+                <td data-label="Assigned Window"><?= htmlspecialchars($staff['window_name'] ?? 'Unassigned') ?></td>
+                <td data-label="Service"><?= htmlspecialchars($staff['service_name'] ?? 'No service assigned') ?></td>
+                <td data-label="Status">
+                  <span class="admin-status-badge<?= $isActive ? ' is-active' : ' is-inactive' ?>">
+                    <?= $isActive ? 'Active' : 'Inactive' ?>
+                  </span>
+                  <?php if ($windowStatus !== ''): ?>
+                    <span class="admin-status-badge is-muted"><?= htmlspecialchars(ucfirst($windowStatus)) ?> window</span>
+                  <?php endif; ?>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+
+        <?php if (!$staffRows): ?>
+          <div class="admin-empty-state">No staff accounts yet. Create the first staff account using the form.</div>
+        <?php endif; ?>
+      </div>
+
+      <p class="admin-pagination-status" data-admin-pagination-status aria-live="polite"></p>
+      <nav class="admin-pagination" aria-label="Staff account pagination" data-admin-pagination></nav>
+    </article>
+  </div>
+</section>
+
+<?php include __DIR__ . '/includes/footer.php'; ?>

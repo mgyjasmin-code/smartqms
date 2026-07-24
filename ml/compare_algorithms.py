@@ -22,29 +22,21 @@ import pandas as pd
 import numpy as np
 import joblib
 from datetime import date
+from pathlib import Path
 
 from sklearn.linear_model  import LinearRegression
 from sklearn.tree           import DecisionTreeRegressor
 from sklearn.ensemble       import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics         import mean_absolute_error, mean_squared_error, r2_score
-
-FEATURE_COLS = [
-    'queue_length', 'hour_of_day', 'day_of_week',
-    'service_type_encoded', 'client_type_encoded',
-    'active_windows', 'avg_service_time',
-]
-TARGET_COL  = 'actual_wait_minutes'
+from data_pipeline import DEFAULT_DATASET, FEATURE_COLS, TARGET_COL, load_dataset
 DB_HOST     = 'localhost'
 DB_USER     = 'root'
 DB_PASS     = ''
 DB_NAME     = 'smartqms'
 
-# Load dataset
-try:
-    df = pd.read_csv('dataset/kaggle_queue_data.csv')
-except FileNotFoundError:
-    df = pd.read_csv('dataset/queue_logs.csv')
+# Load the same validated canonical dataset used by train_model.py.
+df = load_dataset()
 
 X = df[FEATURE_COLS]
 y = df[TARGET_COL]
@@ -80,8 +72,7 @@ for name, model in ALGORITHMS.items():
     r2   = r2_score(y_test, pred)
     mape = np.mean(np.abs((y_test - pred) / y_test)) * 100
 
-    marker = " <- BEST" if rmse < best_rmse else ""
-    print(f"  {name:<22} {mae:>8.4f} {rmse:>8.4f} {r2:>8.4f} {mape:>8.2f}%{marker}")
+    print(f"  {name:<22} {mae:>8.4f} {rmse:>8.4f} {r2:>8.4f} {mape:>8.2f}%")
 
     if rmse < best_rmse:
         best_rmse  = rmse
@@ -107,7 +98,7 @@ for r in results:
         r['is_best'] = 1
 
 # Save best model
-joblib.dump(best_model, 'model.pkl')
+joblib.dump(best_model, Path(__file__).resolve().parent / 'model.pkl')
 print(f"  [OK] {best_name} model saved as model.pkl")
 
 # Save to database
@@ -119,7 +110,7 @@ try:
     )
     cur  = conn.cursor()
     today        = date.today()
-    dataset_name = 'kaggle_queue_data.csv'
+    dataset_name = Path(DEFAULT_DATASET).name
     sample_size  = len(df)
 
     for r in results:

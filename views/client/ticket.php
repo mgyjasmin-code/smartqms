@@ -58,13 +58,19 @@ $issuedAt = $ticket ? date('g:i A', strtotime($ticket['issued_at'])) : '';
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <?= csrfMetaTag() ?>
   <title>Your Ticket -- SmartQMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
 </head>
-<body class="client-page">
-  <main class="client-shell">
+<body class="client-page" data-client-root
+      data-client-notification-url="<?= htmlspecialchars(postActionUrl('modules/notifications/get_notifications.php'), ENT_QUOTES) ?>">
+  <a class="skip-link" href="#main-content">Skip to digital ticket</a>
+  <main id="main-content" class="client-shell" tabindex="-1">
     <div class="client-subnav">
       <a href="index.php" class="btn btn-link px-0">
         <i class="bi bi-arrow-left" aria-hidden="true"></i>
@@ -84,9 +90,9 @@ $issuedAt = $ticket ? date('g:i A', strtotime($ticket['issued_at'])) : '';
       </section>
     <?php else: ?>
       <section class="digital-ticket-hero">
-        <span class="live-update-pill"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Live Queue Updates Active</span>
+        <span class="live-update-pill"><i class="bi bi-shield-check" aria-hidden="true"></i> Official Digital Ticket</span>
         <h1>Your Digital Ticket</h1>
-        <p>Please present this ticket at the counter when your number is called.</p>
+        <p>Keep this page or a printed copy ready, and present the QR code at the counter when your number is called.</p>
       </section>
 
       <section class="digital-ticket-layout">
@@ -117,7 +123,7 @@ $issuedAt = $ticket ? date('g:i A', strtotime($ticket['issued_at'])) : '';
               <span>Queue Position</span>
               <strong><?= (int) $peopleAhead ?> <?= $peopleAhead === 1 ? 'person' : 'people' ?> ahead</strong>
             </div>
-            <span class="queue-status-pill queue-status-<?= htmlspecialchars($ticket['status']) ?>"><?= htmlspecialchars(ucfirst($ticket['status'])) ?></span>
+            <span class="status-badge badge-<?= htmlspecialchars($ticket['status']) ?>"><?= htmlspecialchars($ticket['status']) ?></span>
           </div>
           <div class="ticket-progress-track" aria-hidden="true">
             <span style="width: <?= (int) $progressWidth ?>%"></span>
@@ -136,7 +142,12 @@ $issuedAt = $ticket ? date('g:i A', strtotime($ticket['issued_at'])) : '';
             <span><?= htmlspecialchars($ticket['window_name'] ?? 'Window pending') ?></span>
           </div>
 
-          <button class="btn btn-outline-secondary ticket-print-button" type="button" onclick="window.print()">
+          <p class="ticket-qr-instruction">
+            <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
+            Scan the QR code to open the ticket's public status page, or show this screen to health-center staff.
+          </p>
+
+          <button class="btn btn-outline-secondary ticket-print-button" type="button" data-ticket-print>
             <i class="bi bi-printer" aria-hidden="true"></i>
             Print Ticket
           </button>
@@ -172,7 +183,7 @@ $issuedAt = $ticket ? date('g:i A', strtotime($ticket['issued_at'])) : '';
               Dashboard
             </a>
             <?php if ($ticket['status'] === 'completed'): ?>
-              <a class="btn btn-success" href="feedback.php?ticket_id=<?= (int) $ticket['ticket_id'] ?>">
+              <a class="btn btn-outline-success" href="feedback.php?ticket_id=<?= (int) $ticket['ticket_id'] ?>">
                 <i class="bi bi-chat-heart" aria-hidden="true"></i>
                 Submit Feedback
               </a>
@@ -182,5 +193,7 @@ $issuedAt = $ticket ? date('g:i A', strtotime($ticket['issued_at'])) : '';
       </section>
     <?php endif; ?>
   </main>
+  <script src="<?= assetUrl('assets/js/main.js') ?>"></script>
+  <script src="<?= assetUrl('assets/js/client.js') ?>"></script>
 </body>
 </html>

@@ -16,7 +16,7 @@ $statusUrl = APP_URL . '/modules/queue/status.php?token=' . rawurlencode($displa
   <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/display.css">
 </head>
 <body>
-  <div id="display-board">
+  <div id="display-board" data-display-root data-status-url="<?= htmlspecialchars($statusUrl, ENT_QUOTES) ?>">
     <header class="board-header">
       <h1><?= htmlspecialchars($bhcName) ?></h1>
       <div class="datetime" id="live-clock"></div>
@@ -27,9 +27,6 @@ $statusUrl = APP_URL . '/modules/queue/status.php?token=' . rawurlencode($displa
       <div class="last-updated" id="last-updated"></div>
     </footer>
   </div>
-  <script>
-    window.SMARTQMS_STATUS_URL = '<?= htmlspecialchars($statusUrl, ENT_QUOTES) ?>';
-  </script>
   <script src="<?= APP_URL ?>/assets/js/display.js"></script>
 </body>
 </html>

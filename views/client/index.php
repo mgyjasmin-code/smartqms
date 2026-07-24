@@ -15,12 +15,17 @@ $msg = $_GET['msg'] ?? '';
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <?= csrfMetaTag() ?>
   <title>Client Dashboard -- SmartQMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
 </head>
-<body class="client-page">
-  <main class="client-shell">
+<body class="client-page" data-client-root
+      data-client-notification-url="<?= htmlspecialchars(postActionUrl('modules/notifications/get_notifications.php'), ENT_QUOTES) ?>">
+  <a class="skip-link" href="#main-content">Skip to queue content</a>
+  <main id="main-content" class="client-shell" tabindex="-1">
     <div class="client-topbar">
       <div>
         <p class="client-eyebrow">Client Queue</p>
@@ -66,10 +71,12 @@ $msg = $_GET['msg'] ?? '';
             </a>
           <?php endif; ?>
           <div class="ticket-status-stack">
-            <span class="queue-status-pill queue-status-<?= htmlspecialchars($activeTicket['status']) ?>"><?= htmlspecialchars(strtoupper($activeTicket['status'])) ?></span>
+            <span class="status-badge badge-<?= htmlspecialchars($activeTicket['status']) ?>"><?= htmlspecialchars($activeTicket['status']) ?></span>
             <div class="wait-estimate">
               <span>Estimated Wait</span>
-              <strong><?= htmlspecialchars((string) ($activeTicket['predicted_wait_min'] ?? 'Calculating')) ?> min</strong>
+              <strong><?= $activeTicket['predicted_wait_min'] !== null
+                  ? htmlspecialchars(rtrim(rtrim(number_format((float) $activeTicket['predicted_wait_min'], 1), '0'), '.') . ' min')
+                  : 'Estimate pending' ?></strong>
             </div>
           </div>
         </div>
@@ -109,9 +116,10 @@ $msg = $_GET['msg'] ?? '';
         </div>
         <?php $selectedType = oldFormValue($queueFeedback, 'client_type', 'regular'); ?>
         <?php $selectedServiceId = oldFormValue($queueFeedback, 'service_id'); ?>
-        <form action="<?= postActionUrl('modules/queue/join_queue.php') ?>" method="POST" class="queue-entry-form js-validated-form" novalidate>
+        <form action="<?= postActionUrl('modules/queue/join_queue.php') ?>" method="POST" class="queue-entry-form js-validated-form" novalidate
+              data-prediction-root data-prediction-url="<?= APP_URL ?>/modules/queue/get_prediction.php">
           <?= csrfInput() ?>
-          <fieldset class="service-card-group">
+          <fieldset class="service-card-group" aria-describedby="service-selection-error">
             <legend>Choose Health Service</legend>
             <?php if (!$services): ?>
               <div class="queue-empty-state">No active health services are available right now.</div>
@@ -144,10 +152,10 @@ $msg = $_GET['msg'] ?? '';
                 <?php endforeach; ?>
               </div>
             <?php endif; ?>
-            <div class="field-error" aria-live="polite"><?= htmlspecialchars(fieldError($queueFeedback, 'service_id')) ?></div>
+            <div id="service-selection-error" class="field-error" data-field-error-for="service_id" aria-live="polite"><?= htmlspecialchars(fieldError($queueFeedback, 'service_id')) ?></div>
           </fieldset>
 
-          <fieldset class="classification-group client-classification">
+          <fieldset class="classification-group client-classification" aria-describedby="classification-error">
             <legend>Client Classification</legend>
             <div class="classification-options">
               <label class="classification-card client-classification-card">
@@ -169,10 +177,10 @@ $msg = $_GET['msg'] ?? '';
                 <small>Priority queue</small>
               </label>
             </div>
-            <div class="field-error" aria-live="polite"><?= htmlspecialchars(fieldError($queueFeedback, 'client_type')) ?></div>
+            <div id="classification-error" class="field-error" data-field-error-for="client_type" aria-live="polite"><?= htmlspecialchars(fieldError($queueFeedback, 'client_type')) ?></div>
           </fieldset>
 
-          <aside class="queue-prediction-card" data-prediction-preview aria-live="polite">
+          <aside class="queue-prediction-card" data-prediction-preview data-state="idle" aria-live="polite" aria-atomic="true">
             <div>
               <span class="prediction-icon"><i class="bi bi-clock-history" aria-hidden="true"></i></span>
               <div>
@@ -227,77 +235,6 @@ $msg = $_GET['msg'] ?? '';
   </div>
 
   <script src="<?= assetUrl('assets/js/main.js') ?>"></script>
-  <script>
-    (() => {
-      const predictionUrl = '<?= APP_URL ?>/modules/queue/get_prediction.php';
-      const serviceRadios = Array.from(document.querySelectorAll('[data-service-radio]'));
-      const typeRadios = Array.from(document.querySelectorAll('input[name="client_type"]'));
-      const waitEl = document.querySelector('[data-prediction-wait]');
-      const queueEl = document.querySelector('[data-prediction-queue]');
-      const windowsEl = document.querySelector('[data-prediction-windows]');
-      const sourceEl = document.querySelector('[data-prediction-source]');
-
-      if (!serviceRadios.length || !waitEl || !queueEl || !windowsEl || !sourceEl) return;
-
-      function selectedClientType() {
-        return document.querySelector('input[name="client_type"]:checked')?.value || 'regular';
-      }
-
-      function updateServiceAvailability() {
-        const clientType = selectedClientType();
-        const priorityAllowed = clientType === 'senior' || clientType === 'pwd';
-
-        serviceRadios.forEach(radio => {
-          const priorityOnly = radio.dataset.priorityOnly === '1';
-          const disabled = priorityOnly && !priorityAllowed;
-          radio.disabled = disabled;
-          radio.closest('[data-service-card]')?.classList.toggle('is-disabled', disabled);
-          if (disabled && radio.checked) radio.checked = false;
-        });
-      }
-
-      function selectedService() {
-        return serviceRadios.find(radio => radio.checked && !radio.disabled);
-      }
-
-      function setPreview(wait, queue, windows, source) {
-        waitEl.textContent = wait;
-        queueEl.textContent = queue;
-        windowsEl.textContent = windows;
-        sourceEl.textContent = source;
-      }
-
-      async function loadPrediction() {
-        updateServiceAvailability();
-        const service = selectedService();
-        if (!service) {
-          setPreview('Select a service', '--', '--', 'Ready');
-          return;
-        }
-
-        setPreview('Calculating...', '--', '--', 'Loading');
-        const params = new URLSearchParams({
-          service_id: service.value,
-          client_type: selectedClientType()
-        });
-
-        try {
-          const response = await fetch(`${predictionUrl}?${params.toString()}`, { credentials: 'same-origin' });
-          const payload = await response.json();
-          if (!payload.success) throw new Error(payload.message || 'Prediction unavailable');
-          const minutes = Number(payload.predicted_wait_minutes || 0).toLocaleString(undefined, {
-            maximumFractionDigits: 1
-          });
-          setPreview(`~${minutes} minutes`, String(payload.queue_length ?? 0), String(payload.active_windows ?? 1), payload.source === 'ml' ? 'ML model' : 'Fallback');
-        } catch (error) {
-          setPreview('Estimate unavailable', '--', '--', 'Retry');
-        }
-      }
-
-      serviceRadios.forEach(radio => radio.addEventListener('change', loadPrediction));
-      typeRadios.forEach(radio => radio.addEventListener('change', loadPrediction));
-      loadPrediction();
-    })();
-  </script>
+  <script src="<?= assetUrl('assets/js/client.js') ?>"></script>
 </body>
 </html>

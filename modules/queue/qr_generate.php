@@ -21,6 +21,35 @@ function publicTicketUrl(string $referenceNumber): string {
     return APP_URL . '/views/client/ticket_lookup.php?ref=' . rawurlencode($referenceNumber);
 }
 
+function queueQrRelativePath(string $referenceNumber, string $ticketId): string {
+    $safeReference = preg_replace('/[^A-Za-z0-9_-]/', '-', $referenceNumber);
+    $safeTicketId = preg_replace('/[^0-9]/', '', $ticketId);
+    $filename = $safeReference . ($safeTicketId !== '' ? '-' . $safeTicketId : '') . '.svg';
+    return 'assets/qr/' . $filename;
+}
+
+function queueQrAbsolutePath(string $relativePath): ?string {
+    $normalized = str_replace('\\', '/', $relativePath);
+    $prefix = 'assets/qr/';
+    if (!str_starts_with($normalized, $prefix)) {
+        return null;
+    }
+
+    $filename = substr($normalized, strlen($prefix));
+    if ($filename === '' || basename($filename) !== $filename) {
+        return null;
+    }
+
+    return rtrim(QR_DIR, '/\\') . DIRECTORY_SEPARATOR . $filename;
+}
+
+function removeGeneratedQueueQr(string $relativePath): bool {
+    $absolutePath = queueQrAbsolutePath($relativePath);
+    return $absolutePath !== null && is_file($absolutePath)
+        ? unlink($absolutePath)
+        : false;
+}
+
 function generateQR(string $referenceNumber, string $ticketId): string {
     if (!class_exists(Builder::class)) {
         throw new RuntimeException('QR code package is not installed. Run composer install.');
@@ -30,10 +59,11 @@ function generateQR(string $referenceNumber, string $ticketId): string {
         throw new RuntimeException('Could not create QR directory.');
     }
 
-    $safeReference = preg_replace('/[^A-Za-z0-9_-]/', '-', $referenceNumber);
-    $safeTicketId = preg_replace('/[^0-9]/', '', $ticketId);
-    $filename = $safeReference . ($safeTicketId !== '' ? '-' . $safeTicketId : '') . '.svg';
-    $filepath = QR_DIR . $filename;
+    $relativePath = queueQrRelativePath($referenceNumber, $ticketId);
+    $filepath = queueQrAbsolutePath($relativePath);
+    if ($filepath === null) {
+        throw new RuntimeException('Could not resolve QR output path.');
+    }
 
     $result = Builder::create()
         ->writer(new SvgWriter())
@@ -55,6 +85,6 @@ function generateQR(string $referenceNumber, string $ticketId): string {
 
     $result->saveToFile($filepath);
 
-    return 'assets/qr/' . $filename;
+    return $relativePath;
 }
 ?>

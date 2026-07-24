@@ -12,7 +12,7 @@ requirePostRequest(false, 'views/client/register.php', 'register');
 
 $firstName = trim($_POST['first_name'] ?? '');
 $lastName = trim($_POST['last_name'] ?? '');
-$email = strtolower(trim($_POST['email'] ?? ''));
+$email = normalizeEmail((string) ($_POST['email'] ?? ''));
 $password = $_POST['password'] ?? '';
 $oldInput = [
     'first_name' => $firstName,
@@ -28,20 +28,20 @@ if (!$registerThrottle['allowed']) {
 }
 recordAuthAttempt($conn, 'register', 'client-registration', REGISTER_ATTEMPT_LIMIT, REGISTER_ATTEMPT_WINDOW_SECONDS);
 
-if ($firstName === '') {
+if (!hasRequiredText($firstName)) {
     $fieldErrors['first_name'] = 'First name is required.';
 }
-if ($lastName === '') {
+if (!hasRequiredText($lastName)) {
     $fieldErrors['last_name'] = 'Last name is required.';
 }
-if ($email === '') {
+if (!hasRequiredText($email)) {
     $fieldErrors['email'] = 'Email is required.';
-} elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+} elseif (!isValidEmail($email)) {
     $fieldErrors['email'] = 'Enter a valid email address.';
 }
-if ($password === '') {
+if (!hasRequiredText($password, false)) {
     $fieldErrors['password'] = 'Password is required.';
-} elseif (strlen($password) < 8) {
+} elseif (!hasMinimumLength($password, 8)) {
     $fieldErrors['password'] = 'Password must be at least 8 characters.';
 }
 
@@ -49,32 +49,19 @@ if ($fieldErrors) {
     redirectWithFormFeedback('views/client/register.php', 'register', $fieldErrors, $oldInput);
 }
 
-$stmt = $conn->prepare("SELECT user_id FROM users WHERE email = ? LIMIT 1");
-$stmt->bind_param('s', $email);
-$stmt->execute();
-if ($stmt->get_result()->fetch_assoc()) {
+if (authEmailExists($conn, $email)) {
     redirectWithFormFeedback('views/client/register.php', 'register', [
         'email' => 'That email is already registered.',
     ], $oldInput);
 }
 
-$hash = password_hash($password, PASSWORD_BCRYPT);
-$role = ROLE_CLIENT;
-$verified = 0;
+$hash = hashAuthPassword($password);
+$userId = createUnverifiedClient($conn, $firstName, $lastName, $email, $hash);
 
-$insert = $conn->prepare("
-    INSERT INTO users (first_name, last_name, email, password_hash, role, is_verified)
-    VALUES (?, ?, ?, ?, ?, ?)
-");
-$insert->bind_param('sssssi', $firstName, $lastName, $email, $hash, $role, $verified);
-$insert->execute();
-$userId = $conn->insert_id;
-
-$_SESSION['pending_user_id'] = $userId;
-setOtpSession('register', $userId);
+startRegistrationOtpSession($userId);
 $queued = issueOtp($conn, $userId, 'Your SmartQMS verification code is', 'otp');
 if ($queued) {
-    $_SESSION['otp_last_sent_at'] = time();
+    markOtpSent();
 }
 logActivity($conn, 'register', 'Client registered and OTP was generated', null, $userId, ROLE_CLIENT);
 

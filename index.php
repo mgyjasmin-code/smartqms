@@ -34,7 +34,8 @@ if ($loginFormError !== '') {
   <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
 </head>
 <body class="auth-page">
-  <main class="auth-shell auth-shell-login d-flex flex-column justify-content-center align-items-center">
+  <a class="skip-link" href="#main-content">Skip to sign in form</a>
+  <main id="main-content" class="auth-shell auth-shell-login d-flex flex-column justify-content-center align-items-center" tabindex="-1">
     <section class="auth-card">
       <header class="auth-hero auth-hero-compact">
         <h1>Smart QMS</h1>

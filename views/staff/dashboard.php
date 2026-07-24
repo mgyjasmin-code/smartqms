@@ -2,154 +2,199 @@
 require_once '../../config/config.php';
 require_once '../../config/database.php';
 requireLogin(ROLE_STAFF);
+require_once __DIR__ . '/includes/context.php';
 
-$staffId = getCurrentStaffId($conn);
-$window = $staffId ? getStaffWindow($conn, $staffId) : null;
-$current = null;
-$waiting = [];
-
-if ($window) {
-    $windowId = (int) $window['window_id'];
-    $serviceId = (int) $window['service_id'];
-    $stmt = $conn->prepare("SELECT * FROM queue_tickets WHERE window_id=? AND status='serving' ORDER BY called_at DESC LIMIT 1");
-    $stmt->bind_param('i', $windowId);
-    $stmt->execute();
-    $current = $stmt->get_result()->fetch_assoc();
-    if ($serviceId > 0) {
-        $wait = $conn->prepare("SELECT qt.*, hs.service_name FROM queue_tickets qt JOIN health_services hs ON hs.service_id=qt.service_id WHERE qt.status='waiting' AND qt.service_id=? ORDER BY qt.priority_level DESC, qt.issued_at ASC LIMIT 20");
-        $wait->bind_param('i', $serviceId);
-        $wait->execute();
-        $waiting = $wait->get_result()->fetch_all(MYSQLI_ASSOC);
-    }
-}
+$pageTitle = 'Staff Dashboard';
+$pageHeading = 'Dashboard';
+$pageSubtitle = 'Keep the current client and your service window status visible at a glance.';
+$activePage = 'dashboard';
+$showStaffPageHeader = false;
+include __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <?= csrfMetaTag() ?>
-  <title>Staff Dashboard -- SmartQMS</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
-</head>
-<body class="staff-page">
-  <main class="container py-4 staff-shell">
-    <div class="staff-topbar">
+
+<?php if (!$window): ?>
+  <section class="staff-empty-state">
+    <span><i class="bi bi-window-x" aria-hidden="true"></i></span>
+    <h2>No service window assigned</h2>
+    <p>Your administrator needs to assign an active service window before you can manage tickets.</p>
+  </section>
+<?php else: ?>
+  <?php
+    $serviceName = $window['service_name'] ?? 'No health service assigned';
+    $waitingPreview = array_slice($waiting, 0, 5);
+    $callNextDisabled = $current || $window['status'] === 'closed' || empty($window['service_id']) || !$waiting;
+    $currentClientName = $current['client_name'] ?? 'Current client';
+    $currentWaitMinutes = 0;
+    if ($current && !empty($current['issued_at'])) {
+        $issuedAt = strtotime((string) $current['issued_at']);
+        $currentWaitMinutes = $issuedAt ? max(0, (int) floor((time() - $issuedAt) / 60)) : 0;
+    }
+  ?>
+
+  <section class="staff-window-hero" aria-label="Assigned service window">
+    <div class="staff-window-summary">
+      <span class="staff-window-hero-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
       <div>
-        <h1 class="h3 mb-1">Staff Window</h1>
-        <p class="text-muted mb-0"><?= htmlspecialchars($_SESSION['name'] ?? 'Staff') ?></p>
+        <h1><?= htmlspecialchars($window['window_name']) ?>: <?= htmlspecialchars($serviceName) ?></h1>
+        <p>Health Center Staff: <?= htmlspecialchars($_SESSION['name'] ?? 'Staff') ?></p>
       </div>
-      <button class="btn btn-outline-secondary" type="button" data-confirm-logout>
-        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-        Logout
-      </button>
     </div>
 
-    <?php if (!$window): ?>
-      <div class="alert alert-warning">No active service window is assigned to your staff account yet.</div>
-    <?php else: ?>
-      <section class="card p-4 mb-4">
-        <div class="d-flex flex-wrap justify-content-between gap-3">
-          <div>
-            <h2 class="h4 mb-1"><?= htmlspecialchars($window['window_name']) ?></h2>
-            <p class="text-muted mb-0"><?= htmlspecialchars($window['service_name'] ?? 'No service assigned') ?></p>
-          </div>
-          <div>
-            <span class="badge text-bg-secondary"><?= htmlspecialchars(strtoupper($window['status'])) ?></span>
-          </div>
-        </div>
-        <div class="d-flex flex-wrap gap-2 mt-3">
-          <button class="btn btn-success js-status" data-status="open">Open</button>
-          <button class="btn btn-warning js-status" data-status="closed">Close</button>
-          <button class="btn btn-primary" id="call-next">Call Next</button>
-        </div>
-      </section>
+    <div class="staff-status-segment" role="group" aria-label="Window status">
+      <?php foreach (['open' => 'Open', 'busy' => 'Busy', 'closed' => 'Closed'] as $statusValue => $statusLabel): ?>
+        <button class="staff-status-option<?= $window['status'] === $statusValue ? ' is-active' : '' ?>" type="button" data-staff-action
+                data-status="<?= htmlspecialchars($statusValue) ?>"
+                data-action-url="<?= APP_URL ?>/modules/service_window/window_status.php"
+                data-action-success="<?= htmlspecialchars($window['window_name'], ENT_QUOTES) ?> is now <?= htmlspecialchars($statusValue, ENT_QUOTES) ?>."
+                data-loading-text="Updating..."
+                aria-pressed="<?= $window['status'] === $statusValue ? 'true' : 'false' ?>">
+          <i class="bi bi-circle-fill" aria-hidden="true"></i>
+          <span><?= htmlspecialchars($statusLabel) ?></span>
+        </button>
+      <?php endforeach; ?>
+    </div>
+  </section>
 
-      <section class="card p-4 mb-4">
-        <h2 class="h5">Now Serving</h2>
-        <?php if ($current): ?>
-          <div class="queue-number"><?= htmlspecialchars($current['ticket_number']) ?></div>
-          <p class="mb-3"><?= htmlspecialchars($current['client_type']) ?> client</p>
-          <button class="btn btn-success js-complete" data-ticket-id="<?= (int) $current['ticket_id'] ?>">Complete</button>
-          <button class="btn btn-danger js-skip" data-ticket-id="<?= (int) $current['ticket_id'] ?>">Skip</button>
+  <section class="staff-serving-section" aria-labelledby="currently-serving-title">
+    <p class="staff-section-kicker">Currently Serving</p>
+    <article class="staff-serving-card<?= $current ? ' has-ticket' : ' is-empty' ?>">
+    <?php if ($current): ?>
+      <div class="staff-serving-main">
+        <span class="staff-live-badge">Live Session</span>
+        <h2 id="currently-serving-title" class="staff-serving-ticket"><?= htmlspecialchars($current['ticket_number']) ?></h2>
+        <div class="staff-serving-client">
+          <span class="staff-client-avatar" aria-hidden="true"><?= htmlspecialchars(staffClientInitials($currentClientName)) ?></span>
+          <div>
+            <strong><?= htmlspecialchars($currentClientName) ?></strong>
+            <span><?= htmlspecialchars($serviceName) ?></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="staff-serving-meta">
+        <?php if ($currentIsPriority): ?>
+          <span class="badge-priority">Priority &mdash; <?= htmlspecialchars($currentClientTypeLabel) ?></span>
         <?php else: ?>
-          <p class="text-muted mb-0">No client is currently being served.</p>
+          <span class="staff-type-pill">Regular</span>
         <?php endif; ?>
-      </section>
+        <span class="staff-wait-copy"><i class="bi bi-clock" aria-hidden="true"></i> Waiting: <?= number_format($currentWaitMinutes) ?> mins</span>
+        <span class="staff-wait-copy"><i class="bi bi-telephone-outbound" aria-hidden="true"></i> Called <?= htmlspecialchars(date('g:i A', strtotime((string) $current['called_at']))) ?></span>
+        <aside class="staff-void-timer staff-void-timer-compact" data-void-timer>
+          <small>Response time left</small>
+          <strong data-void-countdown data-remaining-seconds="<?= (int) ($voidRemainingSeconds ?? 0) ?>"
+                  data-void-url="<?= APP_URL ?>/modules/queue/void_checker.php">00:00</strong>
+        </aside>
+      </div>
 
-      <section class="card p-4">
-        <h2 class="h5">Waiting Queue</h2>
-        <div class="table-responsive">
-          <table class="table">
-            <thead><tr><th>Ticket</th><th>Type</th><th>Issued</th></tr></thead>
-            <tbody>
-              <?php foreach ($waiting as $ticket): ?>
-                <tr class="<?= (int) $ticket['priority_level'] ? 'priority-row' : '' ?>">
-                  <td><?= htmlspecialchars($ticket['ticket_number']) ?></td>
-                  <td><?= htmlspecialchars($ticket['client_type']) ?></td>
-                  <td><?= htmlspecialchars($ticket['issued_at']) ?></td>
-                </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <div class="staff-action-stack" aria-label="Current ticket actions">
+        <button class="btn btn-primary staff-call-next" id="call-next" type="button" data-staff-action
+                data-action-url="<?= APP_URL ?>/modules/service_window/call_next.php"
+                data-action-success="The next ticket was called successfully."
+                data-loading-text="Calling next..."
+                disabled>
+          <i class="bi bi-play-circle" aria-hidden="true"></i> Call Next
+        </button>
+        <button class="btn btn-primary staff-complete-action" type="button" data-staff-action
+                data-action-url="<?= APP_URL ?>/modules/service_window/complete_ticket.php"
+                data-ticket-id="<?= (int) $current['ticket_id'] ?>"
+                data-action-success="Ticket <?= htmlspecialchars($current['ticket_number'], ENT_QUOTES) ?> was marked complete."
+                data-loading-text="Completing...">
+          <i class="bi bi-check2-circle" aria-hidden="true"></i> Mark Complete
+        </button>
+        <button class="btn btn-outline-danger staff-skip-action" type="button" data-staff-action
+                data-action-url="<?= APP_URL ?>/modules/service_window/skip_ticket.php"
+                data-ticket-id="<?= (int) $current['ticket_id'] ?>"
+                data-action-success="Ticket <?= htmlspecialchars($current['ticket_number'], ENT_QUOTES) ?> was skipped."
+                data-confirm-message="Skip ticket <?= htmlspecialchars($current['ticket_number'], ENT_QUOTES) ?>? This records the client as a no-show."
+                data-loading-text="Skipping...">
+          <i class="bi bi-person-dash" aria-hidden="true"></i> Skip
+        </button>
+      </div>
+    <?php else: ?>
+      <div class="staff-serving-main">
+        <span class="staff-live-badge is-muted">Ready</span>
+        <h2 id="currently-serving-title" class="staff-empty-serving-title">No active ticket</h2>
+        <p class="staff-empty-serving-copy">Call the next waiting client when your window is open and ready.</p>
+      </div>
+      <div class="staff-serving-meta">
+        <span class="staff-type-pill"><?= number_format(count($waiting)) ?> waiting</span>
+        <span class="staff-wait-copy"><i class="bi bi-info-circle" aria-hidden="true"></i> Priority rows are called first.</span>
+      </div>
+      <div class="staff-action-stack">
+        <button class="btn btn-primary staff-call-next" id="call-next" type="button" data-staff-action
+                data-action-url="<?= APP_URL ?>/modules/service_window/call_next.php"
+                data-action-success="The next ticket was called successfully."
+                data-loading-text="Calling next..."
+                <?= $callNextDisabled ? 'disabled' : '' ?>>
+          <i class="bi bi-play-circle" aria-hidden="true"></i> Call Next
+        </button>
+        <a class="btn btn-outline-primary" href="window.php"><i class="bi bi-list-ul" aria-hidden="true"></i> View Full Queue</a>
+      </div>
     <?php endif; ?>
-  </main>
+    </article>
+  </section>
 
-  <div class="logout-modal" data-logout-modal hidden>
-    <div class="logout-modal-backdrop" data-logout-cancel></div>
-    <section class="logout-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title" aria-describedby="logout-modal-copy" tabindex="-1">
-      <button class="logout-modal-close" type="button" data-logout-cancel aria-label="Close logout confirmation">
-        <i class="bi bi-x-lg" aria-hidden="true"></i>
-      </button>
-      <div class="logout-modal-icon" aria-hidden="true">
-        <i class="bi bi-box-arrow-right"></i>
+  <section class="staff-upcoming-section" aria-labelledby="upcoming-queue-title">
+    <div class="staff-section-heading staff-section-heading-flat">
+      <div>
+        <h2 id="upcoming-queue-title">Upcoming Queue</h2>
+        <span class="staff-queue-count"><?= number_format(count($waiting)) ?> Tickets Waiting</span>
       </div>
-      <h2 id="logout-modal-title">Log out of staff dashboard?</h2>
-      <p id="logout-modal-copy">You will return to the sign-in screen and need to sign in again before managing your service window.</p>
-      <div class="logout-modal-actions">
-        <button class="logout-modal-button logout-modal-button-secondary" type="button" data-logout-cancel>Cancel</button>
-        <form action="<?= APP_URL ?>/modules/auth/logout.php" method="POST" class="m-0">
-          <?= csrfInput() ?>
-          <button class="logout-modal-button logout-modal-button-primary" type="submit" data-logout-confirm>Log out</button>
-        </form>
-      </div>
-    </section>
-  </div>
+      <a class="staff-view-link" href="window.php">View Full List <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    </div>
 
-  <script src="<?= assetUrl('assets/js/main.js') ?>"></script>
-  <script>
-    async function postAction(url, body = null) {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-      const response = await fetch(url, {
-        method: 'POST',
-        body,
-        credentials: 'same-origin',
-        headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {}
-      });
-      const data = await response.json();
-      if (!data.success) alert(data.error || 'Action failed.');
-      location.reload();
-    }
-    document.querySelectorAll('.js-status').forEach(btn => btn.addEventListener('click', () => {
-      const form = new FormData();
-      form.append('status', btn.dataset.status);
-      postAction('<?= APP_URL ?>/modules/service_window/window_status.php', form);
-    }));
-    document.getElementById('call-next')?.addEventListener('click', () => postAction('<?= APP_URL ?>/modules/service_window/call_next.php'));
-    document.querySelectorAll('.js-complete').forEach(btn => btn.addEventListener('click', () => {
-      const form = new FormData();
-      form.append('ticket_id', btn.dataset.ticketId);
-      postAction('<?= APP_URL ?>/modules/service_window/complete_ticket.php', form);
-    }));
-    document.querySelectorAll('.js-skip').forEach(btn => btn.addEventListener('click', () => {
-      const form = new FormData();
-      form.append('ticket_id', btn.dataset.ticketId);
-      postAction('<?= APP_URL ?>/modules/service_window/skip_ticket.php', form);
-    }));
-  </script>
-</body>
-</html>
+    <?php if ($waitingPreview): ?>
+      <div class="staff-table-wrap">
+        <table class="staff-upcoming-table">
+          <thead>
+            <tr>
+              <th>Ticket ID</th>
+              <th>Patient Name</th>
+              <th>Type</th>
+              <th>Service Type</th>
+              <th>Registration</th>
+              <th>Quick Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($waitingPreview as $index => $ticket): ?>
+              <?php
+                $priorityTicket = (int) $ticket['priority_level'] === 1;
+                $clientTypeLabel = staffClientTypeLabel($ticket['client_type'] ?? 'regular');
+              ?>
+              <tr class="<?= $priorityTicket ? 'is-priority' : '' ?>">
+                <td data-label="Ticket ID"><strong><?= htmlspecialchars($ticket['ticket_number']) ?></strong></td>
+                <td data-label="Patient Name">
+                  <?php if ($priorityTicket): ?><i class="bi bi-person-check staff-row-priority-icon" aria-hidden="true"></i><?php endif; ?>
+                  <?= htmlspecialchars($ticket['client_name'] ?? 'Client') ?>
+                </td>
+                <td data-label="Type">
+                  <?php if ($priorityTicket): ?>
+                    <span class="badge-priority"><?= htmlspecialchars($clientTypeLabel) ?></span>
+                  <?php else: ?>
+                    <span class="staff-type-pill">Regular</span>
+                  <?php endif; ?>
+                </td>
+                <td data-label="Service Type"><?= htmlspecialchars($ticket['service_name']) ?></td>
+                <td data-label="Registration">
+                  <time datetime="<?= htmlspecialchars(date(DATE_ATOM, strtotime((string) $ticket['issued_at']))) ?>">
+                    <?= htmlspecialchars(date('g:i A', strtotime((string) $ticket['issued_at']))) ?>
+                  </time>
+                </td>
+                <td data-label="Quick Action"><span class="staff-row-status"><?= $index === 0 ? 'Next in line' : 'Waiting' ?></span></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+      <p class="staff-table-note"><i class="bi bi-info-circle" aria-hidden="true"></i> Showing next 5 available tickets. Prioritize rows highlighted in soft green.</p>
+    <?php else: ?>
+      <div class="staff-empty-inline staff-queue-empty">
+        <span><i class="bi bi-people" aria-hidden="true"></i></span>
+        <div><h3>No waiting tickets</h3><p>New tickets for <?= htmlspecialchars($serviceName) ?> will appear here after clients join the queue.</p></div>
+      </div>
+    <?php endif; ?>
+  </section>
+<?php endif; ?>
+
+<?php include __DIR__ . '/includes/footer.php'; ?>

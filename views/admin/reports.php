@@ -7,8 +7,10 @@ requireLogin(ROLE_ADMIN);
 $definitions = reportDefinitions();
 try {
     $range = reportDateRange($_GET);
+    $rangeError = '';
 } catch (InvalidArgumentException $e) {
     $range = reportDateRange([]);
+    $rangeError = $e->getMessage() . ' The default date range has been restored.';
 }
 
 $activeReport = normalizeReportKey((string) ($_GET['report'] ?? 'queue_summary'));
@@ -42,6 +44,12 @@ include __DIR__ . '/includes/header.php';
       <span><?= htmlspecialchars($reportError) ?></span>
     </div>
   <?php endif; ?>
+  <?php if ($rangeError): ?>
+    <div class="admin-alert is-danger" role="alert">
+      <i data-lucide="calendar-x" aria-hidden="true"></i>
+      <span><?= htmlspecialchars($rangeError) ?></span>
+    </div>
+  <?php endif; ?>
 
   <div class="admin-report-toolbar">
     <div class="admin-report-title">
@@ -50,15 +58,15 @@ include __DIR__ . '/includes/header.php';
     </div>
     <form class="admin-report-actions" method="GET">
       <input type="hidden" name="report" value="<?= htmlspecialchars($activeReport, ENT_QUOTES) ?>">
-      <label class="admin-action-button" for="report-from">
-        <i data-lucide="calendar-days" aria-hidden="true"></i>
+      <label class="admin-report-date-field" for="report-from">
+        <span>From</span>
         <input id="report-from" type="date" name="from" value="<?= htmlspecialchars($range['from']) ?>">
       </label>
-      <label class="admin-action-button" for="report-to">
-        <i data-lucide="calendar-days" aria-hidden="true"></i>
+      <label class="admin-report-date-field" for="report-to">
+        <span>To</span>
         <input id="report-to" type="date" name="to" value="<?= htmlspecialchars($range['to']) ?>">
       </label>
-      <button class="admin-action-button" type="submit">
+      <button class="admin-action-button is-primary" type="submit">
         <i data-lucide="filter" aria-hidden="true"></i>
         <span>Apply</span>
       </button>
@@ -91,20 +99,11 @@ include __DIR__ . '/includes/header.php';
       <h2><?= htmlspecialchars($report['title']) ?> Trend</h2>
     </header>
     <div class="admin-chart-body">
-      <?php $series = array_slice($report['series'] ?? [], 0, 12); ?>
-      <?php if ($series): ?>
-        <?php $maxValue = max(array_map(static fn($point) => (float) ($point['value'] ?? $point['actual'] ?? $point['predicted'] ?? 0), $series)) ?: 1; ?>
-        <div class="admin-bar-chart" role="img" aria-label="<?= htmlspecialchars($report['title']) ?> chart">
-          <div class="admin-bars" aria-hidden="true">
-            <?php foreach ($series as $point): ?>
-              <?php
-                $value = (float) ($point['value'] ?? $point['actual'] ?? $point['predicted'] ?? 0);
-                $height = max(8, min(100, ($value / $maxValue) * 100));
-              ?>
-              <span class="admin-bar" style="--bar-height: <?= (int) $height ?>%"><span><?= htmlspecialchars((string) ($point['label'] ?? '')) ?></span></span>
-            <?php endforeach; ?>
-          </div>
+      <?php if (!empty($report['chart']['labels']) && !empty($report['chart']['datasets'])): ?>
+        <div class="admin-chart-canvas-wrap">
+          <canvas data-admin-chart="admin-report-chart-data" role="img" aria-label="<?= htmlspecialchars($report['chart']['summary'] ?: $report['title'] . ' chart') ?> Exact values are available in the report table."></canvas>
         </div>
+        <script type="application/json" id="admin-report-chart-data"><?= json_encode($report['chart'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
       <?php else: ?>
         <div class="queue-empty-state">No chartable data for this period.</div>
       <?php endif; ?>
@@ -114,6 +113,24 @@ include __DIR__ . '/includes/header.php';
       </div>
     </div>
   </article>
+
+  <?php if ($activeReport === 'ml_accuracy' && !empty($report['table']['rows'])): ?>
+    <?php $bestModel = current(array_filter($report['table']['rows'], static fn($row) => (int) ($row['is_best'] ?? 0) === 1)) ?: $report['table']['rows'][0]; ?>
+    <article class="admin-card admin-model-summary" aria-labelledby="best-model-title">
+      <header class="admin-report-table-title">
+        <i data-lucide="badge-check" aria-hidden="true"></i>
+        <h2 id="best-model-title">Best Model: <?= htmlspecialchars($bestModel['algorithm']) ?></h2>
+      </header>
+      <dl class="admin-model-metrics">
+        <div><dt>MAE</dt><dd><?= htmlspecialchars((string) $bestModel['mae']) ?> min</dd></div>
+        <div><dt>RMSE</dt><dd><?= htmlspecialchars((string) $bestModel['rmse']) ?> min</dd></div>
+        <div><dt>R²</dt><dd><?= htmlspecialchars((string) $bestModel['r2']) ?></dd></div>
+        <div><dt>MAPE</dt><dd><?= htmlspecialchars((string) $bestModel['mape']) ?>%</dd></div>
+        <div><dt>Dataset</dt><dd><?= htmlspecialchars((string) $bestModel['dataset_used']) ?></dd></div>
+        <div><dt>Samples</dt><dd><?= number_format((int) $bestModel['sample_size']) ?></dd></div>
+      </dl>
+    </article>
+  <?php endif; ?>
 
   <article class="admin-card admin-report-table-card">
     <header class="admin-report-table-title">

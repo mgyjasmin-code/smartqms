@@ -16,8 +16,12 @@ Usage:
   -> Creates dataset/synthetic_queue_data.csv (5000 rows)
 """
 
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
+
+from data_pipeline import DEFAULT_DATASET, validate_dataset
 
 np.random.seed(42)
 N = 5000
@@ -54,7 +58,9 @@ df = pd.DataFrame({
     'actual_wait_minutes' : actual_wait,
 })
 
-df.to_csv('dataset/synthetic_queue_data.csv', index=False)
-print(f"Generated {N} rows -> dataset/synthetic_queue_data.csv")
+df = validate_dataset(df)
+Path(DEFAULT_DATASET).parent.mkdir(parents=True, exist_ok=True)
+df.to_csv(DEFAULT_DATASET, index=False)
+print(f"Generated {N} rows -> {DEFAULT_DATASET}")
 print(f"   Avg wait time: {df['actual_wait_minutes'].mean():.2f} minutes")
 print(f"   Peak hour rows (8-11AM): {((df['hour_of_day']>=8)&(df['hour_of_day']<=11)).sum()}")

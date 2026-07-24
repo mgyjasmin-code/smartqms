@@ -13,12 +13,13 @@ if (!$flow || !$userId) {
     redirectWithFormFeedback('index.php', 'login', [], [], 'OTP session expired. Please try again.');
 }
 
-$target = $flow === 'reset' ? 'views/client/forgot_password.php' : 'views/client/verify_otp.php';
-$formKey = $flow === 'reset' ? 'forgot_password_otp' : 'verify_otp';
+$formContext = otpFlowFormContext($flow);
+$target = $formContext['target'];
+$formKey = $formContext['form_key'];
 
 requireValidCsrf($target, $formKey);
 
-if ($lastSent && time() - $lastSent < OTP_RESEND_COOLDOWN_SECONDS) {
+if (otpResendCooldownActive($lastSent)) {
     redirectWithFormFeedback($target, $formKey, [], [], 'Please wait 2 minutes before requesting another OTP email.');
 }
 
@@ -29,13 +30,11 @@ if (!$resendThrottle['allowed']) {
 }
 recordAuthAttempt($conn, 'otp_resend', $throttleIdentifier, OTP_RESEND_ATTEMPT_LIMIT, OTP_RESEND_ATTEMPT_WINDOW_SECONDS);
 
-$prefix = $flow === 'login'
-    ? 'Your SmartQMS login code is'
-    : ($flow === 'reset' ? 'Your SmartQMS password reset code is' : 'Your SmartQMS verification code is');
+$prefix = otpMessagePrefixForFlow($flow);
 
 $queued = issueOtp($conn, $userId, $prefix, 'otp');
 if ($queued) {
-    $_SESSION['otp_last_sent_at'] = time();
+    markOtpSent();
 }
 
 if (!$queued) {

@@ -1,9 +1,10 @@
 import joblib
+from pathlib import Path
 
 # SmartQMS -- Standalone Prediction Test
 # Run: python predict.py
 
-model = joblib.load('model.pkl')
+model = joblib.load(Path(__file__).resolve().parent / 'model.pkl')
 
 # Sample input -- adjust values to test different scenarios
 sample = [[

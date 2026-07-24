@@ -17,7 +17,7 @@ $ticketId = (int) ($_POST['ticket_id'] ?? 0);
 $rating = (int) ($_POST['rating'] ?? 0);
 $comment = trim($_POST['comment'] ?? '');
 
-if ($rating < 1 || $rating > 5) {
+if (!isRatingInRange($rating)) {
     jsonResponse(false, [
         'error' => 'Please correct the highlighted field.',
         'field_errors' => [
@@ -26,7 +26,7 @@ if ($rating < 1 || $rating > 5) {
     ], 422);
 }
 
-if ($ticketId <= 0) {
+if (!isPositiveIdentifier($ticketId)) {
     jsonResponse(false, ['error' => 'Ticket is required before submitting feedback.'], 422);
 }
 

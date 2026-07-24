@@ -12,6 +12,7 @@
  */
 require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once __DIR__ . '/../service_window/ticket_actions.php';
 header('Content-Type: application/json');
 
 if (!isLoggedIn() || ($_SESSION['role'] ?? '') !== ROLE_STAFF) {
@@ -22,49 +23,19 @@ requirePostRequest(true);
 requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and try again.', true);
 
 $staffId = getCurrentStaffId($conn);
-$window = $staffId ? getStaffWindow($conn, $staffId) : null;
-if (!$window) {
+if (!$staffId) {
     jsonResponse(false, ['error' => 'No active window assigned to this staff account.'], 404);
 }
 
-$windowId = (int) $window['window_id'];
 $timeout = max(1, (int) getSetting($conn, 'void_timeout_minutes', '10'));
-$stmt = $conn->prepare("
-    SELECT *
-    FROM queue_tickets
-    WHERE status='serving'
-      AND window_id=?
-      AND called_at IS NOT NULL
-      AND TIMESTAMPDIFF(MINUTE, called_at, NOW()) >= ?
-");
-$stmt->bind_param('ii', $windowId, $timeout);
-$stmt->execute();
-$tickets = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-
-$count = 0;
-foreach ($tickets as $ticket) {
-    $reason = 'Client did not appear within timeout';
-    $ticketId = (int) $ticket['ticket_id'];
-    $update = $conn->prepare("UPDATE queue_tickets SET status='voided', voided_at=NOW(), voided_reason=? WHERE ticket_id=?");
-    $update->bind_param('si', $reason, $ticketId);
-    $update->execute();
-    if (!empty($ticket['window_id'])) {
-        $open = 'open';
-        $win = $conn->prepare("UPDATE service_windows SET status=? WHERE window_id=?");
-        $win->bind_param('si', $open, $ticket['window_id']);
-        $win->execute();
+try {
+    $result = voidExpiredTicketsForStaff($conn, $staffId, $timeout);
+    if ($result['status'] === 'no_window') {
+        jsonResponse(false, ['error' => 'No active window assigned to this staff account.'], 404);
     }
-    $message = 'Your ticket was voided because you did not appear when called.';
-    $type = 'turn_void';
-    $channel = 'browser';
-    $pending = 'pending';
-    $unread = 0;
-    $notif = $conn->prepare("INSERT INTO notifications (ticket_id, user_id, message, type, channel, delivery_status, is_read) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $notif->bind_param('iissssi', $ticketId, $ticket['user_id'], $message, $type, $channel, $pending, $unread);
-    $notif->execute();
-    logActivity($conn, 'ticket_voided', $reason, $ticketId, (int) $ticket['user_id'], ROLE_CLIENT);
-    $count++;
+    $count = (int) $result['voided'];
+    jsonResponse(true, ['voided' => $count, 'data' => ['voided' => $count]]);
+} catch (Throwable $error) {
+    jsonResponse(false, ['error' => 'Could not check expired tickets.'], 500);
 }
-
-jsonResponse(true, ['voided' => $count, 'data' => ['voided' => $count]]);
 ?>

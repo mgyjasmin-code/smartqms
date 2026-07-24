@@ -5,6 +5,9 @@ $pageSubtitle = $pageSubtitle ?? '';
 $activePage = $activePage ?? '';
 $activeReport = $activeReport ?? '';
 $adminBodyClass = trim('admin-page ' . ($adminBodyClass ?? ''));
+$adminName = $_SESSION['name'] ?? 'Administrator';
+$adminInitial = strtoupper(substr((string) $adminName, 0, 1));
+$adminRoleLabel = 'Administrator';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -34,7 +37,7 @@ $adminBodyClass = trim('admin-page ' . ($adminBodyClass ?? ''));
   <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
   <link rel="stylesheet" href="<?= assetUrl('assets/css/admin.css') ?>">
 </head>
-<body class="<?= htmlspecialchars($adminBodyClass, ENT_QUOTES) ?>">
+<body class="<?= htmlspecialchars($adminBodyClass, ENT_QUOTES) ?>" data-admin-root>
   <a class="admin-skip-link" href="#admin-main">Skip to main content</a>
   <div class="admin-shell">
     <?php include __DIR__ . '/sidebar.php'; ?>
@@ -49,10 +52,29 @@ $adminBodyClass = trim('admin-page ' . ($adminBodyClass ?? ''));
           <button class="admin-icon-button admin-theme-toggle" type="button" data-admin-theme-toggle aria-label="Switch to dark mode" aria-pressed="false">
             <i data-admin-theme-icon data-lucide="moon" aria-hidden="true"></i>
           </button>
-          <button class="admin-icon-button admin-notification-button" type="button" aria-label="View notifications">
-            <i data-lucide="bell" aria-hidden="true"></i>
-            <span class="admin-notification-dot" aria-hidden="true"></span>
-          </button>
+          <div class="admin-user-menu" data-admin-user-menu>
+            <button class="admin-user-button" type="button" data-admin-user-menu-toggle aria-expanded="false" aria-controls="admin-user-menu-panel">
+              <span class="admin-user-avatar" aria-hidden="true"><?= htmlspecialchars($adminInitial) ?></span>
+              <span class="admin-user-copy">
+                <strong><?= htmlspecialchars($adminName) ?></strong>
+                <small><?= htmlspecialchars($adminRoleLabel) ?></small>
+              </span>
+              <i data-lucide="chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="admin-user-dropdown" id="admin-user-menu-panel" data-admin-user-menu-panel hidden>
+              <div class="admin-user-dropdown-head">
+                <span class="admin-user-avatar" aria-hidden="true"><?= htmlspecialchars($adminInitial) ?></span>
+                <div>
+                  <strong><?= htmlspecialchars($adminName) ?></strong>
+                  <small><?= htmlspecialchars($adminRoleLabel) ?></small>
+                </div>
+              </div>
+              <button class="admin-user-menu-item is-danger" type="button" data-admin-logout-open>
+                <i data-lucide="log-out" aria-hidden="true"></i>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 

@@ -19,33 +19,18 @@ Output:
 import pandas as pd
 import numpy as np
 import joblib
+from pathlib import Path
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-
-FEATURE_COLS = [
-    'queue_length',
-    'hour_of_day',
-    'day_of_week',
-    'service_type_encoded',
-    'client_type_encoded',   # 0=regular, 1=senior, 2=pwd
-    'active_windows',
-    'avg_service_time',
-]
-TARGET_COL = 'actual_wait_minutes'
+from data_pipeline import FEATURE_COLS, TARGET_COL, load_dataset
 
 print("=" * 50)
 print("  SmartQMS -- Random Forest Training")
 print("=" * 50)
 
-# Load dataset (Kaggle or system-generated)
-try:
-    df = pd.read_csv('dataset/kaggle_queue_data.csv')
-    print(f"  Dataset loaded: {len(df)} rows")
-except FileNotFoundError:
-    print("  kaggle_queue_data.csv not found, trying queue_logs.csv...")
-    df = pd.read_csv('dataset/queue_logs.csv')
-    print(f"  Dataset loaded: {len(df)} rows")
+df = load_dataset()
+print(f"  Canonical dataset loaded: {len(df)} rows")
 
 # Feature and target
 X = df[FEATURE_COLS]
@@ -96,7 +81,7 @@ for feat, imp in sorted(
     print(f"    {feat:<28} {imp:.4f}")
 
 # Save model
-joblib.dump(model, 'model.pkl')
+joblib.dump(model, Path(__file__).resolve().parent / 'model.pkl')
 print()
 print("  [OK] Model saved as model.pkl")
 print("=" * 50)

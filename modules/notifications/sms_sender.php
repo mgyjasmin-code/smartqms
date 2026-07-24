@@ -9,14 +9,11 @@
  *
  * Usage:
  *   require_once 'sms_sender.php';
- *   sendSMS('09171234567', 'Your OTP is: 123456', 'otp', $userId);
+ *   sendSMS($conn, '09171234567', 'Your OTP is: 123456', 'otp', $userId);
  */
 require_once __DIR__ . '/../../config/config.php';
-require_once __DIR__ . '/../../config/database.php';
 
-function sendSMS(string $phone, string $message, string $type = 'notification', int $userId = 0): bool {
-    global $conn;
-
+function sendSMS(mysqli $conn, string $phone, string $message, string $type = 'notification', int $userId = 0): bool {
     // Read SMS settings from system_settings table
     $result  = $conn->query("SELECT setting_key, setting_val FROM system_settings
                               WHERE section = 'sms'");

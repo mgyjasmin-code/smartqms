@@ -1,165 +1,204 @@
 <?php
 require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once __DIR__ . '/../../modules/admin/window_admin.php';
 requireLogin(ROLE_ADMIN);
 
 $fieldErrors = [];
-$oldInput = [
-    'window_name' => '',
-    'service_id' => '0',
-    'staff_id' => '0',
-    'status' => 'closed',
-];
+$oldInput = windowAdminDefaults();
 $formError = '';
 $success = '';
+$editId = (int) ($_GET['edit'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $windowId = (int) ($_POST['window_id'] ?? 0);
-    $windowName = trim($_POST['window_name'] ?? '');
-    $serviceId = (int) ($_POST['service_id'] ?? 0);
-    $staffId = (int) ($_POST['staff_id'] ?? 0);
-    $status = $_POST['status'] ?? 'closed';
-    $oldInput = [
-        'window_name' => $windowName,
-        'service_id' => (string) $serviceId,
-        'staff_id' => (string) $staffId,
-        'status' => $status,
-    ];
+    $input = windowAdminInput($_POST);
+    $windowId = (int) $input['window_id'];
+    $windowName = $input['window_name'];
+    $status = $input['status'];
+    $editId = $windowId;
+    $oldInput = $input;
 
     if (!isValidCsrfToken()) {
         $formError = 'Security check failed. Please refresh the page and try again.';
     }
 
-    if ($formError === '' && $windowName === '') {
-        $fieldErrors['window_name'] = 'Window name is required.';
-    }
-    if ($formError === '' && !in_array($status, ['open', 'busy', 'closed'], true)) {
-        $fieldErrors['status'] = 'Choose a valid window status.';
-    }
-
-    if ($formError !== '') {
-        $fieldErrors = [];
-    } elseif ($fieldErrors) {
-        $formError = '';
-    } elseif ($windowId > 0) {
-        $stmt = $conn->prepare("UPDATE service_windows SET window_name=?, service_id=NULLIF(?,0), staff_id=NULLIF(?,0), status=? WHERE window_id=?");
-        $stmt->bind_param('siisi', $windowName, $serviceId, $staffId, $status, $windowId);
-        $stmt->execute();
-        logActivity($conn, 'window_updated', 'Updated window ' . $windowName);
-        $success = 'Window updated.';
-        $oldInput = [
-            'window_name' => '',
-            'service_id' => '0',
-            'staff_id' => '0',
-            'status' => 'closed',
-        ];
-    } else {
-        $stmt = $conn->prepare("INSERT INTO service_windows (window_name, service_id, staff_id, status) VALUES (?, NULLIF(?,0), NULLIF(?,0), ?)");
-        $stmt->bind_param('siis', $windowName, $serviceId, $staffId, $status);
-        $stmt->execute();
-        logActivity($conn, 'window_created', 'Created window ' . $windowName);
-        $success = 'Window created.';
-        $oldInput = [
-            'window_name' => '',
-            'service_id' => '0',
-            'staff_id' => '0',
-            'status' => 'closed',
-        ];
+    $fieldErrors = $formError === '' ? validateWindowAdminInput($input) : [];
+    if ($formError === '' && !$fieldErrors) {
+        $updated = saveAdminWindow($conn, $input);
+        $success = $updated ? 'Service window updated.' : 'Service window created.';
+        $editId = 0;
+        $oldInput = windowAdminDefaults();
     }
 }
+
+$services = listWindowServiceAssignments($conn);
+$staffRows = listWindowStaffAssignments($conn);
+$windows = listAdminWindows($conn);
+
+$editWindow = $editId > 0 ? findAdminWindow($windows, $editId) : null;
+if ($editWindow && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $oldInput = windowRowToForm($editWindow);
+}
+
 $feedback = [
     'field_errors' => $fieldErrors,
     'old' => $oldInput,
     'form_error' => $formError,
 ];
 
-$services = $conn->query("SELECT service_id, service_name FROM health_services WHERE is_active=1 ORDER BY display_order, service_name")->fetch_all(MYSQLI_ASSOC);
-$staffRows = $conn->query("SELECT s.staff_id, CONCAT(u.first_name, ' ', u.last_name) AS staff_name FROM staff s JOIN users u ON u.user_id=s.user_id WHERE u.is_active=1 ORDER BY staff_name")->fetch_all(MYSQLI_ASSOC);
-$windows = $conn->query("
-    SELECT sw.*, hs.service_name, CONCAT(u.first_name, ' ', u.last_name) AS staff_name
-    FROM service_windows sw
-    LEFT JOIN health_services hs ON hs.service_id=sw.service_id
-    LEFT JOIN staff s ON s.staff_id=sw.staff_id
-    LEFT JOIN users u ON u.user_id=s.user_id
-    WHERE sw.is_active=1
-    ORDER BY sw.window_id
-")->fetch_all(MYSQLI_ASSOC);
+$isEditing = $editWindow !== null;
+$pageTitle = 'Service Windows';
+$pageHeading = 'Service Windows';
+$pageSubtitle = 'Assign staff accounts to service counters so they can call, complete, and skip queue tickets.';
+$activePage = 'windows';
+$adminBodyClass = 'admin-management-page admin-windows-page';
+include __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Service Windows -- SmartQMS</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/style.css">
-</head>
-<body>
-  <main class="container py-4">
-    <a href="dashboard.php" class="btn btn-link px-0">Back to dashboard</a>
-    <div class="row g-4">
-      <section class="col-lg-5">
-        <div class="card p-4">
-          <h1 class="h4 mb-3">Add Window</h1>
-          <?php if ($feedback['form_error']): ?><div class="alert alert-danger" role="alert"><?= htmlspecialchars($feedback['form_error']) ?></div><?php endif; ?>
-          <?php if ($success): ?><div class="alert alert-success"><?= htmlspecialchars($success) ?></div><?php endif; ?>
-          <form method="POST" class="js-validated-form" novalidate>
-            <?= csrfInput() ?>
-            <label class="form-label" for="window_name">Window Name</label>
-            <input id="window_name" class="form-control<?= fieldInvalidClass($feedback, 'window_name') ?>" name="window_name"
+<section class="admin-management-shell">
+  <?php if ($feedback['form_error']): ?>
+    <div class="admin-alert is-danger" role="alert">
+      <i data-lucide="circle-alert" aria-hidden="true"></i>
+      <span><?= htmlspecialchars($feedback['form_error']) ?></span>
+    </div>
+  <?php endif; ?>
+
+  <?php if ($success): ?>
+    <div class="admin-alert is-success" role="status">
+      <i data-lucide="check-circle-2" aria-hidden="true"></i>
+      <span><?= htmlspecialchars($success) ?></span>
+    </div>
+  <?php endif; ?>
+
+  <div class="admin-management-grid">
+    <article class="admin-card admin-management-form-card">
+      <header class="admin-management-card-header">
+        <div>
+          <p class="admin-section-kicker"><?= $isEditing ? 'Update Window' : 'Create Window' ?></p>
+          <h2><?= $isEditing ? 'Edit service window' : 'Assign an operating counter' ?></h2>
+        </div>
+        <span class="admin-management-icon"><i data-lucide="panel-top" aria-hidden="true"></i></span>
+      </header>
+
+      <form class="admin-settings-form js-validated-form" method="POST" novalidate>
+        <?= csrfInput() ?>
+        <input type="hidden" name="window_id" value="<?= htmlspecialchars(oldFormValue($feedback, 'window_id')) ?>">
+
+        <div class="admin-form-grid">
+          <div class="admin-field admin-field-wide">
+            <label for="window_name">Window Name</label>
+            <input id="window_name" class="admin-input<?= fieldInvalidClass($feedback, 'window_name') ?>" name="window_name"
                    value="<?= htmlspecialchars(oldFormValue($feedback, 'window_name'), ENT_QUOTES) ?>"
                    placeholder="Window 1" required data-validate="required"<?= fieldAriaInvalid($feedback, 'window_name') ?>>
-            <div class="field-error mb-3" aria-live="polite"><?= htmlspecialchars(fieldError($feedback, 'window_name')) ?></div>
-            <label class="form-label" for="service_id">Service</label>
-            <select id="service_id" class="form-select mb-3" name="service_id">
+            <div class="field-error" aria-live="polite"><?= htmlspecialchars(fieldError($feedback, 'window_name')) ?></div>
+          </div>
+
+          <div class="admin-field admin-field-wide">
+            <label for="service_id">Service</label>
+            <select id="service_id" class="admin-input admin-select" name="service_id">
               <option value="0"<?= oldFormValue($feedback, 'service_id', '0') === '0' ? ' selected' : '' ?>>Unassigned</option>
               <?php foreach ($services as $service): ?>
                 <?php $selectedService = oldFormValue($feedback, 'service_id', '0') === (string) $service['service_id']; ?>
-                <option value="<?= $service['service_id'] ?>"<?= $selectedService ? ' selected' : '' ?>><?= htmlspecialchars($service['service_name']) ?></option>
+                <option value="<?= (int) $service['service_id'] ?>"<?= $selectedService ? ' selected' : '' ?>><?= htmlspecialchars($service['service_name']) ?></option>
               <?php endforeach; ?>
             </select>
-            <label class="form-label" for="staff_id">Staff</label>
-            <select id="staff_id" class="form-select mb-3" name="staff_id">
+            <?php if (!$services): ?>
+              <p class="admin-field-helper">No active services are available. Add a service before assigning this window.</p>
+            <?php endif; ?>
+          </div>
+
+          <div class="admin-field">
+            <label for="staff_id">Staff</label>
+            <select id="staff_id" class="admin-input admin-select" name="staff_id">
               <option value="0"<?= oldFormValue($feedback, 'staff_id', '0') === '0' ? ' selected' : '' ?>>Unassigned</option>
               <?php foreach ($staffRows as $staff): ?>
                 <?php $selectedStaff = oldFormValue($feedback, 'staff_id', '0') === (string) $staff['staff_id']; ?>
-                <option value="<?= $staff['staff_id'] ?>"<?= $selectedStaff ? ' selected' : '' ?>><?= htmlspecialchars($staff['staff_name']) ?></option>
+                <option value="<?= (int) $staff['staff_id'] ?>"<?= $selectedStaff ? ' selected' : '' ?>><?= htmlspecialchars($staff['staff_name']) ?></option>
               <?php endforeach; ?>
             </select>
-            <label class="form-label" for="status">Status</label>
+            <?php if (!$staffRows): ?>
+              <p class="admin-field-helper">Create a staff account before assigning an operator.</p>
+            <?php endif; ?>
+          </div>
+
+          <div class="admin-field">
+            <label for="status">Status</label>
             <?php $selectedStatus = oldFormValue($feedback, 'status', 'closed'); ?>
-            <select id="status" class="form-select<?= fieldInvalidClass($feedback, 'status') ?>" name="status" required data-validate="required"<?= fieldAriaInvalid($feedback, 'status') ?>>
+            <select id="status" class="admin-input admin-select<?= fieldInvalidClass($feedback, 'status') ?>" name="status" required data-validate="required"<?= fieldAriaInvalid($feedback, 'status') ?>>
               <option value="closed"<?= $selectedStatus === 'closed' ? ' selected' : '' ?>>Closed</option>
               <option value="open"<?= $selectedStatus === 'open' ? ' selected' : '' ?>>Open</option>
               <option value="busy"<?= $selectedStatus === 'busy' ? ' selected' : '' ?>>Busy</option>
             </select>
-            <div class="field-error mb-3" aria-live="polite"><?= htmlspecialchars(fieldError($feedback, 'status')) ?></div>
-            <button class="btn btn-primary" type="submit">Create Window</button>
-          </form>
-        </div>
-      </section>
-      <section class="col-lg-7">
-        <div class="card p-4">
-          <h2 class="h5 mb-3">Configured Windows</h2>
-          <div class="table-responsive">
-            <table class="table">
-              <thead><tr><th>Window</th><th>Service</th><th>Staff</th><th>Status</th></tr></thead>
-              <tbody>
-                <?php foreach ($windows as $window): ?>
-                  <tr>
-                    <td><?= htmlspecialchars($window['window_name']) ?></td>
-                    <td><?= htmlspecialchars($window['service_name'] ?? 'Unassigned') ?></td>
-                    <td><?= htmlspecialchars($window['staff_name'] ?? 'Unassigned') ?></td>
-                    <td><span class="badge text-bg-secondary"><?= htmlspecialchars($window['status']) ?></span></td>
-                  </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
+            <div class="field-error" aria-live="polite"><?= htmlspecialchars(fieldError($feedback, 'status')) ?></div>
           </div>
         </div>
-      </section>
-    </div>
-  </main>
-  <script src="<?= assetUrl('assets/js/main.js') ?>"></script>
-</body>
-</html>
+
+        <div class="admin-form-actions">
+          <button class="admin-action-button is-dark" type="submit" data-loading-text="<?= $isEditing ? 'Saving window...' : 'Creating window...' ?>">
+            <i data-lucide="<?= $isEditing ? 'save' : 'plus' ?>" aria-hidden="true"></i>
+            <span><?= $isEditing ? 'Save Window' : 'Create Window' ?></span>
+          </button>
+          <?php if ($isEditing): ?>
+            <a class="admin-action-button" href="windows.php">
+              <i data-lucide="x" aria-hidden="true"></i>
+              <span>Cancel Edit</span>
+            </a>
+          <?php endif; ?>
+        </div>
+      </form>
+    </article>
+
+    <article class="admin-card admin-table-card admin-management-table-card" data-admin-paginated-region>
+      <header class="admin-management-card-header">
+        <div>
+          <p class="admin-section-kicker">Operating Counters</p>
+          <h2>Configured windows</h2>
+        </div>
+        <span class="admin-pill"><?= number_format(count($windows)) ?> total</span>
+      </header>
+
+      <div class="admin-table-wrap">
+        <table class="admin-data-table admin-management-table" data-admin-paginated-table data-page-size="8" data-pagination-label="service windows">
+          <thead>
+            <tr>
+              <th>Window</th>
+              <th>Service</th>
+              <th>Staff</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($windows as $window): ?>
+              <?php $status = (string) $window['status']; ?>
+              <tr>
+                <td data-label="Window"><strong><?= htmlspecialchars($window['window_name']) ?></strong></td>
+                <td data-label="Service"><?= htmlspecialchars($window['service_name'] ?? 'Unassigned') ?></td>
+                <td data-label="Staff"><?= htmlspecialchars($window['staff_name'] ?? 'Unassigned') ?></td>
+                <td data-label="Status">
+                  <span class="admin-status-badge is-<?= htmlspecialchars($status) ?>"><?= htmlspecialchars(ucfirst($status)) ?></span>
+                </td>
+                <td data-label="Actions">
+                  <div class="admin-row-actions">
+                    <a class="admin-row-action" href="windows.php?edit=<?= (int) $window['window_id'] ?>">
+                      <i data-lucide="pencil" aria-hidden="true"></i>
+                      <span>Edit</span>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+
+        <?php if (!$windows): ?>
+          <div class="admin-empty-state">No service windows yet. Create one and assign it to a staff account.</div>
+        <?php endif; ?>
+      </div>
+
+      <p class="admin-pagination-status" data-admin-pagination-status aria-live="polite"></p>
+      <nav class="admin-pagination" aria-label="Service windows pagination" data-admin-pagination></nav>
+    </article>
+  </div>
+</section>
+
+<?php include __DIR__ . '/includes/footer.php'; ?>

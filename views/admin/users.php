@@ -1,6 +1,7 @@
 <?php
 require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once __DIR__ . '/../../modules/admin/users.php';
 requireLogin(ROLE_ADMIN);
 
 $feedback = consumeFormFeedback('admin_users');
@@ -9,15 +10,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireValidCsrf('views/admin/users.php', 'admin_users');
     $userId = (int) ($_POST['user_id'] ?? 0);
     $active = (int) ($_POST['is_active'] ?? 0);
-    if ($userId > 0 && $userId !== (int) $_SESSION['user_id']) {
-        $stmt = $conn->prepare("UPDATE users SET is_active=? WHERE user_id=?");
-        $stmt->bind_param('ii', $active, $userId);
-        $stmt->execute();
-        logActivity($conn, 'user_status_updated', 'user_id=' . $userId);
-    }
+    setAdminUserActive($conn, $userId, $active, (int) $_SESSION['user_id']);
 }
 
-$users = $conn->query("SELECT user_id, first_name, last_name, phone_number, email, role, is_verified, is_active, created_at FROM users ORDER BY created_at DESC")->fetch_all(MYSQLI_ASSOC);
+$users = listAdminUsers($conn);
 ?>
 <!DOCTYPE html>
 <html lang="en">

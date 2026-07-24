@@ -69,24 +69,10 @@ if ($serviceId > 0) {
     $prediction = $fallback;
     $source = 'fallback';
 
-    $ch = curl_init(ML_API_URL);
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 2,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_POSTFIELDS => json_encode($features),
-    ]);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($response && $httpCode === 200) {
-        $decoded = json_decode($response, true);
-        if (isset($decoded['predicted_wait_minutes'])) {
-            $prediction = (float) $decoded['predicted_wait_minutes'];
-            $source = 'ml';
-        }
+    $mlPrediction = requestMlWaitEstimate($features);
+    if ($mlPrediction !== null) {
+        $prediction = $mlPrediction;
+        $source = 'ml';
     }
 
     jsonResponse(true, [
@@ -109,23 +95,9 @@ $activeWindows = (int) ($features['active_windows'] ?? 1);
 $avgServiceTime = (float) ($features['avg_service_time'] ?? 5);
 $fallback = fallbackWaitEstimate($queueLength, $activeWindows, $avgServiceTime);
 
-$ch = curl_init(ML_API_URL);
-curl_setopt_array($ch, [
-    CURLOPT_POST => true,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 2,
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-    CURLOPT_POSTFIELDS => json_encode($features),
-]);
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
-
-if ($response && $httpCode === 200) {
-    $decoded = json_decode($response, true);
-    if (isset($decoded['predicted_wait_minutes'])) {
-        jsonResponse(true, ['predicted_wait_minutes' => (float) $decoded['predicted_wait_minutes'], 'source' => 'ml']);
-    }
+$mlPrediction = requestMlWaitEstimate($features);
+if ($mlPrediction !== null) {
+    jsonResponse(true, ['predicted_wait_minutes' => $mlPrediction, 'source' => 'ml']);
 }
 
 jsonResponse(true, ['predicted_wait_minutes' => $fallback, 'source' => 'fallback']);

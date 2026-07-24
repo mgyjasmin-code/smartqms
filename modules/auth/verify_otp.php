@@ -24,7 +24,7 @@ if (!$otpThrottle['allowed']) {
     ]);
 }
 
-if (!$userId || !preg_match('/^\d{6}$/', $otp)) {
+if (!isPositiveIdentifier($userId) || !isSixDigitOtp($otp)) {
     if ($userId) {
         recordAuthAttempt($conn, 'otp_verify', $throttleIdentifier, OTP_VERIFY_ATTEMPT_LIMIT, OTP_VERIFY_ATTEMPT_WINDOW_SECONDS);
     }
@@ -33,19 +33,16 @@ if (!$userId || !preg_match('/^\d{6}$/', $otp)) {
     ]);
 }
 
-$stmt = $conn->prepare("SELECT user_id, otp_hash, otp_expires_at FROM users WHERE user_id = ? LIMIT 1");
-$stmt->bind_param('i', $userId);
-$stmt->execute();
-$user = $stmt->get_result()->fetch_assoc();
+$otpStatus = verifyStoredOtp($conn, $userId, $otp);
 
-if (!$user || empty($user['otp_hash']) || !password_verify($otp, $user['otp_hash'])) {
+if ($otpStatus === 'wrong') {
     recordAuthAttempt($conn, 'otp_verify', $throttleIdentifier, OTP_VERIFY_ATTEMPT_LIMIT, OTP_VERIFY_ATTEMPT_WINDOW_SECONDS);
     redirectWithFormFeedback('views/client/verify_otp.php', 'verify_otp', [
         'otp_code' => 'Wrong OTP code.',
     ]);
 }
 
-if (strtotime($user['otp_expires_at']) < time()) {
+if ($otpStatus === 'expired') {
     recordAuthAttempt($conn, 'otp_verify', $throttleIdentifier, OTP_VERIFY_ATTEMPT_LIMIT, OTP_VERIFY_ATTEMPT_WINDOW_SECONDS);
     redirectWithFormFeedback('views/client/verify_otp.php', 'verify_otp', [
         'otp_code' => 'OTP expired. Please register again or ask the staff to help reset it.',
@@ -60,9 +57,7 @@ if (!$fullUser) {
 
 if ($flow === 'register') {
     clearAuthAttempts($conn, 'otp_verify', $throttleIdentifier);
-    $update = $conn->prepare("UPDATE users SET is_verified = 1, otp_code = NULL, otp_hash = NULL, otp_expires_at = NULL WHERE user_id = ?");
-    $update->bind_param('i', $userId);
-    $update->execute();
+    verifyAuthUserEmail($conn, $userId);
     logActivity($conn, 'email_verified', 'Client verified email OTP', null, $userId, ROLE_CLIENT);
     $fullUser['is_verified'] = 1;
     clearOtpSession();
@@ -72,9 +67,7 @@ if ($flow === 'register') {
 
 if ($flow === 'login') {
     clearAuthAttempts($conn, 'otp_verify', $throttleIdentifier);
-    $update = $conn->prepare("UPDATE users SET otp_code = NULL, otp_hash = NULL, otp_expires_at = NULL WHERE user_id = ?");
-    $update->bind_param('i', $userId);
-    $update->execute();
+    clearAuthOtp($conn, $userId);
     clearOtpSession();
     completeLogin($conn, $fullUser);
     redirectAfterLogin($fullUser['role'], ['msg' => 'login_verified']);

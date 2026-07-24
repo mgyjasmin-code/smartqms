@@ -6,7 +6,7 @@ Fresh local install
 1. Start Apache and MySQL in XAMPP.
 2. Open http://localhost/phpmyadmin.
 3. Create or select the smartqms database.
-4. Import database/smartqms_final.sql.
+4. Import database/smartqms_final_v4.sql.
 
 The fresh schema includes:
 - SmartQMS tables

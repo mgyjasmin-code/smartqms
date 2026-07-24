@@ -15,8 +15,8 @@ $reportItems = [
 ?>
 <aside class="admin-sidebar" id="admin-sidebar" aria-label="Admin navigation">
   <div class="admin-sidebar-header">
-    <div class="admin-brand">
-      <span>Smart QMS</span>
+    <div class="admin-brand d-flex align-items-center">
+      <span class="ms-2">Smart QMS</span>
     </div>
     <button class="admin-sidebar-close" type="button" data-admin-sidebar-close aria-label="Close admin navigation">
       <i data-lucide="x" aria-hidden="true"></i>
@@ -27,6 +27,18 @@ $reportItems = [
     <a class="admin-nav-link<?= $activePage === 'dashboard' ? ' is-active' : '' ?>" href="dashboard.php"<?= $activePage === 'dashboard' ? ' aria-current="page"' : '' ?>>
       <i data-lucide="layout-dashboard" aria-hidden="true"></i>
       <span>Dashboard</span>
+    </a>
+    <a class="admin-nav-link<?= $activePage === 'staff' ? ' is-active' : '' ?>" href="add_staff.php"<?= $activePage === 'staff' ? ' aria-current="page"' : '' ?>>
+      <i data-lucide="user-plus" aria-hidden="true"></i>
+      <span>Staff Accounts</span>
+    </a>
+    <a class="admin-nav-link<?= $activePage === 'services' ? ' is-active' : '' ?>" href="services.php"<?= $activePage === 'services' ? ' aria-current="page"' : '' ?>>
+      <i data-lucide="clipboard-list" aria-hidden="true"></i>
+      <span>Health Services</span>
+    </a>
+    <a class="admin-nav-link<?= $activePage === 'windows' ? ' is-active' : '' ?>" href="windows.php"<?= $activePage === 'windows' ? ' aria-current="page"' : '' ?>>
+      <i data-lucide="panel-top" aria-hidden="true"></i>
+      <span>Service Windows</span>
     </a>
     <a class="admin-nav-link<?= $activePage === 'activity_logs' ? ' is-active' : '' ?>" href="activity_log.php"<?= $activePage === 'activity_logs' ? ' aria-current="page"' : '' ?>>
       <i data-lucide="activity" aria-hidden="true"></i>
@@ -52,11 +64,4 @@ $reportItems = [
       <span>Settings</span>
     </a>
   </nav>
-
-  <div class="admin-sidebar-footer">
-    <button class="admin-logout-button" type="button" data-admin-logout-open>
-      <i data-lucide="log-out" aria-hidden="true"></i>
-      <span>Logout</span>
-    </button>
-  </div>
 </aside>

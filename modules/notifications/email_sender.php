@@ -45,41 +45,6 @@ function logEmailError(string $message): void {
     file_put_contents(emailErrorLogPath(), $entry, FILE_APPEND | LOCK_EX);
 }
 
-function ensureEmailJobsTable(mysqli $conn): bool {
-    static $checked = false;
-    if ($checked) {
-        return true;
-    }
-
-    $created = $conn->query("
-        CREATE TABLE IF NOT EXISTS email_jobs (
-          job_id INT AUTO_INCREMENT PRIMARY KEY,
-          user_id INT DEFAULT NULL,
-          recipient_email VARCHAR(190) NOT NULL,
-          subject VARCHAR(255) NOT NULL,
-          message TEXT NOT NULL,
-          type VARCHAR(50) DEFAULT 'notification',
-          status ENUM('pending','processing','sent','failed','cancelled') DEFAULT 'pending',
-          attempts INT NOT NULL DEFAULT 0,
-          error_msg VARCHAR(255) DEFAULT NULL,
-          available_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          sent_at DATETIME DEFAULT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          INDEX idx_email_jobs_status_user (status, user_id, available_at),
-          INDEX idx_email_jobs_created_at (created_at)
-        ) ENGINE=InnoDB
-    ");
-
-    if (!$created) {
-        logEmailError('Could not ensure email_jobs table: ' . $conn->error);
-        return false;
-    }
-
-    $checked = true;
-    return true;
-}
-
 function cancelPendingEmailJobs(mysqli $conn, int $userId, string $type = 'otp'): void {
     if (!ensureEmailJobsTable($conn)) {
         return;

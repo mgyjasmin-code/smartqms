@@ -45,6 +45,78 @@
     });
 
     refreshIcons();
+    if (shouldStore && document.readyState !== 'loading') initAdminCharts();
+  }
+
+  const activeCharts = new Map();
+
+  function initAdminCharts() {
+    if (!window.Chart) return;
+    const styles = getComputedStyle(document.documentElement);
+    const textColor = styles.getPropertyValue('--admin-chart-text').trim() || '#1F2937';
+    const mutedColor = styles.getPropertyValue('--admin-chart-muted').trim() || '#596273';
+    const gridColor = styles.getPropertyValue('--admin-chart-grid').trim() || '#D8DEE8';
+    const primaryColor = styles.getPropertyValue('--admin-primary').trim() || '#10A5F5';
+    const successColor = styles.getPropertyValue('--admin-success').trim() || '#1D9E75';
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    document.querySelectorAll('[data-admin-chart]').forEach((canvas) => {
+      const configId = canvas.dataset.adminChart;
+      const configElement = configId ? document.getElementById(configId) : null;
+      if (!configElement) return;
+
+      let chartData;
+      try {
+        chartData = JSON.parse(configElement.textContent || '{}');
+      } catch (error) {
+        canvas.closest('.admin-chart-canvas-wrap')?.classList.add('has-chart-error');
+        return;
+      }
+
+      const labels = Array.isArray(chartData.labels) ? chartData.labels : [];
+      const datasets = Array.isArray(chartData.datasets) ? chartData.datasets : [];
+      if (!labels.length || !datasets.length) return;
+
+      activeCharts.get(canvas)?.destroy();
+      const palette = [primaryColor, successColor, '#BA7517', '#8B5CF6'];
+      const type = chartData.type === 'line' ? 'line' : 'bar';
+      const normalizedDatasets = datasets.map((dataset, index) => ({
+        label: dataset.label || `Series ${index + 1}`,
+        data: dataset.data || [],
+        borderColor: palette[index % palette.length],
+        backgroundColor: type === 'line' ? palette[index % palette.length] : `${palette[index % palette.length]}B8`,
+        borderWidth: 2,
+        borderRadius: type === 'bar' ? 6 : 0,
+        pointRadius: type === 'line' ? 3 : 0,
+        pointHoverRadius: type === 'line' ? 5 : 0,
+        tension: type === 'line' ? 0.25 : 0,
+        fill: false,
+      }));
+
+      const chart = new window.Chart(canvas, {
+        type,
+        data: { labels, datasets: normalizedDatasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: reducedMotion ? false : { duration: 250 },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: datasets.length > 1, labels: { color: textColor, usePointStyle: true } },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.dataset.label}: ${context.formattedValue}${chartData.unit ? ` ${chartData.unit}` : ''}`,
+              },
+            },
+          },
+          scales: {
+            x: { ticks: { color: mutedColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: mutedColor }, grid: { color: gridColor } },
+          },
+        },
+      });
+      activeCharts.set(canvas, chart);
+    });
   }
 
   function initThemeToggle() {
@@ -124,6 +196,20 @@
     });
   }
 
+  function initConfirmActions() {
+    document.querySelectorAll('[data-admin-confirm]').forEach((button) => {
+      const form = button.closest('form');
+      if (!form) return;
+
+      form.addEventListener('submit', (event) => {
+        const message = button.dataset.adminConfirm || 'Continue with this action?';
+        if (!window.confirm(message)) {
+          event.preventDefault();
+        }
+      });
+    });
+  }
+
   function initLogoutModal() {
     const modal = document.querySelector('[data-admin-logout-modal]');
     const openButtons = document.querySelectorAll('[data-admin-logout-open]');
@@ -191,6 +277,44 @@
     }
   }
 
+  function initUserMenu() {
+    const root = document.querySelector('[data-admin-user-menu]');
+    if (!root) return;
+
+    const toggle = root.querySelector('[data-admin-user-menu-toggle]');
+    const panel = root.querySelector('[data-admin-user-menu-panel]');
+    if (!toggle || !panel) return;
+
+    const setOpen = (isOpen) => {
+      panel.hidden = !isOpen;
+      toggle.setAttribute('aria-expanded', String(isOpen));
+      root.classList.toggle('is-open', isOpen);
+    };
+
+    toggle.addEventListener('click', () => {
+      setOpen(panel.hidden);
+    });
+
+    root.addEventListener('click', (event) => {
+      if (event.target.closest('[data-admin-logout-open]')) {
+        setOpen(false);
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!root.contains(event.target)) {
+        setOpen(false);
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !panel.hidden) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+  }
+
   function getPaginationItems(totalPages, currentPage) {
     if (totalPages <= 3) {
       return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -242,6 +366,7 @@
 
       const rows = Array.from(tbody.rows);
       const pageSize = Math.max(1, parseInt(table.dataset.pageSize || '10', 10));
+      const itemLabel = table.dataset.paginationLabel || 'records';
       const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
       const region = table.closest('[data-admin-paginated-region]') || table.parentElement;
       const pagination = region ? region.querySelector('[data-admin-pagination]') : null;
@@ -260,7 +385,7 @@
 
         if (status) {
           status.textContent = rows.length
-            ? 'Showing ' + (startIndex + 1) + '-' + endIndex + ' of ' + rows.length + ' activity logs'
+            ? 'Showing ' + (startIndex + 1) + '-' + endIndex + ' of ' + rows.length + ' ' + itemLabel
             : '';
         }
 
@@ -314,13 +439,25 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    initThemeToggle();
-    initSidebar();
-    initReportMenu();
-    initPrintButtons();
-    initLogoutModal();
-    initPaginatedTables();
-    refreshIcons();
-  });
+  function initAdminPage() {
+    const root = document.querySelector('[data-admin-root]');
+    if (!root || root.dataset.adminInitialized === 'true') return;
+    root.dataset.adminInitialized = 'true';
+    const initializers = [
+      initThemeToggle,
+      initSidebar,
+      initReportMenu,
+      initPrintButtons,
+      initConfirmActions,
+      initLogoutModal,
+      initUserMenu,
+      initPaginatedTables,
+      initAdminCharts,
+      refreshIcons,
+    ];
+
+    initializers.forEach((initialize) => initialize());
+  }
+
+  document.addEventListener('DOMContentLoaded', initAdminPage);
 })();

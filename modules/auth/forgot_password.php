@@ -8,9 +8,9 @@ requirePostRequest(false, 'views/client/forgot_password.php', 'forgot_password_r
 $action = $_POST['action'] ?? 'request_otp';
 
 if ($action === 'request_otp') {
-    $email = strtolower(trim($_POST['email'] ?? ''));
+    $email = normalizeEmail((string) ($_POST['email'] ?? ''));
     requireValidCsrf('views/client/forgot_password.php', 'forgot_password_request', ['email' => $email]);
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    if (!isValidEmail($email)) {
         redirectWithFormFeedback('views/client/forgot_password.php', 'forgot_password_request', [
             'email' => $email === '' ? 'Registered email address is required.' : 'Enter a valid registered email address.',
         ], ['email' => $email]);
@@ -22,21 +22,16 @@ if ($action === 'request_otp') {
     }
     recordAuthAttempt($conn, 'forgot_password', $email, FORGOT_PASSWORD_ATTEMPT_LIMIT, FORGOT_PASSWORD_ATTEMPT_WINDOW_SECONDS);
 
-    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ? AND role = ? LIMIT 1");
-    $role = ROLE_CLIENT;
-    $stmt->bind_param('ss', $email, $role);
-    $stmt->execute();
-    $user = $stmt->get_result()->fetch_assoc();
+    $user = authClientByEmail($conn, $email);
 
     if (!$user || (int) $user['is_active'] !== 1) {
         redirectWithFormFeedback('views/client/forgot_password.php', 'forgot_password_request', [], ['email' => $email], 'Could not send a reset code for that email. Please check the address and try again.');
     }
 
-    $_SESSION['reset_user_id'] = (int) $user['user_id'];
-    setOtpSession('reset', (int) $user['user_id']);
+    startPasswordResetOtpSession((int) $user['user_id']);
     $queued = issueOtp($conn, (int) $user['user_id'], 'Your SmartQMS password reset code is', 'otp');
     if ($queued) {
-        $_SESSION['otp_last_sent_at'] = time();
+        markOtpSent();
     }
 
     if (!$queued) {
@@ -61,7 +56,7 @@ if ($action === 'verify_otp') {
         ]);
     }
 
-    if (!$userId || !preg_match('/^\d{6}$/', $otp)) {
+    if (!isPositiveIdentifier($userId) || !isSixDigitOtp($otp)) {
         if ($userId) {
             recordAuthAttempt($conn, 'otp_verify', $throttleIdentifier, OTP_VERIFY_ATTEMPT_LIMIT, OTP_VERIFY_ATTEMPT_WINDOW_SECONDS);
         }
@@ -70,19 +65,16 @@ if ($action === 'verify_otp') {
         ]);
     }
 
-    $stmt = $conn->prepare("SELECT user_id, otp_hash, otp_expires_at FROM users WHERE user_id = ? LIMIT 1");
-    $stmt->bind_param('i', $userId);
-    $stmt->execute();
-    $user = $stmt->get_result()->fetch_assoc();
+$otpStatus = verifyStoredOtp($conn, $userId, $otp);
 
-    if (!$user || empty($user['otp_hash']) || !password_verify($otp, $user['otp_hash'])) {
+    if ($otpStatus === 'wrong') {
         recordAuthAttempt($conn, 'otp_verify', $throttleIdentifier, OTP_VERIFY_ATTEMPT_LIMIT, OTP_VERIFY_ATTEMPT_WINDOW_SECONDS);
         redirectWithFormFeedback('views/client/forgot_password.php', 'forgot_password_otp', [
             'otp_code' => 'Wrong OTP code.',
         ]);
     }
 
-    if (strtotime($user['otp_expires_at']) < time()) {
+    if ($otpStatus === 'expired') {
         recordAuthAttempt($conn, 'otp_verify', $throttleIdentifier, OTP_VERIFY_ATTEMPT_LIMIT, OTP_VERIFY_ATTEMPT_WINDOW_SECONDS);
         redirectWithFormFeedback('views/client/forgot_password.php', 'forgot_password_otp', [
             'otp_code' => 'OTP expired. Please request a new code.',
@@ -90,7 +82,7 @@ if ($action === 'verify_otp') {
     }
 
     clearAuthAttempts($conn, 'otp_verify', $throttleIdentifier);
-    $_SESSION['reset_verified_user_id'] = $userId;
+    markPasswordResetOtpVerified($userId);
     redirectTo('views/client/forgot_password.php', ['msg' => 'otp_verified']);
 }
 
@@ -101,19 +93,19 @@ if ($action === 'reset_password') {
 
     requireValidCsrf('views/client/forgot_password.php', 'reset_password');
 
-    if (!$userId) {
+    if (!isPositiveIdentifier($userId)) {
         redirectWithFormFeedback('views/client/forgot_password.php', 'reset_password', [], [], 'Please verify your OTP before changing your password.');
     }
 
     $fieldErrors = [];
-    if ($password === '') {
+    if (!hasRequiredText($password, false)) {
         $fieldErrors['password'] = 'New password is required.';
-    } elseif (strlen($password) < 8) {
+    } elseif (!hasMinimumLength($password, 8)) {
         $fieldErrors['password'] = 'Password must be at least 8 characters.';
     }
-    if ($confirmPassword === '') {
+    if (!hasRequiredText($confirmPassword, false)) {
         $fieldErrors['confirm_password'] = 'Please re-type your password.';
-    } elseif ($password !== $confirmPassword) {
+    } elseif (!passwordsMatch($password, $confirmPassword)) {
         $fieldErrors['confirm_password'] = 'Password entries do not match.';
     }
 
@@ -121,11 +113,7 @@ if ($action === 'reset_password') {
         redirectWithFormFeedback('views/client/forgot_password.php', 'reset_password', $fieldErrors);
     }
 
-    $hash = password_hash($password, PASSWORD_BCRYPT);
-    ensureAuthSecuritySchema($conn);
-    $stmt = $conn->prepare("UPDATE users SET password_hash = ?, is_verified = 1, otp_code = NULL, otp_hash = NULL, otp_expires_at = NULL WHERE user_id = ?");
-    $stmt->bind_param('si', $hash, $userId);
-    $stmt->execute();
+    resetAuthPassword($conn, $userId, $password);
     logActivity($conn, 'password_reset', 'Client reset password after OTP verification', null, $userId, ROLE_CLIENT);
 
     $user = authUserById($conn, $userId);
