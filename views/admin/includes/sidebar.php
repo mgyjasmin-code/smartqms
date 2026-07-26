@@ -15,8 +15,11 @@ $reportItems = [
 ?>
 <aside class="admin-sidebar" id="admin-sidebar" aria-label="Admin navigation">
   <div class="admin-sidebar-header">
-    <div class="admin-brand d-flex align-items-center">
-      <span class="ms-2">Smart QMS</span>
+    <div class="admin-brand" aria-label="Smart QMS">
+      <span class="admin-brand-mark" aria-hidden="true">
+        <i data-lucide="heart-pulse"></i>
+      </span>
+      <span class="admin-brand-name">Smart QMS</span>
     </div>
     <button class="admin-sidebar-close" type="button" data-admin-sidebar-close aria-label="Close admin navigation">
       <i data-lucide="x" aria-hidden="true"></i>

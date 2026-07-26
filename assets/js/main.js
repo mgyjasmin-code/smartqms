@@ -71,11 +71,11 @@
       error = 'This field is required.';
     } else if (rules.minLength && value.length < rules.minLength) {
       error = `Minimum ${rules.minLength} characters.`;
-    } else if (rules.phone && !/^09\d{9}$/.test(value)) {
+    } else if (rules.phone && value && !/^09\d{9}$/.test(value)) {
       error = 'Enter a valid Philippine mobile number (e.g. 09171234567).';
     } else if (rules.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       error = 'Enter a valid email address.';
-    } else if (rules.password && value.length < 8) {
+    } else if (rules.password && value && value.length < 8) {
       error = 'Password must be at least 8 characters.';
     } else if (rules.pin && !/^\d{6}$/.test(value)) {
       error = 'Enter a 6-digit PIN.';
@@ -87,8 +87,9 @@
     }
 
     ensureFeedbackId(input, feedback);
+    const optionalEmpty = !rules.required && value === '';
     input.classList.toggle('is-invalid', Boolean(error));
-    input.classList.toggle('is-valid', !error);
+    input.classList.toggle('is-valid', !error && !optionalEmpty);
     if (error) {
       input.setAttribute('aria-invalid', 'true');
     } else {
@@ -139,14 +140,41 @@
       const fields = Array.from(form.querySelectorAll('[data-validate]'));
 
       fields.forEach(input => {
+        const comparableValue = () => (
+          input.type === 'checkbox' || input.type === 'radio'
+            ? String(input.checked)
+            : input.value
+        );
+        const initialValue = comparableValue();
+        input.dataset.validationDirty = 'false';
+
+        const syncDirtyState = () => {
+          const dirty = comparableValue() !== initialValue;
+          input.dataset.validationDirty = String(dirty);
+          return dirty;
+        };
+
         const onFieldEdit = () => {
+          const dirty = syncDirtyState();
+          if (!dirty && !form.classList.contains('was-validated')) {
+            clearFieldValidation(input, fieldFeedbackElement(input));
+            return;
+          }
+
           if (form.classList.contains('was-validated') || input.classList.contains('is-invalid')) {
             validateField(input, validationRulesFor(input));
           }
         };
 
         input.addEventListener('blur', () => {
-          const showRequired = form.classList.contains('was-validated') || input.classList.contains('is-invalid');
+          const dirty = syncDirtyState();
+          const hasServerError = input.classList.contains('is-invalid');
+          if (!dirty && !form.classList.contains('was-validated') && !hasServerError) {
+            clearFieldValidation(input, fieldFeedbackElement(input));
+            return;
+          }
+
+          const showRequired = form.classList.contains('was-validated') || dirty || hasServerError;
           validateField(input, validationRulesFor(input), { showRequired });
         });
         input.addEventListener('input', onFieldEdit);
@@ -166,6 +194,25 @@
           form.querySelector('.is-invalid')?.focus();
           return;
         }
+
+        if (form.hasAttribute('data-admin-confirm-form') && form.dataset.adminConfirmed !== 'true') {
+          const confirmationEvent = new CustomEvent('smartqms:request-confirmation', {
+            bubbles: true,
+            cancelable: true,
+            detail: {
+              handled: false,
+              submitter: event.submitter || null,
+            },
+          });
+          form.dispatchEvent(confirmationEvent);
+
+          if (confirmationEvent.detail.handled) {
+            event.preventDefault();
+            return;
+          }
+        }
+
+        delete form.dataset.adminConfirmed;
         setSubmitBusy(form, true);
       });
     });
@@ -217,14 +264,22 @@
         ? document.getElementById(targetId)
         : button.closest('.auth-password-field')?.querySelector('input');
       const icon = button.querySelector('i');
+      const showIcon = button.querySelector('[data-password-show-icon]');
+      const hideIcon = button.querySelector('[data-password-hide-icon]');
       const label = button.dataset.passwordToggleLabel || 'password';
-      if (!input || !icon) return;
+      const usesPairedIcons = Boolean(showIcon && hideIcon);
+      if (!input || (!icon && !usesPairedIcons)) return;
 
       button.addEventListener('click', () => {
         const shouldShow = input.type === 'password';
         input.type = shouldShow ? 'text' : 'password';
-        icon.classList.toggle('bi-eye', !shouldShow);
-        icon.classList.toggle('bi-eye-slash', shouldShow);
+        if (usesPairedIcons) {
+          showIcon.hidden = shouldShow;
+          hideIcon.hidden = !shouldShow;
+        } else {
+          icon.classList.toggle('bi-eye', !shouldShow);
+          icon.classList.toggle('bi-eye-slash', shouldShow);
+        }
         const action = shouldShow ? 'Hide' : 'Show';
         button.setAttribute('aria-label', `${action} ${label}`);
         button.setAttribute('aria-pressed', String(shouldShow));

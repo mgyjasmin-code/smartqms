@@ -196,85 +196,205 @@
     });
   }
 
-  function initConfirmActions() {
-    document.querySelectorAll('[data-admin-confirm]').forEach((button) => {
+  function initManagementModals() {
+    if (!window.bootstrap?.Modal) return;
+
+    document.querySelectorAll('[data-admin-management-modal]').forEach((modalElement) => {
+      if (modalElement.dataset.adminModalInitialized === 'true') return;
+      modalElement.dataset.adminModalInitialized = 'true';
+
+      const form = modalElement.querySelector('form');
+      const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
+      const autoOpen = modalElement.hasAttribute('data-admin-auto-open');
+      const cleanUrl = modalElement.dataset.adminCleanUrl || window.location.pathname;
+
+      const resetForm = () => {
+        if (!form) return;
+
+        form.reset();
+        form.classList.remove('was-validated');
+        delete form.dataset.adminConfirmed;
+        form.querySelectorAll('[data-validate]').forEach((field) => {
+          field.classList.remove('is-invalid', 'is-valid');
+          field.removeAttribute('aria-invalid');
+          field.dataset.validationDirty = 'false';
+        });
+        form.querySelectorAll('.field-error').forEach((feedback) => {
+          feedback.textContent = '';
+        });
+      };
+
+      modalElement.addEventListener('shown.bs.modal', () => {
+        window.requestAnimationFrame(() => {
+          const invalidField = form?.querySelector('.is-invalid, [aria-invalid="true"]');
+          const firstField = form?.querySelector('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
+          (invalidField || firstField)?.focus({ preventScroll: true });
+        });
+      });
+
+      modalElement.addEventListener('hidden.bs.modal', () => {
+        if (autoOpen) {
+          window.location.assign(cleanUrl);
+          return;
+        }
+
+        resetForm();
+      });
+
+      if (autoOpen) {
+        window.requestAnimationFrame(() => modal.show());
+      }
+    });
+  }
+
+  function initAdminConfirmations() {
+    const modalElement = document.querySelector('[data-admin-management-confirm-modal]');
+    if (!modalElement || !window.bootstrap?.Modal) return;
+
+    const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
+    const title = modalElement.querySelector('[data-admin-confirm-title]');
+    const message = modalElement.querySelector('[data-admin-confirm-message]');
+    const eyebrow = modalElement.querySelector('[data-admin-confirm-eyebrow]');
+    const summary = modalElement.querySelector('[data-admin-confirm-summary]');
+    const confirmButton = modalElement.querySelector('[data-admin-confirm-submit]');
+    const confirmLabel = modalElement.querySelector('[data-admin-confirm-submit-label]');
+    let pendingForm = null;
+    let pendingSubmitter = null;
+    let lastFocusedElement = null;
+
+    if (!summary || !confirmButton) return;
+
+    const clearSummary = () => {
+      while (summary.firstChild) {
+        summary.removeChild(summary.firstChild);
+      }
+    };
+
+    const appendSummaryItem = (label, value) => {
+      const term = document.createElement('dt');
+      const description = document.createElement('dd');
+      term.textContent = label;
+      description.textContent = value;
+      summary.appendChild(term);
+      summary.appendChild(description);
+    };
+
+    const confirmationValue = (field) => {
+      if (field.dataset.adminConfirmSensitive === 'true') {
+        return field.value ? 'Provided (hidden)' : 'Not provided';
+      }
+
+      if (field.type === 'checkbox') {
+        return field.checked
+          ? (field.dataset.adminConfirmCheckedLabel || 'Yes')
+          : (field.dataset.adminConfirmUncheckedLabel || 'No');
+      }
+
+      if (field.tagName === 'SELECT') {
+        const selectedOption = field.options[field.selectedIndex];
+        return selectedOption ? selectedOption.textContent.trim() : 'Not selected';
+      }
+
+      return field.value.trim() || 'Not provided';
+    };
+
+    const configureModal = (options) => {
+      const tone = options.tone === 'danger' ? 'danger' : 'primary';
+      if (title) title.textContent = options.title || 'Confirm changes';
+      if (message) message.textContent = options.message || 'Review this action before continuing.';
+      if (eyebrow) eyebrow.textContent = tone === 'danger' ? 'Confirm action' : 'Review changes';
+      if (confirmLabel) confirmLabel.textContent = options.submitLabel || 'Confirm changes';
+      confirmButton.classList.toggle('is-danger', tone === 'danger');
+      confirmButton.classList.toggle('is-primary', tone !== 'danger');
+      confirmButton.disabled = false;
+      clearSummary();
+
+      (options.items || []).forEach((item) => appendSummaryItem(item.label, item.value));
+      summary.hidden = !(options.items || []).length;
+      refreshIcons();
+    };
+
+    const showConfirmation = (form, submitter, options) => {
+      pendingForm = form;
+      pendingSubmitter = submitter;
+      lastFocusedElement = submitter || document.activeElement;
+      configureModal(options);
+      modal.show();
+    };
+
+    document.addEventListener('smartqms:request-confirmation', (event) => {
+      const form = event.target;
+      if (!form?.matches?.('[data-admin-confirm-form]')) return;
+
+      event.detail.handled = true;
+      const items = Array.from(form.querySelectorAll('[data-admin-confirm-field]')).map((field) => ({
+        label: field.dataset.adminConfirmLabel || field.name || 'Field',
+        value: confirmationValue(field),
+      }));
+
+      showConfirmation(form, event.detail.submitter, {
+        title: form.dataset.adminConfirmTitle,
+        message: form.dataset.adminConfirmMessage,
+        submitLabel: form.dataset.adminConfirmSubmitLabel,
+        tone: form.dataset.adminConfirmTone,
+        items,
+      });
+    });
+
+    document.querySelectorAll('[data-admin-confirm-action]').forEach((button) => {
       const form = button.closest('form');
       if (!form) return;
 
       form.addEventListener('submit', (event) => {
-        const message = button.dataset.adminConfirm || 'Continue with this action?';
-        if (!window.confirm(message)) {
-          event.preventDefault();
+        if (form.dataset.adminConfirmed === 'true') {
+          delete form.dataset.adminConfirmed;
+          return;
+        }
+
+        event.preventDefault();
+        const items = button.dataset.adminConfirmItemValue
+          ? [{
+              label: button.dataset.adminConfirmItemLabel || 'Item',
+              value: button.dataset.adminConfirmItemValue,
+            }]
+          : [];
+        showConfirmation(form, button, {
+          title: button.dataset.adminConfirmTitle,
+          message: button.dataset.adminConfirmMessage,
+          submitLabel: button.dataset.adminConfirmSubmitLabel,
+          tone: button.dataset.adminConfirmTone,
+          items,
+        });
+      });
+    });
+
+    confirmButton.addEventListener('click', () => {
+      if (!pendingForm || confirmButton.disabled) return;
+
+      const form = pendingForm;
+      const submitter = pendingSubmitter;
+      confirmButton.disabled = true;
+      form.dataset.adminConfirmed = 'true';
+      modal.hide();
+
+      window.requestAnimationFrame(() => {
+        if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit(submitter || undefined);
+        } else {
+          form.submit();
         }
       });
     });
-  }
 
-  function initLogoutModal() {
-    const modal = document.querySelector('[data-admin-logout-modal]');
-    const openButtons = document.querySelectorAll('[data-admin-logout-open]');
-    if (!modal || !openButtons.length) return;
-
-    const dialog = modal.querySelector('[role="dialog"]');
-    const closeButtons = modal.querySelectorAll('[data-admin-logout-close]');
-    const form = modal.querySelector('[data-admin-logout-form]');
-    const confirmButton = modal.querySelector('[data-admin-logout-confirm]');
-    let lastFocusedElement = null;
-
-    const closeModal = () => {
-      modal.hidden = true;
-      document.body.classList.remove('admin-modal-open');
-
+    modalElement.addEventListener('hidden.bs.modal', () => {
+      confirmButton.disabled = false;
       if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
         lastFocusedElement.focus();
       }
-    };
-
-    const openModal = (trigger) => {
-      lastFocusedElement = trigger;
-      modal.hidden = false;
-      document.body.classList.add('admin-modal-open');
-
-      window.requestAnimationFrame(() => {
-        const cancelButton = modal.querySelector('[data-admin-logout-close]');
-        if (cancelButton) {
-          cancelButton.focus();
-        } else if (dialog) {
-          dialog.focus();
-        }
-      });
-    };
-
-    openButtons.forEach((button) => {
-      button.addEventListener('click', () => openModal(button));
+      pendingForm = null;
+      pendingSubmitter = null;
+      lastFocusedElement = null;
     });
-
-    closeButtons.forEach((button) => {
-      button.addEventListener('click', closeModal);
-    });
-
-    modal.addEventListener('click', (event) => {
-      if (event.target === modal) {
-        closeModal();
-      }
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (!modal.hidden && event.key === 'Escape') {
-        closeModal();
-      }
-    });
-
-    if (form && confirmButton) {
-      form.addEventListener('submit', () => {
-        confirmButton.disabled = true;
-        const label = confirmButton.querySelector('span');
-
-        if (label) {
-          label.textContent = 'Signing out...';
-        }
-      });
-    }
   }
 
   function initUserMenu() {
@@ -300,6 +420,13 @@
         setOpen(false);
       }
     });
+
+    const logoutModal = document.getElementById('adminLogoutModal');
+    if (logoutModal) {
+      logoutModal.addEventListener('hidden.bs.modal', () => {
+        toggle.focus();
+      });
+    }
 
     document.addEventListener('click', (event) => {
       if (!root.contains(event.target)) {
@@ -448,8 +575,8 @@
       initSidebar,
       initReportMenu,
       initPrintButtons,
-      initConfirmActions,
-      initLogoutModal,
+      initManagementModals,
+      initAdminConfirmations,
       initUserMenu,
       initPaginatedTables,
       initAdminCharts,

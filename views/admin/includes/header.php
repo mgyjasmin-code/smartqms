@@ -33,7 +33,7 @@ $adminRoleLabel = 'Administrator';
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="<?= assetUrl('vendor/twbs/bootstrap/dist/css/bootstrap.min.css') ?>" rel="stylesheet">
   <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
   <link rel="stylesheet" href="<?= assetUrl('assets/css/admin.css') ?>">
 </head>
@@ -69,7 +69,14 @@ $adminRoleLabel = 'Administrator';
                   <small><?= htmlspecialchars($adminRoleLabel) ?></small>
                 </div>
               </div>
-              <button class="admin-user-menu-item is-danger" type="button" data-admin-logout-open>
+              <button
+                class="admin-user-menu-item is-danger"
+                type="button"
+                data-admin-logout-open
+                data-bs-toggle="modal"
+                data-bs-target="#adminLogoutModal"
+                aria-controls="adminLogoutModal"
+              >
                 <i data-lucide="log-out" aria-hidden="true"></i>
                 <span>Logout</span>
               </button>
