@@ -1,8 +1,7 @@
 <?php
 /**
  * SmartQMS -- Get Unread Notifications (AJAX)
- * Called every 10 seconds by client-side JS.
- * Returns unread notifications for the logged-in client.
+ * Returns the latest notification history and unread count for the client.
  */
 require_once '../../config/config.php';
 require_once '../../config/database.php';
@@ -17,7 +16,8 @@ requirePostRequest(true);
 requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and try again.', true);
 
 $userId = (int) $_SESSION['user_id'];
-$rows = consumeUnreadNotifications($conn, $userId);
+$rows = recentNotificationsForUser($conn, $userId, 10);
+$unreadCount = unreadNotificationCountForUser($conn, $userId);
 
-jsonResponse(true, ['data' => $rows]);
+jsonResponse(true, ['data' => $rows, 'unread_count' => $unreadCount]);
 ?>

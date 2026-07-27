@@ -7,47 +7,22 @@ $activeTicket = getActiveTicket($conn, (int) $_SESSION['user_id']);
 $services = $conn->query("SELECT * FROM health_services WHERE is_active=1 ORDER BY display_order, service_name")->fetch_all(MYSQLI_ASSOC);
 $queueFeedback = consumeFormFeedback('join_queue');
 $msg = $_GET['msg'] ?? '';
+$clientSuccessMessages = [
+    'registered' => 'Registration complete. You are now signed in.',
+    'login_verified' => 'Login verified. Welcome back.',
+    'password_reset' => 'Password changed successfully. You are now signed in.',
+];
+$appActionToasts = isset($clientSuccessMessages[$msg])
+    ? [['tone' => 'success', 'message' => $clientSuccessMessages[$msg]]]
+    : [];
+$pageTitle = 'Client Dashboard';
+$pageHeading = 'Welcome, ' . ($_SESSION['name'] ?? 'Client');
+$pageSubtitle = 'Choose a health service, classify this visit, and get your queue number.';
+$activePage = 'dashboard';
+include __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <?= csrfMetaTag() ?>
-  <title>Client Dashboard -- SmartQMS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
-</head>
-<body class="client-page" data-client-root
-      data-client-notification-url="<?= htmlspecialchars(postActionUrl('modules/notifications/get_notifications.php'), ENT_QUOTES) ?>">
-  <a class="skip-link" href="#main-content">Skip to queue content</a>
-  <main id="main-content" class="client-shell" tabindex="-1">
-    <div class="client-topbar">
-      <div>
-        <p class="client-eyebrow">Client Queue</p>
-        <h1>Welcome, <?= htmlspecialchars($_SESSION['name'] ?? 'Client') ?></h1>
-        <p>Choose a health service, classify this visit, and get your queue number.</p>
-      </div>
-      <div class="client-actions">
-        <a class="btn btn-outline-primary" href="queue_status.php">
-          <i class="bi bi-display" aria-hidden="true"></i>
-          Queue Status
-        </a>
-        <button class="btn btn-outline-secondary" type="button" data-confirm-logout>
-          <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-          Logout
-        </button>
-      </div>
-    </div>
 
     <?php if ($queueFeedback['form_error']): ?><div class="alert alert-danger" role="alert"><?= htmlspecialchars($queueFeedback['form_error']) ?></div><?php endif; ?>
-    <?php if ($msg === 'registered'): ?><div class="alert alert-success">Registration complete. You are now signed in.</div><?php endif; ?>
-    <?php if ($msg === 'login_verified'): ?><div class="alert alert-success">Login verified. Welcome back.</div><?php endif; ?>
-    <?php if ($msg === 'password_reset'): ?><div class="alert alert-success">Password changed successfully. You are now signed in.</div><?php endif; ?>
 
     <?php if ($activeTicket): ?>
       <?php $activeTicket['people_ahead'] = peopleAhead($conn, $activeTicket); ?>
@@ -160,19 +135,19 @@ $msg = $_GET['msg'] ?? '';
             <div class="classification-options">
               <label class="classification-card client-classification-card">
                 <input type="radio" name="client_type" value="regular"<?= $selectedType === 'regular' ? ' checked' : '' ?>>
-                <span class="classification-icon"><i class="bi bi-person" aria-hidden="true"></i></span>
+                <span class="classification-icon"><i data-lucide="user-round" aria-hidden="true"></i></span>
                 <strong>Regular</strong>
                 <small>Standard visit</small>
               </label>
               <label class="classification-card client-classification-card">
                 <input type="radio" name="client_type" value="senior"<?= $selectedType === 'senior' ? ' checked' : '' ?>>
-                <span class="classification-icon"><i class="bi bi-person-hearts" aria-hidden="true"></i></span>
+                <span class="classification-icon"><i data-lucide="heart-handshake" aria-hidden="true"></i></span>
                 <strong>Senior</strong>
                 <small>Priority queue</small>
               </label>
               <label class="classification-card client-classification-card">
                 <input type="radio" name="client_type" value="pwd"<?= $selectedType === 'pwd' ? ' checked' : '' ?>>
-                <span class="classification-icon"><i class="bi bi-universal-access" aria-hidden="true"></i></span>
+                <span class="classification-icon"><i data-lucide="accessibility" aria-hidden="true"></i></span>
                 <strong>PWD</strong>
                 <small>Priority queue</small>
               </label>
@@ -211,30 +186,4 @@ $msg = $_GET['msg'] ?? '';
         </form>
       </section>
     <?php endif; ?>
-  </main>
-
-  <div class="logout-modal" data-logout-modal hidden>
-    <div class="logout-modal-backdrop" data-logout-cancel></div>
-    <section class="logout-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title" aria-describedby="logout-modal-copy" tabindex="-1">
-      <button class="logout-modal-close" type="button" data-logout-cancel aria-label="Close logout confirmation">
-        <i class="bi bi-x-lg" aria-hidden="true"></i>
-      </button>
-      <div class="logout-modal-icon" aria-hidden="true">
-        <i class="bi bi-box-arrow-right"></i>
-      </div>
-      <h2 id="logout-modal-title">Log out of Smart QMS?</h2>
-      <p id="logout-modal-copy">You will need to sign in again before joining or checking your queue.</p>
-      <div class="logout-modal-actions">
-        <button class="logout-modal-button logout-modal-button-secondary" type="button" data-logout-cancel>Cancel</button>
-        <form action="<?= APP_URL ?>/modules/auth/logout.php" method="POST" class="m-0">
-          <?= csrfInput() ?>
-          <button class="logout-modal-button logout-modal-button-primary" type="submit" data-logout-confirm>Log out</button>
-        </form>
-      </div>
-    </section>
-  </div>
-
-  <script src="<?= assetUrl('assets/js/main.js') ?>"></script>
-  <script src="<?= assetUrl('assets/js/client.js') ?>"></script>
-</body>
-</html>
+<?php include __DIR__ . '/includes/footer.php'; ?>

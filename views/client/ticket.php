@@ -3,22 +3,11 @@ require_once '../../config/config.php';
 require_once '../../config/database.php';
 requireLogin(ROLE_CLIENT);
 
-$ticket = getActiveTicket($conn, (int) $_SESSION['user_id']);
-if (!$ticket) {
-    $stmt = $conn->prepare("
-        SELECT qt.*, hs.service_name, sw.window_name, wl.predicted_wait_min
-        FROM queue_tickets qt
-        JOIN health_services hs ON hs.service_id=qt.service_id
-        LEFT JOIN service_windows sw ON sw.window_id=qt.window_id
-        LEFT JOIN wait_time_logs wl ON wl.ticket_id=qt.ticket_id
-        WHERE qt.user_id=?
-        ORDER BY qt.issued_at DESC
-        LIMIT 1
-    ");
-    $stmt->bind_param('i', $_SESSION['user_id']);
-    $stmt->execute();
-    $ticket = $stmt->get_result()->fetch_assoc();
-}
+$activeTicket = getActiveTicket($conn, (int) $_SESSION['user_id']);
+$feedbackTicket = $activeTicket ? null : getCompletedTicketAwaitingFeedback($conn, (int) $_SESSION['user_id']);
+$ticket = $activeTicket ?? $feedbackTicket;
+$feedbackPending = $feedbackTicket !== null;
+$autoOpenFeedback = $feedbackPending && ($_GET['feedback'] ?? '') === '1';
 
 $peopleAhead = $ticket && in_array($ticket['status'], ['waiting', 'serving'], true) ? peopleAhead($conn, $ticket) : 0;
 
@@ -52,43 +41,22 @@ $progressWidth = $ticket && in_array($ticket['status'], ['waiting', 'serving'], 
     ? ($peopleAhead === 0 ? 100 : max(12, min(88, 100 - ($peopleAhead * 14))))
     : 100;
 $issuedAt = $ticket ? date('g:i A', strtotime($ticket['issued_at'])) : '';
+$pageTitle = 'Your Ticket';
+$pageHeading = 'Your Ticket';
+$activePage = 'ticket';
+$showClientPageHeader = false;
+$msg = $_GET['msg'] ?? '';
+$appActionToasts = match ($msg) {
+    'feedback_submitted' => [['tone' => 'success', 'message' => 'Thank you for your feedback.']],
+    'feedback_unavailable' => [['tone' => 'info', 'message' => 'Feedback has already been submitted or is unavailable for this ticket.']],
+    default => [],
+};
+$publicTicketUrl = $ticket
+    ? APP_URL . '/views/client/ticket_lookup.php?ref=' . rawurlencode((string) $ticket['reference_number'])
+    : '';
+include __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <?= csrfMetaTag() ?>
-  <title>Your Ticket -- SmartQMS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
-</head>
-<body class="client-page" data-client-root
-      data-client-notification-url="<?= htmlspecialchars(postActionUrl('modules/notifications/get_notifications.php'), ENT_QUOTES) ?>">
-  <a class="skip-link" href="#main-content">Skip to digital ticket</a>
-  <main id="main-content" class="client-shell" tabindex="-1">
-    <div class="client-subnav">
-      <a href="index.php" class="btn btn-link px-0">
-        <i class="bi bi-arrow-left" aria-hidden="true"></i>
-        Back to dashboard
-      </a>
-      <a href="queue_status.php" class="btn btn-outline-primary">
-        <i class="bi bi-display" aria-hidden="true"></i>
-        Queue Status
-      </a>
-    </div>
-    <?php if (!$ticket): ?>
-      <section class="client-panel empty-ticket-panel">
-        <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
-        <h1>No tickets yet</h1>
-        <p>Join the queue from your dashboard to receive your digital ticket.</p>
-        <a class="btn btn-primary" href="index.php">Get Queue Number</a>
-      </section>
-    <?php else: ?>
+    <?php if ($ticket): ?>
       <section class="digital-ticket-hero">
         <span class="live-update-pill"><i class="bi bi-shield-check" aria-hidden="true"></i> Official Digital Ticket</span>
         <h1>Your Digital Ticket</h1>
@@ -147,9 +115,13 @@ $issuedAt = $ticket ? date('g:i A', strtotime($ticket['issued_at'])) : '';
             Scan the QR code to open the ticket's public status page, or show this screen to health-center staff.
           </p>
 
-          <button class="btn btn-outline-secondary ticket-print-button" type="button" data-ticket-print>
+          <p class="ticket-print-public-url">
+            Public ticket status: <?= htmlspecialchars($publicTicketUrl) ?>
+          </p>
+
+          <button class="btn btn-primary ticket-print-button" type="button" data-ticket-print>
             <i class="bi bi-printer" aria-hidden="true"></i>
-            Print Ticket
+            Print or Save Ticket
           </button>
         </article>
 
@@ -178,22 +150,67 @@ $issuedAt = $ticket ? date('g:i A', strtotime($ticket['issued_at'])) : '';
               <i class="bi bi-activity" aria-hidden="true"></i>
               Check Updates
             </a>
-            <a class="btn btn-outline-primary" href="index.php">
-              <i class="bi bi-house" aria-hidden="true"></i>
-              Dashboard
-            </a>
-            <?php if ($ticket['status'] === 'completed'): ?>
-              <a class="btn btn-outline-success" href="feedback.php?ticket_id=<?= (int) $ticket['ticket_id'] ?>">
+            <?php if ($feedbackPending): ?>
+              <button class="btn btn-success" type="button"
+                      data-bs-toggle="modal" data-bs-target="#clientFeedbackModal">
                 <i class="bi bi-chat-heart" aria-hidden="true"></i>
                 Submit Feedback
-              </a>
+              </button>
             <?php endif; ?>
           </div>
         </aside>
       </section>
+
+      <?php if ($feedbackPending): ?>
+        <div class="modal fade app-feedback-modal" id="clientFeedbackModal" tabindex="-1"
+             aria-labelledby="client-feedback-title" aria-describedby="client-feedback-description"
+             aria-hidden="true" data-client-feedback-modal<?= $autoOpenFeedback ? ' data-auto-open="true"' : '' ?>>
+          <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header">
+                <div>
+                  <p class="text-uppercase small fw-semibold text-primary mb-1">Service complete</p>
+                  <h2 class="modal-title fs-5" id="client-feedback-title">Submit Feedback</h2>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close feedback form"></button>
+              </div>
+              <form data-feedback-form
+                    data-feedback-url="<?= htmlspecialchars(postActionUrl('modules/feedback/submit_feedback.php'), ENT_QUOTES) ?>"
+                    data-feedback-success-url="ticket.php?msg=feedback_submitted">
+                <?= csrfInput() ?>
+                <input type="hidden" name="ticket_id" value="<?= (int) $ticket['ticket_id'] ?>">
+                <div class="modal-body">
+                  <p id="client-feedback-description" class="text-body-secondary">
+                    Rate your experience for ticket <?= htmlspecialchars($ticket['ticket_number']) ?>.
+                    One response is allowed for this completed service.
+                  </p>
+                  <div class="mb-3">
+                    <label class="form-label" for="feedback-rating">Rating</label>
+                    <select id="feedback-rating" class="form-select" name="rating" required>
+                      <option value="">Choose a rating</option>
+                      <option value="5">5 - Excellent</option>
+                      <option value="4">4 - Good</option>
+                      <option value="3">3 - Okay</option>
+                      <option value="2">2 - Poor</option>
+                      <option value="1">1 - Very poor</option>
+                    </select>
+                    <div class="field-error" data-field-error-for="rating" aria-live="polite"></div>
+                  </div>
+                  <div>
+                    <label class="form-label" for="feedback-comment">Comment <span class="text-body-secondary">(optional)</span></label>
+                    <textarea id="feedback-comment" class="form-control" name="comment" rows="4"
+                              maxlength="2000" placeholder="Tell us what went well or what we can improve."></textarea>
+                  </div>
+                  <div class="mt-3" data-feedback-result aria-live="polite"></div>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+                  <button class="btn btn-primary" type="submit" data-loading-text="Sending...">Send Feedback</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      <?php endif; ?>
     <?php endif; ?>
-  </main>
-  <script src="<?= assetUrl('assets/js/main.js') ?>"></script>
-  <script src="<?= assetUrl('assets/js/client.js') ?>"></script>
-</body>
-</html>
+<?php include __DIR__ . '/includes/footer.php'; ?>

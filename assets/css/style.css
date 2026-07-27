@@ -381,7 +381,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .auth-form-polished {
-  gap: 5px;
+  gap: 8px;
 }
 
 .auth-grid {
@@ -418,6 +418,10 @@ h1, h2, h3, h4, h5, h6,
   font-family: 'Poppins', sans-serif;
   font-size: 14px;
   font-weight: 600;
+}
+
+.auth-form-polished .auth-label {
+  margin-bottom: 8px;
 }
 
 .auth-label span {
@@ -529,6 +533,15 @@ h1, h2, h3, h4, h5, h6,
 .auth-form-stable-errors .field-error:empty {
   display: block;
   visibility: hidden;
+}
+
+.auth-form-compact-feedback {
+  gap: 0;
+}
+
+.auth-form-compact-feedback.auth-form-stable-errors .field-error {
+  min-height: 14px;
+  margin-top: 2px;
 }
 
 .auth-form-polished .field-error {
@@ -1672,7 +1685,15 @@ body.modal-open {
   }
 
   .auth-form-polished {
-    gap: 5px;
+    gap: 8px;
+  }
+
+  .auth-form-compact-feedback {
+    gap: 0;
+  }
+
+  .auth-form-compact-feedback .auth-grid-2 {
+    gap: 0;
   }
 
   .auth-grid-3,
@@ -2239,6 +2260,23 @@ body.modal-open {
   min-height: 44px;
 }
 
+.ticket-print-button.btn-primary {
+  border-color: var(--admin-primary, #0D6EFD);
+  background: var(--admin-primary, #0D6EFD);
+  color: #FFFFFF;
+}
+
+.ticket-print-button.btn-primary:hover,
+.ticket-print-button.btn-primary:focus-visible {
+  border-color: var(--admin-primary-dark, #0B5ED7);
+  background: var(--admin-primary-dark, #0B5ED7);
+  color: #FFFFFF;
+}
+
+.ticket-print-public-url {
+  display: none;
+}
+
 .ticket-side-panel {
   display: grid;
   gap: 18px;
@@ -2609,34 +2647,6 @@ body.modal-open {
 button[disabled] {
   cursor: not-allowed;
   opacity: 0.52;
-}
-
-.auth-helper {
-  margin: 6px 0 0;
-  color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.auth-admin-note {
-  max-width: 390px;
-  margin: 16px auto 0;
-  border-top: 1px solid #EEF1F4;
-  color: var(--text-muted);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 8px;
-  padding-top: 14px;
-  font-size: 13px;
-  line-height: 1.5;
-  text-align: left;
-}
-
-.auth-admin-note i {
-  color: var(--success);
-  font-size: 16px;
-  line-height: 1.4;
 }
 
 .auth-form-meta a,
@@ -4163,5 +4173,727 @@ html[data-staff-theme="dark"] .staff-page {
     display: block;
   }
 
+  .ticket-print-public-url {
+    display: block !important;
+    margin: 12pt 0 0;
+    color: #1F252D !important;
+    font-size: 9pt;
+    overflow-wrap: anywhere;
+  }
 
+}
+/* --------------------------------------------------------------------------
+   Shared authenticated role shell
+   -------------------------------------------------------------------------- */
+
+body.app-page {
+  min-width: 0;
+  background: var(--admin-panel-bg);
+  color: var(--admin-text);
+}
+
+body.app-page .app-brand {
+  text-decoration: none;
+}
+
+body.app-page .app-topbar {
+  justify-content: flex-start;
+}
+
+body.app-page .app-search-collapse {
+  min-width: 0;
+  flex: 1 1 440px;
+}
+
+body.app-page .app-topbar-actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+body.app-page .app-main {
+  min-height: calc(100dvh - 88px);
+}
+
+body.app-page .app-page-header {
+  margin-bottom: 18px;
+}
+
+/* Staff workflow surfaces follow the shared authenticated theme tokens. */
+body.app-staff-page {
+  --bg-page: var(--admin-bg);
+  --text-primary: var(--admin-text);
+  --text-strong: var(--admin-text);
+  --text-muted: var(--admin-muted);
+  --surface: var(--admin-surface);
+  --surface-soft: var(--admin-soft-bg);
+  --accent: var(--admin-primary);
+  --accent-hover: var(--admin-primary-dark);
+  --accent-soft: var(--admin-primary-soft);
+  --success: var(--admin-success);
+  --warning: var(--admin-warning);
+  --danger: var(--admin-danger);
+  --border: var(--admin-border);
+  --border-strong: var(--admin-button-border);
+  --focus-ring: var(--admin-focus-ring);
+  --shadow-card: var(--admin-shadow);
+  --staff-bg: var(--admin-bg);
+  --staff-surface: var(--admin-surface);
+  --staff-surface-soft: var(--admin-soft-bg);
+  --staff-text: var(--admin-text);
+  --staff-muted: var(--admin-muted);
+  --staff-border: var(--admin-border);
+  --staff-border-strong: var(--admin-button-border);
+  --staff-brand: var(--admin-primary-dark);
+  --staff-brand-soft: var(--admin-primary-soft);
+  --staff-success: var(--admin-success);
+  --staff-success-soft: color-mix(in srgb, var(--admin-success) 12%, var(--admin-surface));
+  --staff-danger: var(--admin-danger);
+  --staff-warning: var(--admin-warning);
+  --staff-shadow: var(--admin-shadow);
+  --staff-shadow-lift: var(--admin-shadow);
+  --staff-focus: var(--admin-focus-ring);
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+body.app-staff-page .staff-workspace,
+body.app-staff-page .staff-main {
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+body.app-staff-page .staff-overview-card,
+body.app-staff-page .staff-current-card,
+body.app-staff-page .staff-window-hero,
+body.app-staff-page .staff-serving-card,
+body.app-staff-page .staff-window-card,
+body.app-staff-page .staff-queue-card,
+body.app-staff-page .staff-activity-card,
+body.app-staff-page .staff-empty-state {
+  border-color: var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  box-shadow: var(--admin-shadow);
+}
+
+body.app-staff-page .staff-current-ticket,
+body.app-staff-page .staff-empty-inline,
+body.app-staff-page .staff-queue-position,
+body.app-staff-page .staff-timeline-content {
+  border-color: var(--admin-border);
+  background: var(--admin-soft-bg);
+  color: var(--admin-text);
+}
+
+body.app-staff-page .staff-queue-row {
+  border-color: var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+}
+
+body.app-staff-page .staff-queue-row:nth-child(odd) {
+  background: var(--admin-soft-bg);
+}
+
+body.app-staff-page .staff-workspace-header h1,
+body.app-staff-page .staff-overview-card strong,
+body.app-staff-page .staff-section-heading h2,
+body.app-staff-page .staff-section-heading-flat h2,
+body.app-staff-page .staff-current-ticket .staff-ticket-number,
+body.app-staff-page .staff-ticket-meta dd,
+body.app-staff-page .staff-empty-inline h3,
+body.app-staff-page .staff-empty-state h2,
+body.app-staff-page .staff-window-summary h1,
+body.app-staff-page .staff-window-identity h2,
+body.app-staff-page .staff-serving-ticket,
+body.app-staff-page .staff-empty-serving-title,
+body.app-staff-page .staff-serving-client strong,
+body.app-staff-page .staff-queue-ticket strong,
+body.app-staff-page .staff-timeline-content h3 {
+  color: var(--admin-text);
+}
+
+body.app-staff-page .staff-workspace-header > div:first-child > p:last-child,
+body.app-staff-page .staff-overview-card small,
+body.app-staff-page .staff-current-ticket > p,
+body.app-staff-page .staff-ticket-meta dt,
+body.app-staff-page .staff-empty-inline p,
+body.app-staff-page .staff-empty-state p,
+body.app-staff-page .staff-window-summary p,
+body.app-staff-page .staff-window-identity p,
+body.app-staff-page .staff-empty-serving-copy,
+body.app-staff-page .staff-serving-client span,
+body.app-staff-page .staff-wait-copy,
+body.app-staff-page .staff-queue-ticket small,
+body.app-staff-page .staff-queue-classification > span:not(.badge-priority),
+body.app-staff-page .staff-queue-row time,
+body.app-staff-page .staff-timeline-content time,
+body.app-staff-page .staff-timeline-content p {
+  color: var(--admin-muted);
+}
+
+body.app-staff-page .staff-window-controls {
+  border-color: var(--admin-border);
+}
+
+body.app-staff-page .staff-window-notice,
+body.app-staff-page .staff-action-status.is-info {
+  border-color: color-mix(in srgb, var(--admin-primary) 42%, var(--admin-border));
+  background: color-mix(in srgb, var(--admin-primary) 10%, var(--admin-surface));
+  color: var(--admin-text);
+}
+
+body.app-staff-page .staff-window-notice.is-warning,
+body.app-staff-page .staff-action-status.is-warning {
+  border-color: color-mix(in srgb, var(--admin-warning) 42%, var(--admin-border));
+  background: color-mix(in srgb, var(--admin-warning) 10%, var(--admin-surface));
+  color: var(--admin-text);
+}
+
+body.app-staff-page .staff-action-status.is-success {
+  border-color: color-mix(in srgb, var(--admin-success) 42%, var(--admin-border));
+  background: color-mix(in srgb, var(--admin-success) 10%, var(--admin-surface));
+  color: var(--admin-text);
+}
+
+body.app-staff-page .staff-action-status.is-danger {
+  border-color: color-mix(in srgb, var(--admin-danger) 42%, var(--admin-border));
+  background: color-mix(in srgb, var(--admin-danger) 10%, var(--admin-surface));
+  color: var(--admin-text);
+}
+
+body.app-staff-page .staff-window-notice > i,
+body.app-staff-page .staff-window-notice a {
+  color: var(--admin-primary-dark);
+}
+
+body.app-staff-page .staff-window-notice.is-warning > i,
+body.app-staff-page .staff-window-notice.is-warning a {
+  color: var(--admin-warning);
+}
+
+body.app-staff-page .staff-timeline-icon {
+  border-color: var(--admin-surface);
+  background: var(--admin-primary-soft);
+  color: var(--admin-primary-dark);
+}
+
+/* Client workflow surfaces follow the shared authenticated theme tokens. */
+body.app-client-page {
+  --bg-page: var(--admin-bg);
+  --text-primary: var(--admin-text);
+  --text-strong: var(--admin-text);
+  --text-muted: var(--admin-muted);
+  --surface: var(--admin-surface);
+  --surface-soft: var(--admin-soft-bg);
+  --accent: var(--admin-primary);
+  --accent-hover: var(--admin-primary-dark);
+  --accent-soft: var(--admin-primary-soft);
+  --success: var(--admin-success);
+  --warning: var(--admin-warning);
+  --danger: var(--admin-danger);
+  --border: var(--admin-border);
+  --border-strong: var(--admin-button-border);
+  --focus-ring: var(--admin-focus-ring);
+  --shadow-card: var(--admin-shadow);
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+body.app-client-page .client-panel,
+body.app-client-page .ticket-sheet,
+body.app-client-page .queue-status-section,
+body.app-client-page .empty-ticket-panel,
+body.app-client-page .service-card,
+body.app-client-page .digital-ticket-card,
+body.app-client-page .ticket-update-card,
+body.app-client-page .public-ticket-card,
+body.app-client-page .card {
+  border-color: var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  box-shadow: var(--admin-shadow);
+}
+
+body.app-client-page [data-queue-status-root],
+body.app-client-page .queue-status-hero,
+body.app-client-page .queue-status-section {
+  color: var(--admin-text);
+}
+
+body.app-client-page .classification-card,
+body.app-client-page .queue-prediction-card dl > div,
+body.app-client-page .queue-metrics > div,
+body.app-client-page .ticket-info-item,
+body.app-client-page .ticket-qr-panel,
+body.app-client-page .ticket-estimate-card,
+body.app-client-page .ticket-update-row,
+body.app-client-page .window-status-card,
+body.app-client-page .next-ticket-row,
+body.app-client-page .queue-empty-state,
+body.app-client-page .queue-current-metrics > div,
+body.app-client-page .active-ticket-qr {
+  border-color: var(--admin-border);
+  background: var(--admin-soft-bg);
+  color: var(--admin-text);
+}
+
+body.app-client-page .queue-prediction-card,
+body.app-client-page .wait-estimate,
+body.app-client-page .status-refresh,
+body.app-client-page .service-card:has(input:checked),
+body.app-client-page .service-card.is-selected,
+body.app-client-page .client-classification-card:has(input:checked),
+body.app-client-page .ticket-wait-item {
+  border-color: color-mix(in srgb, var(--admin-primary) 45%, var(--admin-border));
+  background: var(--admin-soft-hover);
+  color: var(--admin-text);
+}
+
+body.app-client-page .service-card.is-disabled {
+  border-color: var(--admin-border);
+  background: color-mix(in srgb, var(--admin-soft-bg) 78%, var(--admin-bg));
+  color: var(--admin-muted);
+}
+
+body.app-client-page .client-classification-card .classification-icon,
+body.app-client-page .service-card-icon,
+body.app-client-page .prediction-icon,
+body.app-client-page .ticket-estimate-card > span,
+body.app-client-page .ticket-update-row > span,
+body.app-client-page .next-ticket-row > span {
+  background: var(--admin-primary-soft);
+  color: var(--admin-primary-dark);
+}
+
+body.app-client-page .panel-heading h2,
+body.app-client-page .active-ticket-panel h2,
+body.app-client-page .ticket-identity h1,
+body.app-client-page .queue-status-hero h1,
+body.app-client-page .client-classification legend,
+body.app-client-page .service-card-group legend,
+body.app-client-page .service-card-content strong,
+body.app-client-page .classification-card strong,
+body.app-client-page .queue-prediction-card dd,
+body.app-client-page .digital-ticket-hero h1,
+body.app-client-page .digital-ticket-number,
+body.app-client-page .ticket-progress-block strong,
+body.app-client-page .ticket-update-row strong,
+body.app-client-page .queue-current-strip h2,
+body.app-client-page .queue-current-metrics strong,
+body.app-client-page .window-ticket,
+body.app-client-page .empty-ticket-panel h1,
+body.app-client-page .ticket-qr-panel strong,
+body.app-client-page .form-label {
+  color: var(--admin-text);
+}
+
+body.app-client-page .panel-note,
+body.app-client-page .ticket-reference,
+body.app-client-page .queue-status-hero p,
+body.app-client-page .service-card-content small,
+body.app-client-page .classification-card small,
+body.app-client-page .queue-prediction-card p,
+body.app-client-page .queue-prediction-card dt,
+body.app-client-page .digital-ticket-hero p,
+body.app-client-page .ticket-service-name,
+body.app-client-page .digital-ticket-reference,
+body.app-client-page .ticket-progress-block span:first-child,
+body.app-client-page .ticket-meta-row,
+body.app-client-page .ticket-update-card p,
+body.app-client-page .ticket-update-row small,
+body.app-client-page .queue-current-strip > div:first-child > span,
+body.app-client-page .queue-current-metrics span,
+body.app-client-page .window-status-card-head,
+body.app-client-page .window-status-card p,
+body.app-client-page .next-ticket-row small,
+body.app-client-page .queue-empty-state,
+body.app-client-page .empty-ticket-panel p,
+body.app-client-page .ticket-qr-panel span {
+  color: var(--admin-muted);
+}
+
+body.app-client-page .form-control,
+body.app-client-page .form-select {
+  border-color: var(--admin-button-border);
+  background-color: var(--admin-button-bg);
+  color: var(--admin-text);
+}
+
+body.app-client-page .form-control::placeholder {
+  color: var(--admin-muted);
+}
+
+body.app-client-page .form-control:focus,
+body.app-client-page .form-select:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px var(--admin-focus-ring);
+}
+
+body.app-client-page .digital-ticket-qr,
+body.app-client-page .digital-ticket-qr img,
+body.app-client-page .digital-ticket-qr .qr-placeholder,
+body.app-client-page .ticket-qr-panel img,
+body.app-client-page .qr-placeholder {
+  background: #FFFFFF;
+  color-scheme: light;
+}
+
+body.app-client-page .ticket-progress-track {
+  background: var(--admin-border);
+}
+
+body.app-client-page .client-skeleton {
+  background: var(--admin-soft-hover);
+}
+
+body.app-client-page .window-state-closed {
+  background: var(--admin-soft-hover);
+  color: var(--admin-muted);
+}
+
+body.app-client-page .ticket-print-button.btn-primary {
+  border-color: var(--admin-primary);
+  background: var(--admin-primary);
+  color: #FFFFFF;
+}
+
+body.app-client-page .ticket-print-button.btn-primary:hover,
+body.app-client-page .ticket-print-button.btn-primary:focus-visible {
+  border-color: var(--admin-primary-dark);
+  background: var(--admin-primary-dark);
+  color: #FFFFFF;
+}
+
+body.app-client-page .ticket-qr-instruction {
+  background: var(--admin-soft-bg);
+  color: var(--admin-muted);
+}
+
+.app-feedback-card {
+  width: 100%;
+  max-width: 620px;
+}
+
+.app-toast-container {
+  z-index: 1090;
+}
+
+.app-action-toast {
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  box-shadow: var(--admin-shadow);
+}
+
+.app-action-toast .toast-body {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-action-toast svg {
+  width: 20px;
+  height: 20px;
+  color: var(--admin-primary);
+}
+
+.app-action-toast.is-success svg {
+  color: var(--admin-success);
+}
+
+.app-action-toast.is-danger svg {
+  color: var(--admin-danger);
+}
+
+.app-action-toast .btn-close {
+  filter: none;
+}
+
+html[data-app-theme="dark"] .app-action-toast .btn-close {
+  filter: invert(1) grayscale(100%) brightness(180%);
+}
+
+.app-notification-center {
+  flex: 0 0 auto;
+}
+
+.app-notification-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 2px solid var(--admin-topbar-solid-bg);
+  border-radius: 999px;
+  background: var(--admin-danger);
+  color: var(--admin-on-danger, #fff);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.app-notification-menu {
+  width: min(380px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  box-shadow: var(--admin-user-dropdown-shadow);
+  padding: 0;
+}
+
+.app-notification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--admin-border);
+  padding: 14px 16px;
+}
+
+.app-notification-header div {
+  display: grid;
+  gap: 2px;
+}
+
+.app-notification-header small,
+.app-notification-item small,
+.app-notification-state {
+  color: var(--admin-muted);
+}
+
+.app-notification-list {
+  max-height: min(420px, 58vh);
+  overflow-y: auto;
+}
+
+.app-notification-state {
+  margin: 0;
+  padding: 28px 18px;
+  text-align: center;
+}
+
+.app-notification-item {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+  border-bottom: 1px solid var(--admin-border);
+  padding: 13px 16px;
+}
+
+.app-notification-item:last-child {
+  border-bottom: 0;
+}
+
+.app-notification-item.is-unread {
+  background: var(--admin-soft-bg);
+}
+
+.app-notification-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--admin-primary-soft);
+  color: var(--admin-primary);
+}
+
+.app-notification-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.app-notification-copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.app-notification-copy p {
+  margin: 0;
+  color: var(--admin-text);
+  line-height: 1.45;
+}
+
+.app-notification-retry {
+  min-height: 44px;
+  color: var(--admin-primary);
+}
+
+.app-confirm-modal .modal-content,
+.app-feedback-modal .modal-content {
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  box-shadow: var(--admin-user-dropdown-shadow);
+}
+
+.app-confirm-modal .modal-header,
+.app-confirm-modal .modal-footer,
+.app-feedback-modal .modal-header,
+.app-feedback-modal .modal-footer {
+  border-color: var(--admin-border);
+}
+
+.app-confirm-modal .modal-body p {
+  margin: 0;
+  color: var(--admin-muted);
+  line-height: 1.65;
+}
+
+.app-confirm-modal .admin-action-button.is-warning {
+  border-color: var(--admin-warning);
+  background: var(--admin-warning);
+  color: var(--admin-on-warning, #111827);
+}
+
+.app-confirm-modal .admin-action-button.is-danger {
+  color: var(--admin-on-danger, #fff);
+}
+
+html[data-app-theme="dark"] .app-confirm-modal .btn-close {
+  filter: invert(1) grayscale(100%) brightness(180%);
+}
+
+.app-feedback-modal .modal-body > p {
+  line-height: 1.6;
+}
+
+.app-feedback-modal .modal-footer .btn {
+  min-width: 120px;
+  min-height: 44px;
+}
+
+html[data-app-theme="dark"] .app-feedback-modal .btn-close {
+  filter: invert(1) grayscale(100%) brightness(180%);
+}
+
+@media (max-width: 768px) {
+  body.app-page .app-topbar {
+    min-height: 76px;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  body.app-page .app-menu-toggle,
+  body.app-page .app-search-toggle,
+  body.app-page .app-user-button,
+  body.app-page .app-notification-center > button {
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  body.app-page .app-search-collapse {
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    flex: 1 1 auto;
+    margin: 0;
+  }
+
+  body.app-page .app-search-collapse:not(.show):not(.collapsing) {
+    display: none;
+  }
+
+  body.app-page .app-search-collapse.show,
+  body.app-page .app-search-collapse.collapsing {
+    display: block;
+  }
+
+  body.app-page .app-header-search {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body.app-page .app-topbar-actions {
+    gap: 6px;
+  }
+
+  body.app-page .app-topbar.is-search-open .app-notification-center {
+    display: none;
+  }
+
+  body.app-page .app-user-menu {
+    display: block !important;
+  }
+
+  body.app-page .app-user-copy,
+  body.app-page .app-user-button > svg {
+    display: none;
+  }
+
+  body.app-page .app-user-button {
+    padding: 2px;
+  }
+
+  body.app-page .app-user-avatar {
+    width: 38px;
+    height: 38px;
+  }
+
+  body.app-page .app-main {
+    min-height: calc(100dvh - 76px);
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+
+  body.app-page .app-search-results {
+    position: fixed;
+    top: 76px;
+    right: 16px;
+    left: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  body.app-page .app-topbar {
+    padding-inline: 12px;
+  }
+
+  body.app-page .app-topbar.is-search-open .app-menu-toggle {
+    display: none;
+  }
+
+  body.app-page .app-topbar.is-search-open .app-search-collapse {
+    flex: 1 1 0;
+  }
+
+  body.app-page .app-header-search .input-group,
+  body.app-page .app-header-search .form-control {
+    min-width: 0;
+  }
+
+  body.app-page .app-header-search .form-control {
+    text-overflow: ellipsis;
+  }
+
+  body.app-page .app-main {
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+
+  body.app-page .app-search-collapse .input-group-text {
+    padding-right: 6px;
+    padding-left: 10px;
+  }
+
+  body.app-page .app-search-collapse .form-control {
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.app-page .app-search-collapse.collapsing {
+    transition: none;
+  }
 }

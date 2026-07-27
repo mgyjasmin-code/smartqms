@@ -37,7 +37,7 @@ $exportUrl = postActionUrl('modules/reports/export_csv.php')
     . '&to=' . urlencode($range['to']);
 include __DIR__ . '/includes/header.php';
 ?>
-<section class="admin-report-shell">
+<section class="admin-report-shell container-fluid" aria-labelledby="active-report-title">
   <?php if ($reportError): ?>
     <div class="admin-alert is-danger" role="alert">
       <i data-lucide="circle-alert" aria-hidden="true"></i>
@@ -51,12 +51,12 @@ include __DIR__ . '/includes/header.php';
     </div>
   <?php endif; ?>
 
-  <div class="admin-report-toolbar">
+  <header class="admin-report-toolbar">
     <div class="admin-report-title">
-      <h2><?= htmlspecialchars($report['title']) ?></h2>
+      <h2 id="active-report-title"><?= htmlspecialchars($report['title']) ?></h2>
       <p><?= htmlspecialchars($report['description']) ?></p>
     </div>
-    <form class="admin-report-actions" method="GET">
+    <form class="admin-report-actions" method="GET" aria-label="<?= htmlspecialchars($report['title'], ENT_QUOTES) ?> report controls">
       <input type="hidden" name="report" value="<?= htmlspecialchars($activeReport, ENT_QUOTES) ?>">
       <label class="admin-report-date-field" for="report-from">
         <span>From</span>
@@ -79,9 +79,10 @@ include __DIR__ . '/includes/header.php';
         <span>Print</span>
       </button>
     </form>
-  </div>
+  </header>
 
-  <div class="admin-report-metrics">
+  <div class="admin-report-content">
+  <div class="admin-report-metrics" aria-label="<?= htmlspecialchars($report['title'], ENT_QUOTES) ?> key metrics">
     <?php foreach ($report['metrics'] as $metric): ?>
       <article class="admin-metric-card">
         <span><?= htmlspecialchars($metric['label']) ?></span>
@@ -93,15 +94,23 @@ include __DIR__ . '/includes/header.php';
     <?php endforeach; ?>
   </div>
 
-  <article class="admin-card">
+  <article class="admin-card admin-report-chart-card">
     <header class="admin-report-table-title">
       <i data-lucide="<?= htmlspecialchars($definitions[$activeReport]['icon']) ?>" aria-hidden="true"></i>
       <h2><?= htmlspecialchars($report['title']) ?> Trend</h2>
     </header>
     <div class="admin-chart-body">
       <?php if (!empty($report['chart']['labels']) && !empty($report['chart']['datasets'])): ?>
-        <div class="admin-chart-canvas-wrap">
-          <canvas data-admin-chart="admin-report-chart-data" role="img" aria-label="<?= htmlspecialchars($report['chart']['summary'] ?: $report['title'] . ' chart') ?> Exact values are available in the report table."></canvas>
+        <div
+          class="admin-chart-canvas-wrap"
+          role="region"
+          aria-label="<?= htmlspecialchars($report['title'], ENT_QUOTES) ?> chart; scroll horizontally to view all data points"
+          tabindex="0"
+          data-admin-chart-scroll
+        >
+          <div class="admin-chart-scroll-content" data-admin-chart-scroll-content>
+            <canvas data-admin-chart="admin-report-chart-data" role="img" aria-label="<?= htmlspecialchars($report['chart']['summary'] ?: $report['title'] . ' chart') ?> Exact values are available in the report table."></canvas>
+          </div>
         </div>
         <script type="application/json" id="admin-report-chart-data"><?= json_encode($report['chart'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
       <?php else: ?>
@@ -137,7 +146,7 @@ include __DIR__ . '/includes/header.php';
       <i data-lucide="table" aria-hidden="true"></i>
       <h2>Report Table</h2>
     </header>
-    <div class="admin-table-wrap">
+    <div class="admin-table-wrap" role="region" aria-label="<?= htmlspecialchars($report['title'], ENT_QUOTES) ?> data table; scroll horizontally to view all columns" tabindex="0">
       <table class="admin-data-table">
         <thead>
           <tr>
@@ -164,6 +173,7 @@ include __DIR__ . '/includes/header.php';
       </table>
     </div>
   </article>
+  </div>
 </section>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

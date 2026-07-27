@@ -43,11 +43,6 @@ $reportItems = [
       <i data-lucide="panel-top" aria-hidden="true"></i>
       <span>Service Windows</span>
     </a>
-    <a class="admin-nav-link<?= $activePage === 'activity_logs' ? ' is-active' : '' ?>" href="activity_log.php"<?= $activePage === 'activity_logs' ? ' aria-current="page"' : '' ?>>
-      <i data-lucide="activity" aria-hidden="true"></i>
-      <span>Activity Logs</span>
-    </a>
-
     <button class="admin-nav-link admin-nav-toggle<?= $reportsOpen ? ' is-active' : '' ?>" type="button" data-admin-submenu-toggle aria-expanded="<?= $reportsOpen ? 'true' : 'false' ?>" aria-controls="admin-report-submenu">
       <i data-lucide="file-text" aria-hidden="true"></i>
       <span>Reports</span>
@@ -62,9 +57,5 @@ $reportItems = [
       <?php endforeach; ?>
     </div>
 
-    <a class="admin-nav-link<?= $activePage === 'settings' ? ' is-active' : '' ?>" href="settings.php"<?= $activePage === 'settings' ? ' aria-current="page"' : '' ?>>
-      <i data-lucide="settings" aria-hidden="true"></i>
-      <span>Settings</span>
-    </a>
   </nav>
 </aside>

@@ -47,7 +47,7 @@ if ($loginFormError !== '') {
           <div class="auth-alert auth-alert-error" role="alert"><?= htmlspecialchars($feedback['form_error']) ?></div>
         <?php endif; ?>
 
-        <form action="modules/auth/login.php" method="POST" class="auth-form auth-form-stable-errors auth-form-polished js-auth-form" novalidate>
+        <form action="modules/auth/login.php" method="POST" class="auth-form auth-form-compact-feedback auth-form-stable-errors auth-form-polished js-auth-form" novalidate>
           <?= csrfInput() ?>
           <div class="form-row-single">
             <label class="auth-label" for="login_id">Email Address</label>

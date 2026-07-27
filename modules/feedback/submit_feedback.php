@@ -7,6 +7,7 @@
  */
 require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once __DIR__ . '/feedback_service.php';
 requireLogin(ROLE_CLIENT);
 header('Content-Type: application/json');
 
@@ -30,24 +31,21 @@ if (!isPositiveIdentifier($ticketId)) {
     jsonResponse(false, ['error' => 'Ticket is required before submitting feedback.'], 422);
 }
 
-$stmt = $conn->prepare("SELECT * FROM queue_tickets WHERE ticket_id=? AND user_id=? AND status='completed' LIMIT 1");
-$stmt->bind_param('ii', $ticketId, $_SESSION['user_id']);
-$stmt->execute();
-$ticket = $stmt->get_result()->fetch_assoc();
-if (!$ticket) {
+$result = submitFeedbackForClient(
+    $conn,
+    (int) $_SESSION['user_id'],
+    $ticketId,
+    $rating,
+    $comment
+);
+
+if ($result['status'] === 'ticket_not_found') {
     jsonResponse(false, ['error' => 'Completed ticket not found for this account.'], 404);
 }
 
-$exists = $conn->prepare("SELECT feedback_id FROM feedback WHERE ticket_id=?");
-$exists->bind_param('i', $ticketId);
-$exists->execute();
-if ($exists->get_result()->fetch_assoc()) {
+if ($result['status'] === 'already_submitted') {
     jsonResponse(false, ['error' => 'Feedback was already submitted for this ticket.'], 409);
 }
 
-$insert = $conn->prepare("INSERT INTO feedback (ticket_id, user_id, window_id, service_id, rating, comment) VALUES (?, ?, ?, ?, ?, NULLIF(?, ''))");
-$insert->bind_param('iiiiis', $ticketId, $_SESSION['user_id'], $ticket['window_id'], $ticket['service_id'], $rating, $comment);
-$insert->execute();
-logActivity($conn, 'feedback_submitted', 'Rating: ' . $rating, $ticketId);
-jsonResponse(true);
+jsonResponse(true, ['feedback_id' => $result['feedback_id'] ?? null]);
 ?>

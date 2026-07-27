@@ -13,10 +13,26 @@ $counts = [
     'voided_today' => (int) (reportFetchOne($conn, "SELECT COUNT(*) AS c FROM queue_tickets WHERE status IN ('voided','skipped') AND DATE(COALESCE(voided_at, issued_at))=CURDATE()")['c'] ?? 0),
 ];
 $avgWait = reportFetchOne($conn, "
-    SELECT ROUND(AVG(actual_wait_min), 2) AS avg_wait
+    SELECT ROUND(
+               AVG(
+                   TIMESTAMPDIFF(
+                       SECOND,
+                       qt.issued_at,
+                       COALESCE(qt.served_at, qt.called_at, qt.completed_at)
+                   ) / 60
+               ),
+               2
+           ) AS avg_wait
     FROM wait_time_logs wl
     JOIN queue_tickets qt ON qt.ticket_id = wl.ticket_id
-    WHERE qt.completed_at IS NOT NULL AND DATE(qt.completed_at)=CURDATE()
+    WHERE qt.status = 'completed'
+      AND qt.completed_at IS NOT NULL
+      AND TIMESTAMPDIFF(
+              SECOND,
+              qt.issued_at,
+              COALESCE(qt.served_at, qt.called_at, qt.completed_at)
+          ) BETWEEN 0 AND 28800
+      AND DATE(qt.completed_at)=CURDATE()
 ")['avg_wait'] ?? null;
 
 $hourRows = reportFetchAll($conn, "
@@ -35,16 +51,30 @@ foreach ($hourRows as $row) {
 }
 
 $waitRows = reportFetchAll($conn, "
-    SELECT DATE(qt.completed_at) AS report_date,
-           ROUND(AVG(wl.predicted_wait_min), 2) AS predicted_wait_min,
-           ROUND(AVG(wl.actual_wait_min), 2) AS actual_wait_min,
-           ROUND(AVG(ABS(wl.predicted_wait_min - wl.actual_wait_min)), 2) AS mae
-    FROM wait_time_logs wl
-    JOIN queue_tickets qt ON qt.ticket_id = wl.ticket_id
-    WHERE qt.completed_at IS NOT NULL
-      AND wl.predicted_wait_min IS NOT NULL
-      AND wl.actual_wait_min IS NOT NULL
-      AND DATE(qt.completed_at) BETWEEN ? AND ?
+    SELECT observed.report_date,
+           ROUND(AVG(observed.predicted_wait_min), 2) AS predicted_wait_min,
+           ROUND(AVG(observed.actual_wait_min), 2) AS actual_wait_min,
+           ROUND(AVG(ABS(observed.predicted_wait_min - observed.actual_wait_min)), 2) AS mae
+    FROM (
+        SELECT DATE(qt.completed_at) AS report_date,
+               wl.predicted_wait_min,
+               TIMESTAMPDIFF(
+                   SECOND,
+                   qt.issued_at,
+                   COALESCE(qt.served_at, qt.called_at, qt.completed_at)
+               ) / 60 AS actual_wait_min
+        FROM wait_time_logs wl
+        JOIN queue_tickets qt ON qt.ticket_id = wl.ticket_id
+        WHERE qt.status = 'completed'
+          AND qt.completed_at IS NOT NULL
+          AND wl.predicted_wait_min BETWEEN 0 AND 480
+          AND TIMESTAMPDIFF(
+                  SECOND,
+                  qt.issued_at,
+                  COALESCE(qt.served_at, qt.called_at, qt.completed_at)
+              ) BETWEEN 0 AND 28800
+          AND DATE(qt.completed_at) BETWEEN ? AND ?
+    ) observed
     GROUP BY report_date
     ORDER BY report_date
 ", 'ss', [$sevenDaysAgo, $today]);

@@ -1,51 +1,9 @@
 (function () {
-  const themeStorageKey = 'smartqms-admin-theme';
 
   function refreshIcons() {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
       window.lucide.createIcons();
     }
-  }
-
-  function getCurrentTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-admin-theme');
-    return currentTheme === 'dark' ? 'dark' : 'light';
-  }
-
-  function storeTheme(theme) {
-    try {
-      window.localStorage.setItem(themeStorageKey, theme);
-    } catch (error) {
-      return false;
-    }
-
-    return true;
-  }
-
-  function setTheme(theme, shouldStore) {
-    const nextTheme = theme === 'dark' ? 'dark' : 'light';
-    const toggles = document.querySelectorAll('[data-admin-theme-toggle]');
-    const darkModeActive = nextTheme === 'dark';
-
-    document.documentElement.setAttribute('data-admin-theme', nextTheme);
-
-    if (shouldStore) {
-      storeTheme(nextTheme);
-    }
-
-    toggles.forEach((toggle) => {
-      const icon = toggle.querySelector('[data-admin-theme-icon]');
-
-      toggle.setAttribute('aria-pressed', String(darkModeActive));
-      toggle.setAttribute('aria-label', darkModeActive ? 'Switch to light mode' : 'Switch to dark mode');
-
-      if (icon) {
-        icon.setAttribute('data-lucide', darkModeActive ? 'sun' : 'moon');
-      }
-    });
-
-    refreshIcons();
-    if (shouldStore && document.readyState !== 'loading') initAdminCharts();
   }
 
   const activeCharts = new Map();
@@ -80,6 +38,21 @@
       activeCharts.get(canvas)?.destroy();
       const palette = [primaryColor, successColor, '#BA7517', '#8B5CF6'];
       const type = chartData.type === 'line' ? 'line' : 'bar';
+      const scrollContent = canvas.closest('[data-admin-chart-scroll-content]');
+      const longestLabelLength = labels.reduce(
+        (length, label) => Math.max(length, String(label || '').length),
+        0
+      );
+      const basePointWidth = type === 'bar' ? 104 : 84;
+      const maximumPointWidth = type === 'bar' ? 180 : 150;
+      const pointWidth = Math.min(
+        maximumPointWidth,
+        Math.max(basePointWidth, Math.ceil(longestLabelLength * 6.8) + 32)
+      );
+      const minimumChartWidth = Math.max(320, (labels.length * pointWidth) + 96);
+
+      scrollContent?.style.setProperty('--admin-chart-min-width', `${minimumChartWidth}px`);
+
       const normalizedDatasets = datasets.map((dataset, index) => ({
         label: dataset.label || `Series ${index + 1}`,
         data: dataset.data || [],
@@ -119,80 +92,19 @@
     });
   }
 
-  function initThemeToggle() {
-    const toggles = document.querySelectorAll('[data-admin-theme-toggle]');
-    if (!toggles.length) return;
-
-    setTheme(getCurrentTheme(), false);
-
-    toggles.forEach((toggle) => {
-      toggle.addEventListener('click', () => {
-        setTheme(getCurrentTheme() === 'dark' ? 'light' : 'dark', true);
-      });
-    });
-  }
-
-  function initSidebar() {
-    const body = document.body;
-    const toggle = document.querySelector('[data-admin-sidebar-toggle]');
-    const closeTargets = document.querySelectorAll('[data-admin-sidebar-close]');
-    const drawerQuery = window.matchMedia('(max-width: 1024px)');
-
-    const setOpen = (isOpen) => {
-      body.classList.toggle('admin-sidebar-open', isOpen);
-
-      if (toggle) {
-        toggle.setAttribute('aria-expanded', String(isOpen));
-        toggle.setAttribute('aria-label', isOpen ? 'Close admin navigation' : 'Open admin navigation');
-      }
-    };
-
-    if (toggle) {
-      toggle.addEventListener('click', () => {
-        setOpen(!body.classList.contains('admin-sidebar-open'));
-      });
-    }
-
-    closeTargets.forEach((target) => {
-      target.addEventListener('click', () => setOpen(false));
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        setOpen(false);
-      }
-    });
-
-    const handleViewportChange = () => {
-      if (!drawerQuery.matches) {
-        setOpen(false);
-      }
-    };
-
-    if (typeof drawerQuery.addEventListener === 'function') {
-      drawerQuery.addEventListener('change', handleViewportChange);
-    } else if (typeof drawerQuery.addListener === 'function') {
-      drawerQuery.addListener(handleViewportChange);
-    }
-  }
-
-  function initReportMenu() {
-    document.querySelectorAll('[data-admin-submenu-toggle]').forEach((button) => {
-      const target = document.getElementById(button.getAttribute('aria-controls'));
-      if (!target) return;
-
-      button.addEventListener('click', () => {
-        const isOpen = button.getAttribute('aria-expanded') === 'true';
-        button.setAttribute('aria-expanded', String(!isOpen));
-        target.classList.toggle('is-open', !isOpen);
-        target.setAttribute('aria-hidden', String(isOpen));
-      });
-    });
-  }
-
   function initPrintButtons() {
     document.querySelectorAll('[data-admin-print]').forEach((button) => {
       button.addEventListener('click', () => window.print());
+    });
+  }
+
+  function initAdminToasts() {
+    if (!window.bootstrap?.Toast) return;
+
+    document.querySelectorAll('[data-admin-action-toast]').forEach((toastElement) => {
+      if (toastElement.dataset.adminToastInitialized === 'true') return;
+      toastElement.dataset.adminToastInitialized = 'true';
+      window.bootstrap.Toast.getOrCreateInstance(toastElement).show();
     });
   }
 
@@ -397,51 +309,6 @@
     });
   }
 
-  function initUserMenu() {
-    const root = document.querySelector('[data-admin-user-menu]');
-    if (!root) return;
-
-    const toggle = root.querySelector('[data-admin-user-menu-toggle]');
-    const panel = root.querySelector('[data-admin-user-menu-panel]');
-    if (!toggle || !panel) return;
-
-    const setOpen = (isOpen) => {
-      panel.hidden = !isOpen;
-      toggle.setAttribute('aria-expanded', String(isOpen));
-      root.classList.toggle('is-open', isOpen);
-    };
-
-    toggle.addEventListener('click', () => {
-      setOpen(panel.hidden);
-    });
-
-    root.addEventListener('click', (event) => {
-      if (event.target.closest('[data-admin-logout-open]')) {
-        setOpen(false);
-      }
-    });
-
-    const logoutModal = document.getElementById('adminLogoutModal');
-    if (logoutModal) {
-      logoutModal.addEventListener('hidden.bs.modal', () => {
-        toggle.focus();
-      });
-    }
-
-    document.addEventListener('click', (event) => {
-      if (!root.contains(event.target)) {
-        setOpen(false);
-      }
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && !panel.hidden) {
-        setOpen(false);
-        toggle.focus();
-      }
-    });
-  }
-
   function getPaginationItems(totalPages, currentPage) {
     if (totalPages <= 3) {
       return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -571,13 +438,10 @@
     if (!root || root.dataset.adminInitialized === 'true') return;
     root.dataset.adminInitialized = 'true';
     const initializers = [
-      initThemeToggle,
-      initSidebar,
-      initReportMenu,
       initPrintButtons,
+      initAdminToasts,
       initManagementModals,
       initAdminConfirmations,
-      initUserMenu,
       initPaginatedTables,
       initAdminCharts,
       refreshIcons,
@@ -586,5 +450,6 @@
     initializers.forEach((initialize) => initialize());
   }
 
+  document.addEventListener('smartqms:theme-changed', initAdminCharts);
   document.addEventListener('DOMContentLoaded', initAdminPage);
 })();

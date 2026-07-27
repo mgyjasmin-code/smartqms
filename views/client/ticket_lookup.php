@@ -36,7 +36,7 @@ $estimatedWait = $ticket && $ticket['predicted_wait_min'] !== null
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ticket Status -- SmartQMS</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="<?= assetUrl('vendor/twbs/bootstrap/dist/css/bootstrap.min.css') ?>" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
 </head>
@@ -83,8 +83,14 @@ $estimatedWait = $ticket && $ticket['predicted_wait_min'] !== null
         <p class="public-ticket-note">
           This page only shows ticket status details. It does not expose personal client information.
         </p>
+
+        <button class="btn btn-primary ticket-print-button" type="button" data-ticket-print>
+          <i class="bi bi-printer" aria-hidden="true"></i>
+          Print or Save Ticket
+        </button>
       <?php endif; ?>
     </section>
   </main>
+  <script src="<?= assetUrl('assets/js/client.js') ?>"></script>
 </body>
 </html>

@@ -8,37 +8,14 @@ $activePeopleAhead = $activeTicket ? peopleAhead($conn, $activeTicket) : 0;
 $activeWait = $activeTicket && $activeTicket['predicted_wait_min'] !== null
     ? '~' . rtrim(rtrim(number_format((float) $activeTicket['predicted_wait_min'], 1), '0'), '.') . ' minutes'
     : 'Calculating';
+$pageTitle = 'Queue Status';
+$pageHeading = 'Queue Status';
+$pageSubtitle = 'See active service windows and the next waiting tickets.';
+$activePage = 'queue';
+$showClientPageHeader = false;
+include __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <?= csrfMetaTag() ?>
-  <title>Queue Status -- SmartQMS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
-</head>
-<body class="client-page" data-client-root
-      data-client-notification-url="<?= htmlspecialchars(postActionUrl('modules/notifications/get_notifications.php'), ENT_QUOTES) ?>">
-  <a class="skip-link" href="#main-content">Skip to live queue status</a>
-  <main id="main-content" class="client-shell" tabindex="-1"
-        data-queue-status-root data-status-url="<?= APP_URL ?>/modules/queue/status.php" data-refresh-interval="10000">
-    <div class="client-subnav">
-      <a href="index.php" class="btn btn-link px-0">
-        <i class="bi bi-arrow-left" aria-hidden="true"></i>
-        Back to dashboard
-      </a>
-      <a href="ticket.php" class="btn btn-outline-primary">
-        <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
-        My Ticket
-      </a>
-    </div>
-
+  <div data-queue-status-root data-status-url="<?= APP_URL ?>/modules/queue/status.php" data-refresh-interval="10000">
     <section class="client-panel queue-status-hero">
       <div>
         <p class="panel-kicker">Live Queue</p>
@@ -108,8 +85,5 @@ $activeWait = $activeTicket && $activeTicket['predicted_wait_min'] !== null
         </div>
       </aside>
     </section>
-  </main>
-  <script src="<?= assetUrl('assets/js/main.js') ?>"></script>
-  <script src="<?= assetUrl('assets/js/client.js') ?>"></script>
-</body>
-</html>
+  </div>
+<?php include __DIR__ . '/includes/footer.php'; ?>

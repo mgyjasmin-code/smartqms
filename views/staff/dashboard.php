@@ -105,9 +105,25 @@ include __DIR__ . '/includes/header.php';
                 data-action-url="<?= APP_URL ?>/modules/service_window/skip_ticket.php"
                 data-ticket-id="<?= (int) $current['ticket_id'] ?>"
                 data-action-success="Ticket <?= htmlspecialchars($current['ticket_number'], ENT_QUOTES) ?> was skipped."
-                data-confirm-message="Skip ticket <?= htmlspecialchars($current['ticket_number'], ENT_QUOTES) ?>? This records the client as a no-show."
+                data-staff-confirm
+                data-staff-confirm-title="Skip ticket <?= htmlspecialchars($current['ticket_number'], ENT_QUOTES) ?>?"
+                data-staff-confirm-message="This records the client as a no-show and returns your service window to open."
+                data-staff-confirm-label="Skip ticket"
+                data-staff-confirm-tone="warning"
                 data-loading-text="Skipping...">
           <i class="bi bi-person-dash" aria-hidden="true"></i> Skip
+        </button>
+        <button class="btn btn-danger staff-void-action" type="button" data-staff-action
+                data-action-url="<?= APP_URL ?>/modules/service_window/void_ticket.php"
+                data-ticket-id="<?= (int) $current['ticket_id'] ?>"
+                data-action-success="Ticket <?= htmlspecialchars($current['ticket_number'], ENT_QUOTES) ?> was voided."
+                data-staff-confirm
+                data-staff-confirm-title="Void ticket <?= htmlspecialchars($current['ticket_number'], ENT_QUOTES) ?>?"
+                data-staff-confirm-message="The ticket will be voided immediately, the client will be notified, and your service window will return to open."
+                data-staff-confirm-label="Void ticket"
+                data-staff-confirm-tone="danger"
+                data-loading-text="Voiding...">
+          <i class="bi bi-ban" aria-hidden="true"></i> Void
         </button>
       </div>
     <?php else: ?>

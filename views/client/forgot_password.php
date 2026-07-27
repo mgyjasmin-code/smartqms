@@ -46,7 +46,7 @@ $shouldDispatchEmail = in_array($msg, ['reset_otp_sent', 'otp_resent'], true);
         <?php endif; ?>
 
         <?php if (!$hasResetUser): ?>
-          <form action="<?= postActionUrl('modules/auth/forgot_password.php') ?>" method="POST" class="auth-form js-auth-form" novalidate>
+          <form action="<?= postActionUrl('modules/auth/forgot_password.php') ?>" method="POST" class="auth-form auth-form-stable-errors js-auth-form" novalidate>
             <?= csrfInput() ?>
             <input type="hidden" name="action" value="request_otp">
             <div class="form-row-single">

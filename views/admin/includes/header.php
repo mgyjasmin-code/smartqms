@@ -1,94 +1,79 @@
 <?php
+require_once __DIR__ . '/../../../modules/reports/report_core.php';
+
 $pageTitle = $pageTitle ?? 'Admin Dashboard';
 $pageHeading = $pageHeading ?? $pageTitle;
 $pageSubtitle = $pageSubtitle ?? '';
 $activePage = $activePage ?? '';
 $activeReport = $activeReport ?? '';
-$adminBodyClass = trim('admin-page ' . ($adminBodyClass ?? ''));
-$adminName = $_SESSION['name'] ?? 'Administrator';
-$adminInitial = strtoupper(substr((string) $adminName, 0, 1));
-$adminRoleLabel = 'Administrator';
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <?= csrfMetaTag() ?>
-  <title><?= htmlspecialchars($pageTitle) ?> -- SmartQMS</title>
-  <script>
-    (function () {
-      try {
-        var key = 'smartqms-admin-theme';
-        var savedTheme = window.localStorage.getItem(key);
-        var theme = savedTheme === 'dark' || savedTheme === 'light'
-          ? savedTheme
-          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-admin-theme', theme);
-      } catch (error) {
-        document.documentElement.setAttribute('data-admin-theme', 'light');
-      }
-    })();
-  </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link href="<?= assetUrl('vendor/twbs/bootstrap/dist/css/bootstrap.min.css') ?>" rel="stylesheet">
-  <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
-  <link rel="stylesheet" href="<?= assetUrl('assets/css/admin.css') ?>">
-</head>
-<body class="<?= htmlspecialchars($adminBodyClass, ENT_QUOTES) ?>" data-admin-root>
-  <a class="admin-skip-link" href="#admin-main">Skip to main content</a>
-  <div class="admin-shell">
-    <?php include __DIR__ . '/sidebar.php'; ?>
+$adminBodyClass = trim((string) ($adminBodyClass ?? ''));
 
-    <div class="admin-panel">
-      <header class="admin-topbar">
-        <button class="admin-icon-button admin-menu-toggle" type="button" data-admin-sidebar-toggle aria-label="Open admin navigation" aria-expanded="false">
-          <i data-lucide="menu" aria-hidden="true"></i>
-        </button>
+$reportItems = [
+    'queue_summary' => ['label' => 'Queue Summary', 'icon' => 'chart-column'],
+    'predicted_vs_actual' => ['label' => 'Predicted vs Actual', 'icon' => 'line-chart'],
+    'peak_hour' => ['label' => 'Peak Hour Analysis', 'icon' => 'trending-up'],
+    'counter_performance' => ['label' => 'Counter Performance', 'icon' => 'gauge'],
+    'turnaround_time' => ['label' => 'Turnaround Time', 'icon' => 'timer'],
+    'no_show' => ['label' => 'No-Show Report', 'icon' => 'user-x'],
+    'staff_productivity' => ['label' => 'Staff Productivity', 'icon' => 'users'],
+    'ml_accuracy' => ['label' => 'ML Accuracy', 'icon' => 'brain-circuit'],
+    'daily_monthly_stats' => ['label' => 'Daily/Monthly Stats', 'icon' => 'calendar-days'],
+    'satisfaction' => ['label' => 'Satisfaction', 'icon' => 'star'],
+];
+$reportChildren = [];
+foreach ($reportItems as $reportKey => $reportItem) {
+    $reportChildren[] = [
+        'key' => $reportKey,
+        'label' => $reportItem['label'],
+        'icon' => $reportItem['icon'],
+        'url' => 'reports.php?report=' . urlencode($reportKey),
+    ];
+}
 
-        <div class="admin-topbar-actions">
-          <button class="admin-icon-button admin-theme-toggle" type="button" data-admin-theme-toggle aria-label="Switch to dark mode" aria-pressed="false">
-            <i data-admin-theme-icon data-lucide="moon" aria-hidden="true"></i>
-          </button>
-          <div class="admin-user-menu" data-admin-user-menu>
-            <button class="admin-user-button" type="button" data-admin-user-menu-toggle aria-expanded="false" aria-controls="admin-user-menu-panel">
-              <span class="admin-user-avatar" aria-hidden="true"><?= htmlspecialchars($adminInitial) ?></span>
-              <span class="admin-user-copy">
-                <strong><?= htmlspecialchars($adminName) ?></strong>
-                <small><?= htmlspecialchars($adminRoleLabel) ?></small>
-              </span>
-              <i data-lucide="chevron-down" aria-hidden="true"></i>
-            </button>
-            <div class="admin-user-dropdown" id="admin-user-menu-panel" data-admin-user-menu-panel hidden>
-              <div class="admin-user-dropdown-head">
-                <span class="admin-user-avatar" aria-hidden="true"><?= htmlspecialchars($adminInitial) ?></span>
-                <div>
-                  <strong><?= htmlspecialchars($adminName) ?></strong>
-                  <small><?= htmlspecialchars($adminRoleLabel) ?></small>
-                </div>
-              </div>
-              <button
-                class="admin-user-menu-item is-danger"
-                type="button"
-                data-admin-logout-open
-                data-bs-toggle="modal"
-                data-bs-target="#adminLogoutModal"
-                aria-controls="adminLogoutModal"
-              >
-                <i data-lucide="log-out" aria-hidden="true"></i>
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+$adminSearchDestinations = [
+    ['label' => 'Dashboard', 'description' => 'Operational analytics and queue overview', 'icon' => 'layout-dashboard', 'url' => 'dashboard.php', 'keywords' => 'home overview metrics analytics', 'type' => 'Page'],
+    ['label' => 'Staff Accounts', 'description' => 'Create and manage staff accounts', 'icon' => 'users', 'url' => 'add_staff.php', 'keywords' => 'staff employee operator account', 'type' => 'Page'],
+    ['label' => 'Health Services', 'description' => 'Configure client queue services', 'icon' => 'clipboard-list', 'url' => 'services.php', 'keywords' => 'health service catalog priority', 'type' => 'Page'],
+    ['label' => 'Service Windows', 'description' => 'Assign counters, staff, and services', 'icon' => 'panel-top', 'url' => 'windows.php', 'keywords' => 'window counter station assignment', 'type' => 'Page'],
+];
+foreach (reportDefinitions() as $reportKey => $reportDefinition) {
+    $adminSearchDestinations[] = [
+        'label' => (string) $reportDefinition['label'],
+        'description' => (string) $reportDefinition['description'],
+        'icon' => (string) $reportDefinition['icon'],
+        'url' => 'reports.php?report=' . urlencode((string) $reportKey),
+        'keywords' => 'report analytics ' . str_replace('_', ' ', (string) $reportKey),
+        'type' => 'Report',
+    ];
+}
 
-      <main id="admin-main" class="admin-main" tabindex="-1">
-        <section class="admin-page-header">
-          <h1><?= htmlspecialchars($pageHeading) ?></h1>
-          <?php if ($pageSubtitle !== ''): ?>
-            <p><?= htmlspecialchars($pageSubtitle) ?></p>
-          <?php endif; ?>
-        </section>
+$appShell = [
+    'role' => 'admin',
+    'title' => $pageTitle,
+    'heading' => $pageHeading,
+    'subtitle' => $pageSubtitle,
+    'active_page' => $activePage,
+    'active_report' => $activeReport,
+    'name' => $_SESSION['name'] ?? 'System Administrator',
+    'role_label' => 'Administrator',
+    'body_class' => $adminBodyClass,
+    'main_id' => 'admin-main',
+    'home_url' => 'dashboard.php',
+    'legacy_theme_key' => 'smartqms-admin-theme',
+    'search_label' => 'Search administrator pages and reports',
+    'search_placeholder' => 'Search pages and reports',
+    'search_destinations' => $adminSearchDestinations,
+    'nav_items' => [
+        ['key' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'layout-dashboard', 'url' => 'dashboard.php'],
+        ['key' => 'staff', 'label' => 'Staff Accounts', 'icon' => 'user-plus', 'url' => 'add_staff.php'],
+        ['key' => 'services', 'label' => 'Health Services', 'icon' => 'clipboard-list', 'url' => 'services.php'],
+        ['key' => 'windows', 'label' => 'Service Windows', 'icon' => 'panel-top', 'url' => 'windows.php'],
+        ['key' => 'reports', 'label' => 'Reports', 'icon' => 'file-text', 'children' => $reportChildren],
+    ],
+    'logout_title' => 'Log out of admin?',
+    'logout_description' => 'You will return to the sign-in screen and need to sign in again before managing Smart QMS.',
+    'scripts' => ['assets/js/admin.js'],
+    'load_chart' => true,
+];
+
+include __DIR__ . '/../../shared/includes/shell_header.php';

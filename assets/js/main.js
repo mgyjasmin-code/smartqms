@@ -88,8 +88,9 @@
 
     ensureFeedbackId(input, feedback);
     const optionalEmpty = !rules.required && value === '';
+    const errorsOnly = input.closest('form')?.hasAttribute('data-validation-errors-only') === true;
     input.classList.toggle('is-invalid', Boolean(error));
-    input.classList.toggle('is-valid', !error && !optionalEmpty);
+    input.classList.toggle('is-valid', !errorsOnly && !error && !optionalEmpty);
     if (error) {
       input.setAttribute('aria-invalid', 'true');
     } else {
@@ -187,7 +188,8 @@
           return;
         }
 
-        form.classList.add('was-validated');
+        const errorsOnly = form.hasAttribute('data-validation-errors-only');
+        form.classList.toggle('was-validated', !errorsOnly);
         const valid = fields.map(input => validateField(input, validationRulesFor(input))).every(Boolean);
         if (!valid) {
           event.preventDefault();
@@ -319,38 +321,6 @@
     });
   }
 
-  function initLogoutConfirmation() {
-    const modal = document.querySelector('[data-logout-modal]');
-    const triggers = document.querySelectorAll('[data-confirm-logout]');
-    if (!modal || !triggers.length || modal.dataset.logoutInitialized === 'true') return;
-    modal.dataset.logoutInitialized = 'true';
-
-    const dialog = modal.querySelector('.logout-modal-dialog');
-    const closeButtons = modal.querySelectorAll('[data-logout-cancel]');
-    let lastFocused = null;
-
-    const closeModal = () => {
-      modal.hidden = true;
-      document.body.classList.remove('modal-open');
-      if (lastFocused) lastFocused.focus();
-    };
-    const onKeydown = event => {
-      if (!modal.hidden && event.key === 'Escape') closeModal();
-    };
-
-    triggers.forEach(trigger => {
-      trigger.addEventListener('click', event => {
-        event.preventDefault();
-        lastFocused = document.activeElement;
-        modal.hidden = false;
-        document.body.classList.add('modal-open');
-        (modal.querySelector('.logout-modal-close') || modal.querySelector('.logout-modal-button') || dialog)?.focus();
-      });
-    });
-    closeButtons.forEach(button => button.addEventListener('click', closeModal));
-    document.addEventListener('keydown', onKeydown);
-  }
-
   function resetSubmittingForms() {
     document.querySelectorAll('form[data-submitting="true"]').forEach(form => setSubmitBusy(form, false));
   }
@@ -372,7 +342,6 @@
     initValidatedForms();
     initOtpResendCountdown();
     initEmailDispatch();
-    initLogoutConfirmation();
     initPasswordToggles();
   }
 

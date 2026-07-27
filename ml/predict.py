@@ -1,21 +1,23 @@
-import joblib
-from pathlib import Path
+"""Run one local prediction against the verified SmartQMS model artifact."""
 
-# SmartQMS -- Standalone Prediction Test
-# Run: python predict.py
+import pandas as pd
 
-model = joblib.load(Path(__file__).resolve().parent / 'model.pkl')
+from app import MODEL, MODEL_METADATA
+from data_pipeline import FEATURE_COLS
 
-# Sample input -- adjust values to test different scenarios
-sample = [[
-    5,      # queue_length: 5 people waiting
-    9,      # hour_of_day: 9AM (peak hour)
-    1,      # day_of_week: Monday
-    2,      # service_type_encoded: Vaccination
-    0,      # client_type_encoded: 0=regular
-    3,      # active_windows: 3 windows open
-    4.5,    # avg_service_time: 4.5 minutes average
-]]
 
-result = model.predict(sample)[0]
-print(f"Predicted waiting time: {result:.2f} minutes")
+if MODEL is None:
+    raise SystemExit("No verified real-data model is available. Run train_model.py first.")
+
+sample = {
+    "queue_length": 5,
+    "hour_of_day": 9,
+    "day_of_week": 1,
+    "service_type_encoded": 2,
+    "client_type_encoded": 0,
+    "active_windows": 3,
+    "avg_service_time": 4.5,
+}
+result = MODEL.predict(pd.DataFrame([sample], columns=FEATURE_COLS))[0]
+print(f"Model: {MODEL_METADATA.get('algorithm', 'SmartQMS model')}")
+print(f"Predicted waiting time: {float(result):.2f} minutes")

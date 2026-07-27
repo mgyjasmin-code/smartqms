@@ -63,13 +63,6 @@ include __DIR__ . '/includes/header.php';
     </div>
   <?php endif; ?>
 
-  <?php if ($success): ?>
-    <div class="admin-alert is-success" role="status">
-      <i data-lucide="check-circle-2" aria-hidden="true"></i>
-      <span><?= htmlspecialchars($success) ?></span>
-    </div>
-  <?php endif; ?>
-
   <div class="modal fade admin-management-form-modal"
        id="serviceWindowModal"
        tabindex="-1"
@@ -78,8 +71,8 @@ include __DIR__ . '/includes/header.php';
        data-admin-management-modal
        data-admin-modal-mode="<?= $isEditing ? 'edit' : 'add' ?>"
        data-admin-clean-url="windows.php"<?= $formModalOpen ? ' data-admin-auto-open="true"' : '' ?>>
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
-      <form class="modal-content admin-settings-form js-validated-form" method="POST" novalidate>
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <form class="modal-content admin-settings-form js-validated-form" method="POST" data-validation-errors-only novalidate>
         <div class="modal-header">
           <div class="admin-management-modal-heading">
             <span class="admin-management-icon"><i data-lucide="panel-top" aria-hidden="true"></i></span>
@@ -102,7 +95,7 @@ include __DIR__ . '/includes/header.php';
             </div>
           <?php endif; ?>
 
-          <div class="row g-3 admin-form-grid">
+          <div class="row g-2 admin-form-grid">
             <div class="col-12 admin-field">
               <label class="form-label" for="window_name">Window Name</label>
               <input id="window_name" class="form-control admin-input<?= fieldInvalidClass($feedback, 'window_name') ?>" name="window_name"
@@ -155,11 +148,9 @@ include __DIR__ . '/includes/header.php';
 
         <div class="modal-footer">
           <button class="btn admin-action-button" type="button" data-bs-dismiss="modal" data-admin-management-cancel>
-            <i data-lucide="x" aria-hidden="true"></i>
-            <span><?= $isEditing ? 'Cancel Edit' : 'Cancel' ?></span>
+            <span>Cancel</span>
           </button>
           <button class="btn admin-action-button is-primary" type="submit" data-loading-text="<?= $isEditing ? 'Saving window...' : 'Creating window...' ?>">
-            <i data-lucide="<?= $isEditing ? 'save' : 'plus' ?>" aria-hidden="true"></i>
             <span><?= $isEditing ? 'Save Changes' : 'Create Window' ?></span>
           </button>
         </div>
@@ -173,27 +164,22 @@ include __DIR__ . '/includes/header.php';
           <p class="admin-section-kicker">Operating Counters</p>
           <h2>Configured windows</h2>
         </div>
-        <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2">
-          <span class="admin-pill"><?= number_format(count($windows)) ?> total</span>
-          <?php if ($isEditing): ?>
-            <a class="btn admin-action-button" href="windows.php">
-              <i data-lucide="x" aria-hidden="true"></i>
-              <span>Cancel Edit</span>
-            </a>
-          <?php else: ?>
-            <button class="btn admin-action-button is-primary"
-                    type="button"
-                    data-bs-toggle="modal"
-                    data-bs-target="#serviceWindowModal"
-                    aria-controls="serviceWindowModal">
-              <i data-lucide="plus" aria-hidden="true"></i>
-              <span>Add Window</span>
-            </button>
-          <?php endif; ?>
+        <div class="d-flex flex-row align-items-center gap-2 flex-shrink-0">
+          <button class="btn admin-action-button is-primary"
+                  type="button"
+                  data-bs-toggle="modal"
+                  data-bs-target="#serviceWindowModal"
+                  aria-controls="serviceWindowModal">
+            <i data-lucide="plus" aria-hidden="true"></i>
+            <span>Add Window</span>
+          </button>
         </div>
       </header>
 
-      <div class="table-responsive admin-table-wrap">
+      <div class="table-responsive admin-table-wrap"
+           role="region"
+           aria-label="Service windows table; scroll horizontally to view all columns"
+           tabindex="0">
         <table class="table table-hover align-middle w-100 mb-0 admin-data-table admin-management-table" data-admin-paginated-table data-page-size="8" data-pagination-label="service windows">
           <thead>
             <tr>
@@ -216,9 +202,11 @@ include __DIR__ . '/includes/header.php';
                 </td>
                 <td data-label="Actions">
                   <div class="admin-row-actions">
-                    <a class="admin-row-action" href="windows.php?edit=<?= (int) $window['window_id'] ?>">
+                    <a class="admin-row-action is-icon-only"
+                       href="windows.php?edit=<?= (int) $window['window_id'] ?>"
+                       aria-label="Edit <?= htmlspecialchars($window['window_name'], ENT_QUOTES) ?> service window"
+                       title="Edit service window">
                       <i data-lucide="pencil" aria-hidden="true"></i>
-                      <span>Edit</span>
                     </a>
                   </div>
                 </td>

@@ -112,20 +112,6 @@ include __DIR__ . '/includes/header.php';
     </div>
   <?php endif; ?>
 
-  <?php if ($success): ?>
-    <div class="admin-alert is-success" role="status">
-      <i data-lucide="check-circle-2" aria-hidden="true"></i>
-      <span><?= htmlspecialchars($success) ?></span>
-    </div>
-  <?php endif; ?>
-
-  <?php if ($notice): ?>
-    <div class="admin-alert is-info" role="status">
-      <i data-lucide="info" aria-hidden="true"></i>
-      <span><?= htmlspecialchars($notice) ?></span>
-    </div>
-  <?php endif; ?>
-
   <div class="modal fade admin-management-form-modal"
        id="staffAccountModal"
        tabindex="-1"
@@ -135,7 +121,7 @@ include __DIR__ . '/includes/header.php';
        data-admin-modal-mode="<?= $isEditing ? 'edit' : 'add' ?>"
        data-admin-clean-url="add_staff.php"<?= $formModalOpen ? ' data-admin-auto-open="true"' : '' ?>>
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-      <form class="modal-content admin-settings-form js-validated-form" method="POST" novalidate>
+      <form class="modal-content admin-settings-form js-validated-form" method="POST" data-validation-errors-only novalidate>
         <div class="modal-header">
           <div class="admin-management-modal-heading">
             <span class="admin-management-icon"><i data-lucide="<?= $isEditing ? 'user-round-pen' : 'user-plus' ?>" aria-hidden="true"></i></span>

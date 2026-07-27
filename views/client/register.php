@@ -32,7 +32,7 @@ $feedback = consumeFormFeedback('register');
           <div class="auth-alert auth-alert-error" role="alert"><?= htmlspecialchars($feedback['form_error']) ?></div>
         <?php endif; ?>
 
-        <form action="<?= postActionUrl('modules/auth/register.php') ?>" method="POST" class="auth-form auth-form-stable-errors auth-form-polished js-auth-form" novalidate>
+        <form action="<?= postActionUrl('modules/auth/register.php') ?>" method="POST" class="auth-form auth-form-compact-feedback auth-form-stable-errors auth-form-polished js-auth-form" novalidate>
           <?= csrfInput() ?>
           <div class="auth-grid auth-grid-2">
             <div>
@@ -63,15 +63,13 @@ $feedback = consumeFormFeedback('register');
             <label class="auth-label required" for="password">Password</label>
             <div class="auth-password-field">
               <input id="password" class="auth-input<?= fieldInvalidClass($feedback, 'password') ?>" type="password" name="password"
-                     placeholder="At least 8 characters" required autocomplete="new-password" data-validate="password"
-                     aria-describedby="password-helper"<?= fieldAriaInvalid($feedback, 'password') ?>>
+                     placeholder="At least 8 characters" required autocomplete="new-password" data-validate="password"<?= fieldAriaInvalid($feedback, 'password') ?>>
               <button class="password-toggle" type="button" data-password-toggle
                       data-password-toggle-label="password" aria-label="Show password"
                       aria-controls="password" aria-pressed="false" title="Show password">
                 <i class="bi bi-eye" aria-hidden="true"></i>
               </button>
             </div>
-            <p id="password-helper" class="auth-helper">Use at least 8 characters. Your password is never included in email messages.</p>
             <div class="field-error" aria-live="polite"><?= htmlspecialchars(fieldError($feedback, 'password')) ?></div>
           </div>
 
@@ -82,10 +80,6 @@ $feedback = consumeFormFeedback('register');
         <p class="auth-switch">
           Already have an account?
           <a href="<?= APP_URL ?>/index.php">Login here</a>
-        </p>
-        <p class="auth-admin-note">
-          <i class="bi bi-person-check" aria-hidden="true"></i>
-          This form creates client accounts only.
         </p>
       </div>
     </section>

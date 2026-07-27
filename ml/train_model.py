@@ -1,87 +1,110 @@
-"""
-SmartQMS -- Random Forest Model Training Script
-==============================================
-Trains the waiting time prediction model on queue data.
+"""Train and deploy SmartQMS using ml/dataset/queue_data.csv."""
 
-Dataset columns required:
-  queue_length, hour_of_day, day_of_week, service_type_encoded,
-  client_type_encoded, active_windows, avg_service_time,
-  actual_wait_minutes
+from __future__ import annotations
 
-Usage:
-  python train_model.py
+from datetime import date
+import sys
 
-Output:
-  model.pkl             -- saved trained model
-  Prints evaluation metrics: MAE, RMSE, R2, MAPE, CV score
-"""
-
-import pandas as pd
-import numpy as np
-import joblib
-from pathlib import Path
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from data_pipeline import FEATURE_COLS, TARGET_COL, load_dataset
-
-print("=" * 50)
-print("  SmartQMS -- Random Forest Training")
-print("=" * 50)
-
-df = load_dataset()
-print(f"  Canonical dataset loaded: {len(df)} rows")
-
-# Feature and target
-X = df[FEATURE_COLS]
-y = df[TARGET_COL]
-
-# Train/test split (80/20)
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+from data_pipeline import (
+    DatasetValidationError,
+    TRAINING_SOURCE,
+    load_dataset,
+    open_database_connection,
 )
+from training import build_artifact, save_artifact_atomic, train_and_compare
 
-# Train Random Forest
-model = RandomForestRegressor(
-    n_estimators=100,
-    random_state=42,
-    n_jobs=-1,
-)
-model.fit(X_train, y_train)
 
-# Predictions
-y_pred = model.predict(X_test)
+def record_comparison_results(comparisons: list[dict], best_name: str, sample_size: int) -> None:
+    connection = open_database_connection()
+    try:
+        with connection.cursor() as cursor:
+            today = date.today()
+            cursor.execute(
+                "DELETE FROM ml_comparison_logs WHERE run_date = %s AND dataset_used = %s",
+                (today, TRAINING_SOURCE),
+            )
+            for row in comparisons:
+                cursor.execute(
+                    """
+                    INSERT INTO ml_comparison_logs
+                      (run_date, algorithm, mae, rmse, r2, mape, is_best,
+                       dataset_used, sample_size)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        today,
+                        row["algorithm"],
+                        row["mae"],
+                        row["rmse"],
+                        row["r2"],
+                        row["mape"],
+                        1 if row["algorithm"] == best_name else 0,
+                        TRAINING_SOURCE,
+                        sample_size,
+                    ),
+                )
+            cursor.execute(
+                """
+                INSERT INTO system_settings
+                    (setting_key, setting_val, label, section)
+                VALUES ('ml_last_trained', %s, 'Model Last Trained', 'ml')
+                ON DUPLICATE KEY UPDATE setting_val = VALUES(setting_val)
+                """,
+                (today.isoformat(),),
+            )
+            cursor.execute(
+                """
+                INSERT INTO system_settings
+                    (setting_key, setting_val, label, section)
+                VALUES ('ml_dataset_used', %s, 'Training Dataset Used', 'ml')
+                ON DUPLICATE KEY UPDATE setting_val = VALUES(setting_val)
+                """,
+                (TRAINING_SOURCE,),
+            )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
 
-# Evaluation metrics
-mae  = mean_absolute_error(y_test, y_pred)
-rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-r2   = r2_score(y_test, y_pred)
-mape = np.mean(np.abs((y_test - y_pred) / y_test)) * 100
 
-# K-Fold Cross Validation (k=10)
-cv_scores = cross_val_score(
-    model, X, y, cv=10, scoring='neg_mean_absolute_error', n_jobs=-1
-)
-cv_mae = -cv_scores.mean()
+def main() -> int:
+    print("=" * 64)
+    print("SmartQMS queue_data.csv wait-time model training")
+    print("=" * 64)
+    try:
+        frame = load_dataset()
+        model, comparisons, best, train_count, test_count = train_and_compare(frame)
+        artifact = build_artifact(
+            model,
+            best,
+            row_count=len(frame),
+            train_count=train_count,
+            test_count=test_count,
+        )
+        save_artifact_atomic(artifact)
+        record_comparison_results(comparisons, best["algorithm"], len(frame))
+    except (DatasetValidationError, ValueError) as error:
+        print(f"[STOPPED] {error}", file=sys.stderr)
+        return 2
+    except Exception as error:
+        print(f"[FAILED] Training did not replace the current model: {error}", file=sys.stderr)
+        return 1
 
-print()
-print(f"  MAE   : {mae:.4f} minutes")
-print(f"  RMSE  : {rmse:.4f} minutes")
-print(f"  R²    : {r2:.4f}")
-print(f"  MAPE  : {mape:.2f}%")
-print(f"  CV MAE (k=10): {cv_mae:.4f} minutes")
-print()
+    for row in comparisons:
+        mape = "n/a" if row["mape"] is None else f"{row['mape']:.2f}%"
+        r2 = "n/a" if row["r2"] is None else f"{row['r2']:.4f}"
+        print(
+            f"{row['algorithm']:<22} "
+            f"MAE={row['mae']:.4f} RMSE={row['rmse']:.4f} R2={r2} MAPE={mape}"
+        )
+    print(
+        f"[OK] Deployed {best['algorithm']} using {len(frame)} validated queue observations "
+        f"({train_count} train / {test_count} chronological holdout)."
+    )
+    return 0
 
-# Feature importance
-print("  Feature Importance:")
-for feat, imp in sorted(
-    zip(FEATURE_COLS, model.feature_importances_),
-    key=lambda x: -x[1]
-):
-    print(f"    {feat:<28} {imp:.4f}")
 
-# Save model
-joblib.dump(model, Path(__file__).resolve().parent / 'model.pkl')
-print()
-print("  [OK] Model saved as model.pkl")
-print("=" * 50)
+if __name__ == "__main__":
+    raise SystemExit(main())
