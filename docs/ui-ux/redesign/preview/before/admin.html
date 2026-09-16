@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="review-only">  <title>Admin Dashboard -- SmartQMS</title>
+  <script nonce="t6Eh3OGR91UwIwlrGfYFzkz+">
+    (function () {
+      try {
+        var sharedKey = 'smartqms-theme';
+        var legacyKey = "smartqms-admin-theme";
+        var savedTheme = window.localStorage.getItem(sharedKey);
+        if (savedTheme !== 'dark' && savedTheme !== 'light' && legacyKey) {
+          savedTheme = window.localStorage.getItem(legacyKey);
+        }
+        var theme = savedTheme === 'dark' || savedTheme === 'light'
+          ? savedTheme
+          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-app-theme', theme);
+        document.documentElement.setAttribute('data-admin-theme', theme);
+        document.documentElement.setAttribute('data-staff-theme', theme);
+      } catch (error) {
+        document.documentElement.setAttribute('data-app-theme', 'light');
+        document.documentElement.setAttribute('data-admin-theme', 'light');
+        document.documentElement.setAttribute('data-staff-theme', 'light');
+      }
+    })();
+  </script>
+  <link href="http://127.0.0.1:8766/before/assets/vendor/bootstrap/bootstrap.min.css?v=1624332556" rel="stylesheet">
+  <link rel="stylesheet" href="http://127.0.0.1:8766/before/assets/css/style.css?v=1788602830">
+  <link rel="stylesheet" href="http://127.0.0.1:8766/before/assets/css/admin.css?v=1788004672">
+    
+<link rel="stylesheet" href="../review.css"></head>
+<body
+  class="app-page admin-page app-admin-page admin-dashboard-page"
+  data-app-root
+  data-app-role="admin"
+  data-admin-root    ><div class="review-notice">Design review · Fictional sample data · Before</div>
+  <a class="app-skip-link admin-skip-link" href="#admin-main">Skip to main content</a>
+  <div class="app-shell admin-shell">
+        <aside class="app-sidebar admin-sidebar" id="app-sidebar" aria-label="Administrator navigation">
+      <div class="app-sidebar-header admin-sidebar-header">
+        <a class="app-brand admin-brand" href="dashboard.php" aria-label="Smart QMS Administrator dashboard">
+          <span class="app-brand-mark admin-brand-mark" aria-hidden="true">
+            <img src="http://127.0.0.1:8766/before/assets/images/brand/smartqms-mark.svg?v=1787409080" alt="" width="32" height="32">
+          </span>
+          <span class="app-brand-name admin-brand-name">Smart QMS</span>
+        </a>
+        <button class="app-sidebar-close admin-sidebar-close" type="button" data-app-sidebar-close aria-label="Close Administrator navigation">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <nav class="app-nav admin-nav">
+        <p class="app-nav-label admin-nav-label">Admin workspace</p>
+                                        <a class="app-nav-link admin-nav-link is-active" href="dashboard.php" aria-current="page">
+              <i data-lucide="layout-dashboard" aria-hidden="true"></i>
+              <span>Dashboard</span>
+            </a>
+                                                  <a class="app-nav-link admin-nav-link" href="add_staff.php">
+              <i data-lucide="user-plus" aria-hidden="true"></i>
+              <span>Staff Accounts</span>
+            </a>
+                                                  <a class="app-nav-link admin-nav-link" href="services.php">
+              <i data-lucide="clipboard-list" aria-hidden="true"></i>
+              <span>Health Services</span>
+            </a>
+                                                  <a class="app-nav-link admin-nav-link" href="windows.php">
+              <i data-lucide="panel-top" aria-hidden="true"></i>
+              <span>Service Windows</span>
+            </a>
+                                                              <button class="app-nav-link admin-nav-link app-nav-toggle admin-nav-toggle" type="button"
+                    data-app-submenu-toggle aria-expanded="false" aria-controls="app-submenu-reports">
+              <i data-lucide="file-text" aria-hidden="true"></i>
+              <span>Reports</span>
+              <i class="app-nav-chevron admin-nav-chevron" data-lucide="chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="app-subnav admin-subnav" id="app-submenu-reports" aria-hidden="true">
+                                              <a class="app-subnav-link admin-subnav-link" href="reports.php?report=queue_summary">
+                  <i class="app-subnav-icon admin-subnav-icon" data-lucide="chart-column" aria-hidden="true"></i>
+                  <span>Queue Summary</span>
+                </a>
+                                              <a class="app-subnav-link admin-subnav-link" href="reports.php?report=predicted_vs_actual">
+                  <i class="app-subnav-icon admin-subnav-icon" data-lucide="line-chart" aria-hidden="true"></i>
+                  <span>Predicted vs Actual</span>
+                </a>
+                                              <a class="app-subnav-link admin-subnav-link" href="reports.php?report=peak_hour">
+                  <i class="app-subnav-icon admin-subnav-icon" data-lucide="trending-up" aria-hidden="true"></i>
+                  <span>Peak Hour Analysis</span>
+                </a>
+                                              <a class="app-subnav-link admin-subnav-link" href="reports.php?report=counter_performance">
+                  <i class="app-subnav-icon admin-subnav-icon" data-lucide="gauge" aria-hidden="true"></i>
+                  <span>Counter Performance</span>
+                </a>
+                                              <a class="app-subnav-link admin-subnav-link" href="reports.php?report=turnaround_time">
+                  <i class="app-subnav-icon admin-subnav-icon" data-lucide="timer" aria-hidden="true"></i>
+                  <span>Turnaround Time</span>
+                </a>
+                                              <a class="app-subnav-link admin-subnav-link" href="reports.php?report=no_show">
+                  <i class="app-subnav-icon admin-subnav-icon" data-lucide="user-x" aria-hidden="true"></i>
+                  <span>No-Show Report</span>
+                </a>
+                                              <a class="app-subnav-link admin-subnav-link" href="reports.php?report=staff_productivity">
+                  <i class="app-subnav-icon admin-subnav-icon" data-lucide="users" aria-hidden="true"></i>
+                  <span>Staff Productivity</span>
+                </a>
+                                              <a class="app-subnav-link admin-subnav-link" href="reports.php?report=ml_accuracy">
+                  <i class="app-subnav-icon admin-subnav-icon" data-lucide="brain-circuit" aria-hidden="true"></i>
+                  <span>ML Accuracy</span>
+                </a>
+                                              <a class="app-subnav-link admin-subnav-link" href="reports.php?report=daily_monthly_stats">
+                  <i class="app-subnav-icon admin-subnav-icon" data-lucide="calendar-days" aria-hidden="true"></i>
+                  <span>Daily/Monthly Stats</span>
+                </a>
+                                              <a class="app-subnav-link admin-subnav-link" href="reports.php?report=satisfaction">
+                  <i class="app-subnav-icon admin-subnav-icon" data-lucide="star" aria-hidden="true"></i>
+                  <span>Satisfaction</span>
+                </a>
+                          </div>
+                        </nav>
+    </aside>
+    
+    <div class="app-panel admin-panel">
+      <header class="app-topbar admin-topbar">
+                <button class="app-icon-button admin-icon-button app-menu-toggle admin-menu-toggle" type="button" data-app-sidebar-toggle aria-label="Open Administrator navigation" aria-expanded="false">
+          <i data-lucide="menu" aria-hidden="true"></i>
+        </button>
+        
+                <div class="app-search-collapse admin-header-search-collapse collapse width collapse-horizontal" id="appHeaderSearch">
+          <form class="app-header-search admin-header-search" role="search" data-app-search novalidate>
+            <label class="visually-hidden" for="app-global-search">Search administrator pages and reports</label>
+            <div class="input-group">
+              <span class="input-group-text" aria-hidden="true"><i data-lucide="search"></i></span>
+              <input class="form-control" id="app-global-search" type="search"
+                     placeholder="Search pages and reports" autocomplete="off"
+                     aria-autocomplete="list" aria-controls="app-search-results" aria-expanded="false" data-app-search-input>
+              <button class="btn app-search-clear admin-search-clear" type="button" data-app-search-clear aria-label="Clear search" hidden>
+                <i data-lucide="x" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="list-group app-search-results admin-search-results" id="app-search-results" role="listbox"
+                 aria-label="Administrator search results" data-app-search-results hidden>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-0"
+                   href="dashboard.php"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="dashboard operational analytics and queue overview home overview metrics analytics"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="layout-dashboard"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>Dashboard</strong>
+                    <small>Operational analytics and queue overview</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Page</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-1"
+                   href="add_staff.php"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="staff accounts create and manage staff accounts staff employee operator account"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="users"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>Staff Accounts</strong>
+                    <small>Create and manage staff accounts</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Page</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-2"
+                   href="services.php"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="health services configure client queue services health service catalog availability"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="clipboard-list"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>Health Services</strong>
+                    <small>Configure client queue services</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Page</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-3"
+                   href="windows.php"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="service windows assign counters, staff, and services window counter station assignment"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="panel-top"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>Service Windows</strong>
+                    <small>Assign counters, staff, and services</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Page</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-4"
+                   href="reports.php?report=queue_summary"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="queue summary tickets grouped by day, service, window, and status. report analytics queue summary"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="chart-column"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>Queue Summary</strong>
+                    <small>Tickets grouped by day, service, window, and status.</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Report</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-5"
+                   href="reports.php?report=predicted_vs_actual"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="predicted vs actual wait compares model estimates against completed ticket wait times. report analytics predicted vs actual"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="line-chart"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>Predicted vs Actual Wait</strong>
+                    <small>Compares model estimates against completed ticket wait times.</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Report</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-6"
+                   href="reports.php?report=peak_hour"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="peak hour analysis ticket volume by hour for the selected period. report analytics peak hour"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="trending-up"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>Peak Hour Analysis</strong>
+                    <small>Ticket volume by hour for the selected period.</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Report</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-7"
+                   href="reports.php?report=counter_performance"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="service counter performance tickets served and average durations per service window. report analytics counter performance"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="gauge"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>Service Counter Performance</strong>
+                    <small>Tickets served and average durations per service window.</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Report</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-8"
+                   href="reports.php?report=turnaround_time"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="customer turnaround time total time clients spent from ticket issue to completion. report analytics turnaround time"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="timer"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>Customer Turnaround Time</strong>
+                    <small>Total time clients spent from ticket issue to completion.</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Report</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-9"
+                   href="reports.php?report=no_show"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="no-show report skipped and voided tickets by day, hour, service, and reason. report analytics no show"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="user-x"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>No-Show Report</strong>
+                    <small>Skipped and voided tickets by day, hour, service, and reason.</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Report</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-10"
+                   href="reports.php?report=staff_productivity"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="staff productivity completed tickets and service duration by staff member. report analytics staff productivity"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="users"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>Staff Productivity</strong>
+                    <small>Completed tickets and service duration by staff member.</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Report</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-11"
+                   href="reports.php?report=ml_accuracy"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="ml accuracy report verified training metrics or a chronological baseline from ml/dataset/queue_data.csv. report analytics ml accuracy"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="brain-circuit"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>ML Accuracy Report</strong>
+                    <small>Verified training metrics or a chronological baseline from ml/dataset/queue_data.csv.</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Report</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-12"
+                   href="reports.php?report=daily_monthly_stats"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="daily and monthly stats ticket totals by day and month. report analytics daily monthly stats"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="calendar-days"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>Daily and Monthly Stats</strong>
+                    <small>Ticket totals by day and month.</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Report</span>
+                </a>
+                              <a class="list-group-item list-group-item-action app-search-option admin-search-option"
+                   id="app-search-option-13"
+                   href="reports.php?report=satisfaction"
+                   role="option" aria-selected="false" data-app-search-option
+                   data-app-search-text="satisfaction report average feedback ratings by service, window, and day. report analytics satisfaction"
+                   hidden>
+                  <span class="app-search-option-icon admin-search-option-icon" aria-hidden="true">
+                    <i data-lucide="star"></i>
+                  </span>
+                  <span class="app-search-option-copy admin-search-option-copy">
+                    <strong>Satisfaction Report</strong>
+                    <small>Average feedback ratings by service, window, and day.</small>
+                  </span>
+                  <span class="app-search-option-type admin-search-option-type">Report</span>
+                </a>
+                            <p class="app-search-empty admin-search-empty" data-app-search-empty hidden>No matching page.</p>
+            </div>
+          </form>
+        </div>
+        
+        <div class="app-topbar-actions admin-topbar-actions">
+                    <button class="app-icon-button admin-icon-button app-search-toggle admin-search-toggle" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#appHeaderSearch" aria-controls="appHeaderSearch"
+                  aria-expanded="false" aria-label="Open Administrator search" data-app-search-toggle>
+            <i data-app-search-toggle-icon data-lucide="search" aria-hidden="true"></i>
+          </button>
+          
+          
+          
+          <div class="app-user-menu admin-user-menu" data-app-user-menu>
+            <button class="app-user-button admin-user-button" type="button" data-app-user-menu-toggle aria-expanded="false"
+                    aria-controls="app-user-menu-panel" aria-label="Open profile menu for Demo Operator">
+              <span class="app-user-avatar admin-user-avatar" aria-hidden="true">D</span>
+              <span class="app-user-copy admin-user-copy"><strong>Demo Operator</strong><small>Administrator</small></span>
+              <i data-lucide="chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="app-user-dropdown admin-user-dropdown" id="app-user-menu-panel" data-app-user-menu-panel hidden>
+              <div class="app-user-dropdown-head admin-user-dropdown-head">
+                <span class="app-user-avatar admin-user-avatar" aria-hidden="true">D</span>
+                <div><strong>Demo Operator</strong><small>Administrator</small></div>
+              </div>
+              <div class="app-user-theme-switch admin-user-theme-switch form-check form-switch">
+                <label class="form-check-label" for="app-theme-switch">
+                  <i data-app-theme-icon data-lucide="moon" aria-hidden="true"></i>
+                  <span data-app-theme-label>Dark mode</span>
+                </label>
+                <input class="form-check-input" type="checkbox" role="switch" id="app-theme-switch"
+                       data-app-theme-toggle aria-label="Dark mode">
+              </div>
+                            <button class="app-user-menu-item admin-user-menu-item is-danger" type="button"
+                      data-bs-toggle="modal" data-bs-target="#appLogoutModal" aria-controls="appLogoutModal">
+                <i data-lucide="log-out" aria-hidden="true"></i><span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main id="admin-main" class="app-main admin-main" tabindex="-1">
+                  <section class="app-page-header admin-page-header">
+            <h1>Operational Analytics</h1>
+            <p>Today at your health center.</p>          </section>
+        <section class="admin-kpi-grid" aria-label="Operational metrics" data-review-dashboard>
+  <article class="admin-kpi-card">
+    <h2>Total Tickets Today</h2>
+    <p class="admin-kpi-value">46</p>
+    <p class="admin-kpi-trend">Checked in on Sep 07</p>
+    <span class="admin-kpi-icon is-blue"><i data-lucide="users-round" aria-hidden="true"></i></span>
+  </article>
+  <article class="admin-kpi-card">
+    <h2>Avg Wait Time</h2>
+    <p class="admin-kpi-value">12.4 mins</p>
+    <p class="admin-kpi-trend">Completed tickets today</p>
+    <span class="admin-kpi-icon is-blue"><i data-lucide="clock-3" aria-hidden="true"></i></span>
+  </article>
+  <article class="admin-kpi-card">
+    <h2>Currently Serving</h2>
+    <p class="admin-kpi-value">3</p>
+    <p class="admin-kpi-trend">Active service windows</p>
+    <span class="admin-kpi-icon is-orange"><i data-lucide="user-check" aria-hidden="true"></i></span>
+  </article>
+  <article class="admin-kpi-card">
+    <h2>Voided/Skipped Today</h2>
+    <p class="admin-kpi-value">2</p>
+    <p class="admin-kpi-trend">No-show and voided tickets</p>
+    <span class="admin-kpi-icon is-slate"><i data-lucide="user-round-minus" aria-hidden="true"></i></span>
+  </article>
+</section>
+
+<section class="admin-dashboard-grid">
+  <article class="admin-card">
+    <header class="admin-card-header">
+      <h2>Hourly Ticket Volume Distribution</h2>
+    </header>
+    <div class="admin-chart-body">
+              <div class="admin-chart-canvas-wrap">
+          <canvas data-admin-chart="admin-hour-chart-data" role="img" aria-label="Hourly ticket volume for today. Exact values are available in the table after the chart."></canvas>
+        </div>
+        <script nonce="t6Eh3OGR91UwIwlrGfYFzkz+" type="application/json" id="admin-hour-chart-data">{"type":"bar","labels":["08:00","09:00","10:00"],"datasets":[{"label":"Tickets","data":[12,21,13]}],"unit":"tickets"}</script>
+        <div class="admin-table-wrap admin-chart-table-alternative">
+          <table class="admin-data-table">
+            <caption class="visually-hidden">Hourly ticket volume values</caption>
+            <thead><tr><th>Hour</th><th>Tickets</th></tr></thead>
+            <tbody><tr><td>08:00</td><td>12</td></tr><tr><td>09:00</td><td>21</td></tr><tr><td>10:00</td><td>13</td></tr></tbody>
+          </table>
+        </div>
+        <div class="admin-insight">
+          <i data-lucide="info" aria-hidden="true"></i>
+          <p class="mb-0">Peak hour today is 09:00 with 21 ticket(s).</p>
+        </div>
+          </div>
+  </article>
+
+  <article class="admin-card">
+    <header class="admin-card-header">
+      <h2>Wait Time Performance (Predicted vs Actual)</h2>
+    </header>
+    <div class="admin-chart-body">
+              <div class="admin-chart-canvas-wrap">
+          <canvas data-admin-chart="admin-wait-chart-data" role="img" aria-label="Predicted and actual average wait times over the last seven days. Exact values are available in the table after the chart."></canvas>
+        </div>
+        <script nonce="t6Eh3OGR91UwIwlrGfYFzkz+" type="application/json" id="admin-wait-chart-data">{"type":"line","labels":["Sep 01","Sep 02","Sep 03","Sep 04","Sep 05"],"datasets":[{"label":"Predicted wait","data":[10,14,12,15,11.2]},{"label":"Actual wait","data":[12,16,11,17,12.4]}],"unit":"minutes"}</script>
+        <div class="admin-table-wrap">
+          <table class="admin-data-table">
+            <thead>
+              <tr><th>Date</th><th>Predicted Avg</th><th>Actual Avg</th><th>MAE</th></tr>
+            </thead>
+            <tbody>
+                              <tr>
+                  <td>2026-09-07</td>
+                  <td>11.2 min</td>
+                  <td>12.4 min</td>
+                  <td>1.2 min</td>
+                </tr>
+                          </tbody>
+          </table>
+        </div>
+        <div class="admin-insight">
+          <i data-lucide="info" aria-hidden="true"></i>
+          <p class="mb-0">Latest model error is 1.2 minute(s) on 2026-09-07.</p>
+        </div>
+          </div>
+  </article>
+</section>
+
+      </main>
+    </div>
+  </div>
+      <button class="app-sidebar-scrim admin-sidebar-scrim" type="button" data-app-sidebar-close aria-label="Close navigation"></button>
+  
+  <div class="toast-container app-toast-container position-fixed top-0 end-0 p-3" aria-live="polite" aria-atomic="true">
+          </div>
+
+  <div class="modal fade app-logout-modal admin-logout-bootstrap-modal" id="appLogoutModal" tabindex="-1"
+       aria-labelledby="app-logout-title" aria-describedby="app-logout-description" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content js-validated-form" action="http://127.0.0.1:8766/before/modules/auth/logout.php" method="POST">
+        <input type="hidden" name="csrf_token" value="review-only">        <div class="modal-header">
+          <h2 class="modal-title fs-5" id="app-logout-title">Log out of admin?</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close logout confirmation"></button>
+        </div>
+        <div class="modal-body"><p id="app-logout-description">You will return to the sign-in screen and need to sign in again before managing Smart QMS.</p></div>
+        <div class="modal-footer">
+          <button class="btn admin-action-button" type="button" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn admin-action-button is-danger" type="submit" data-loading-text="Logging out...">Log out</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  
+  
+  
+      
+    
+  
+  
+  
+      
+      
+      
+      
+      
+      
+  <script src="assets/vendor/bootstrap/bootstrap.bundle.min.js"></script><script src="assets/vendor/lucide/lucide.min.js"></script><script src="assets/vendor/chart.js/chart.umd.min.js"></script><script src="assets/js/theme.js"></script><script src="assets/js/language.js"></script><script src="assets/js/main.js"></script><script src="assets/js/shell.js"></script><script src="assets/js/admin.js"></script><script src="../review.js"></script></body>
+</html>

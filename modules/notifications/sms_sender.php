@@ -1,7 +1,6 @@
 <?php
 /**
- * SmartQMS -- SMS Sender (Semaphore API)
- * Wraps the Semaphore SMS API for OTP and notifications.
+ * SmartQMS SMS delivery boundary for OTP and notifications.
  *
  * FREE TIER: Sign up at semaphore.co to get free SMS credits.
  * If sms_enabled = 0 in system_settings -> log as 'simulated'
@@ -12,6 +11,7 @@
  *   sendSMS($conn, '09171234567', 'Your OTP is: 123456', 'otp', $userId);
  */
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/sms_provider.php';
 
 function sendSMS(mysqli $conn, string $phone, string $message, string $type = 'notification', int $userId = 0): bool {
     // Read SMS settings from system_settings table
@@ -22,35 +22,29 @@ function sendSMS(mysqli $conn, string $phone, string $message, string $type = 'n
         $settings[$row['setting_key']] = $row['setting_val'];
     }
 
-    $enabled    = $settings['sms_enabled']    ?? '0';
-    $apiKey     = $settings['sms_api_key']    ?? '';
-    $senderName = $settings['sms_sender_name'] ?? 'BHCQMS';
-
+    $configuration = resolveSmsConfiguration($settings);
     $status = 'simulated';
+    $errorMessage = null;
 
-    if ($enabled === '1' && !empty($apiKey)) {
-        // TODO: Send via Semaphore API
-        $data = [
-            'apikey'     => $apiKey,
-            'number'     => $phone,
-            'message'    => $message,
-            'sendername' => $senderName,
-        ];
-        $ch = curl_init('https://api.semaphore.co/api/v4/messages');
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        $status = ($httpCode === 200) ? 'sent' : 'failed';
+    if ($configuration['enabled']) {
+        try {
+            $result = sendSmsWithProvider($configuration, $phone, $message);
+            $status = $result['accepted'] ? 'sent' : 'failed';
+            if (!$result['accepted']) {
+                $errorMessage = 'Provider rejected the request (HTTP ' . $result['http_code'] . ').';
+            }
+        } catch (Throwable $error) {
+            $status = 'failed';
+            $errorMessage = substr($error->getMessage(), 0, 255);
+            error_log('SmartQMS SMS delivery failed for provider ' . $configuration['provider'] . '.');
+        }
     }
 
     // Always log SMS attempt regardless of actual sending
     $nullableUserId = $userId > 0 ? $userId : null;
     $stmt = $conn->prepare("INSERT INTO sms_logs
-        (user_id, phone, message, type, status) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param('issss', $nullableUserId, $phone, $message, $type, $status);
+        (user_id, phone, message, type, status, error_msg) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param('isssss', $nullableUserId, $phone, $message, $type, $status, $errorMessage);
     $stmt->execute();
 
     return $status === 'sent' || $status === 'simulated';

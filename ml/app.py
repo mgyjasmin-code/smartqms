@@ -1,6 +1,7 @@
 """Validated Flask inference API for the SmartQMS wait-time model."""
 
 from pathlib import Path
+import hmac
 import json
 import os
 
@@ -27,6 +28,29 @@ FEATURE_RANGES = {
     "active_windows": (1, 100, int),
     "avg_service_time": (0.1, 480, float),
 }
+
+
+def request_is_authorized() -> bool:
+    """Fail closed unless the server-only bearer token is configured and supplied."""
+    expected = os.environ.get("PYTHON_ML_TOKEN", "").strip()
+    if not expected:
+        return False
+    supplied = request.headers.get("Authorization", "")
+    prefix = "Bearer "
+    if not supplied.startswith(prefix):
+        return False
+    return hmac.compare_digest(supplied[len(prefix):], expected)
+
+
+def prediction_confidence(prediction: float) -> float:
+    """Derive a bounded quality score from the artifact holdout MAE."""
+    metrics = MODEL_METADATA.get("metrics", {})
+    try:
+        mae = max(0.0, float(metrics.get("mae", 0.0)))
+    except (TypeError, ValueError):
+        mae = 0.0
+    scale = max(5.0, prediction, mae * 2.0)
+    return round(float(np.clip(1.0 - (mae / scale), 0.05, 0.99)), 5)
 
 
 def load_model(
@@ -81,6 +105,8 @@ def load_model(
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    if not request_is_authorized():
+        return jsonify({"error": "Prediction service authorization failed."}), 401
     if MODEL is None:
         return jsonify({"error": "Verified real-data model is not available."}), 503
 
@@ -115,27 +141,21 @@ def predict():
 
     if not np.isfinite(prediction) or prediction < 0 or prediction > 480:
         return jsonify({"error": "Model returned an invalid prediction."}), 500
-    return jsonify(
-        {
-            "predicted_wait_minutes": round(prediction, 2),
-            "status": "success",
-            "model": MODEL_METADATA.get("algorithm", "SmartQMS model"),
-        }
-    )
+    minutes = round(prediction, 2)
+    model_version = MODEL_METADATA.get("model_version") or "qms-wait-v2-unversioned"
+    return jsonify({
+        "estimated_wait_minutes": minutes,
+        "predicted_wait_minutes": minutes,
+        "confidence": prediction_confidence(minutes),
+        "model_version": model_version,
+        "status": "success",
+        "model": MODEL_METADATA.get("algorithm", "SmartQMS model"),
+    })
 
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify(
-        {
-            "status": "running" if MODEL is not None else "degraded",
-            "model": "loaded" if MODEL is not None else "not loaded",
-            "ready": MODEL is not None,
-            "features": FEATURE_COLS,
-            "metadata": MODEL_METADATA,
-            "error": MODEL_LOAD_ERROR or None,
-        }
-    )
+    return jsonify({"status": "ok" if MODEL is not None else "degraded", "ready": MODEL is not None})
 
 
 load_model()

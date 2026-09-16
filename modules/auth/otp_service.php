@@ -46,9 +46,6 @@ function verifyStoredOtp(mysqli $conn, int $userId, string $otp): string {
 }
 
 function otpMessagePrefixForFlow(string $flow): string {
-    if ($flow === 'login') {
-        return 'Your SmartQMS login code is';
-    }
     if ($flow === 'reset') {
         return 'Your SmartQMS password reset code is';
     }

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A-024 — SmartQMS</title>
+  <meta name="csrf-token" content="review-only">  <script nonce="58cgjZi6ur3mzo0jO/uKjloi">
+  (function () {
+    try {
+      var saved = window.localStorage.getItem('smartqms-theme');
+      var theme = saved === 'dark' || saved === 'light'
+        ? saved
+        : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-app-theme', theme);
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    } catch (error) {
+      document.documentElement.setAttribute('data-app-theme', 'light');
+      document.documentElement.setAttribute('data-bs-theme', 'light');
+    }
+  })();
+</script>
+  <link rel="stylesheet" href="http://127.0.0.1:8766/after/assets/vendor/bootstrap/bootstrap.min.css?v=1788876824">
+  <link rel="stylesheet" href="http://127.0.0.1:8766/after/assets/css/style.css?v=1788878942">
+<link rel="stylesheet" href="../review.css"></head>
+<body class="public-journey-page public-queue-page d-flex flex-column min-vh-100"><div class="review-notice">Design review · Fictional sample data · After</div>
+  <a class="skip-link" href="#main-content">Skip to ticket status</a>
+  <nav class="navbar navbar-expand-xl public-navbar sticky-top" aria-label="Public navigation">
+  <div class="container public-shell-container">
+    <a class="navbar-brand public-brand" href="http://127.0.0.1:8766/after/" aria-label="SmartQMS home">
+      <span class="public-brand-mark" aria-hidden="true"><img src="http://127.0.0.1:8766/after/assets/images/brand/smartqms-mark.svg?v=1787409080" alt="" width="36" height="36"></span>
+      <span>SmartQMS</span>
+    </a>
+
+    <div class="public-navbar-priority d-flex align-items-center gap-2 ms-auto d-xl-none">
+      <a class="btn btn-primary btn-sm" href="http://127.0.0.1:8766/after/queue/join/">Book</a>
+      <a class="btn btn-outline-primary btn-sm" href="http://127.0.0.1:8766/after/#secure-tracking">Track</a>
+    </div>
+
+    <button class="navbar-toggler public-navbar-toggler ms-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#publicNavigation" aria-controls="publicNavigation" aria-label="Open navigation">
+      <i data-lucide="menu" aria-hidden="true"></i>
+    </button>
+
+    <div class="offcanvas offcanvas-end public-nav-offcanvas" tabindex="-1" id="publicNavigation" aria-labelledby="public-navigation-title">
+      <div class="offcanvas-header">
+        <h2 class="offcanvas-title h5 mb-0" id="public-navigation-title">SmartQMS navigation</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close navigation"></button>
+      </div>
+      <div class="offcanvas-body align-items-xl-center">
+        <ul class="navbar-nav public-nav-list mx-xl-auto mb-3 mb-xl-0">
+                      <li class="nav-item">
+              <a class="nav-link" href="http://127.0.0.1:8766/after/">Home</a>
+            </li>
+                      <li class="nav-item">
+              <a class="nav-link" href="http://127.0.0.1:8766/after/queue/join/">Book a Visit</a>
+            </li>
+                      <li class="nav-item">
+              <a class="nav-link active" href="http://127.0.0.1:8766/after/#secure-tracking" aria-current="page">Track Queue</a>
+            </li>
+                      <li class="nav-item">
+              <a class="nav-link" href="http://127.0.0.1:8766/after/manage-reservation/">Manage Reservation</a>
+            </li>
+                  </ul>
+        <div class="public-nav-tools d-flex flex-column flex-xl-row align-items-stretch align-items-xl-center gap-2">
+          <label class="sq-language-control">
+  <span class="visually-hidden">Language</span>
+  <i data-lucide="languages" aria-hidden="true"></i>
+  <select class="form-select" data-sq-language aria-label="Language: English">
+    <option value="en">English</option>
+    <option value="fil">Filipino</option>
+  </select>
+</label>
+          <button class="sq-theme-toggle" type="button" data-sq-theme-toggle aria-label="Switch to dark mode" aria-pressed="false">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path data-sq-theme-icon d="M12 3a6 6 0 1 0 9 9 9 9 0 1 1-9-9Z"/>
+  </svg>
+</button>
+          <a class="btn btn-outline-secondary" href="http://127.0.0.1:8766/after/login/">Staff/Admin Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+  <main id="main-content" class="public-workflow-main flex-grow-1" tabindex="-1">
+    <div class="container public-form-container">
+              <section class="public-tracker" data-review-ticket-tracker data-token="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" data-status-url="http://127.0.0.1:8766/after/modules/queue/public_ticket_status.php" data-feedback-url="http://127.0.0.1:8766/after/modules/feedback/public_submit.php">
+          <header class="public-workflow-heading public-tracker-heading"><div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3"><div><h1>Your place in line</h1><p data-service-name>General Consultation</p></div><button class="btn btn-outline-primary" type="button" data-enable-sound aria-pressed="false"><i data-lucide="bell" aria-hidden="true"></i> Enable alerts</button></div></header>
+
+          <div class="public-status-panel" data-status-panel data-status="waiting" role="status" aria-live="polite"><span class="public-status-icon" aria-hidden="true"><i data-lucide="clock-3"></i></span><div><p data-status-label>Waiting</p><h2 data-status-message>Your live queue status is ready.</h2><time class="public-status-updated" data-last-updated datetime="2026-09-08T22:54:47+08:00">Last updated just now</time></div></div>
+          <p class="public-update-error" data-update-error role="status" aria-live="polite" hidden><i data-lucide="wifi-off" aria-hidden="true"></i><span>Updates are temporarily unavailable. Showing the last received information; retrying automatically.</span></p>
+
+          <div class="public-tracker-grid" data-ticket-metadata>
+            <article class="card public-ticket-card"><div class="card-body p-4">
+              <div class="public-ticket-number-block"><span>Your queue number</span><strong data-ticket-number data-queue-number>A-024</strong></div>
+              <dl class="public-queue-summary">
+                <div><dt>People ahead</dt><dd data-people-ahead>3</dd></div>
+                <div><dt>Estimated wait</dt><dd data-wait-display><span data-wait-minutes>12.0</span> min</dd></div>
+              </dl>
+              <p class="public-wait-note">Waiting times are estimates and may change as clients are served.</p>
+              <dl class="public-ticket-details mt-4">
+                <div><dt>Counter</dt><dd data-counter-label>Assigned when called</dd></div>
+                <div><dt>Status</dt><dd data-status-detail>Waiting</dd></div>
+                <div><dt>Visit date</dt><dd>September 8, 2026</dd></div>
+                <div><dt>Reference</dt><dd>DEMO-024</dd></div>
+              </dl>
+            </div></article>
+            <article class="card public-ticket-qr-card"><div class="card-body p-4 text-center"><h2 class="h5">Keep your place handy</h2><p class="text-body-secondary">Scan to reopen this tracker on another device.</p><p class="public-wait-note">Keep the private link to this page so you can return to your tracker.</p></div></article>
+          </div>
+
+          <div class="public-ticket-actions d-flex flex-column flex-sm-row gap-3"><button class="btn btn-primary flex-fill" type="button" data-print-page><i data-lucide="printer" aria-hidden="true"></i> Print Ticket</button><a class="btn btn-outline-primary flex-fill" href="http://127.0.0.1:8766/after/track/">Open another private link</a></div>
+
+          <section class="card public-feedback-gate" data-feedback-gate hidden aria-labelledby="public-feedback-title"><div class="card-body p-4 p-md-5"><p class="public-kicker">Service complete</p><h2 id="public-feedback-title">How was your visit?</h2><p class="text-body-secondary">Submit one anonymous rating. Do not include medical or personal information.</p><form data-public-feedback-form><input type="hidden" name="csrf_token" value="review-only"><input type="hidden" name="ticket_token" value="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"><fieldset><legend class="form-label">Rating</legend><div class="public-rating-grid"><label><input type="radio" name="rating" value="1" required><span>1<small>star</small></span></label><label><input type="radio" name="rating" value="2" required><span>2<small>stars</small></span></label><label><input type="radio" name="rating" value="3" required><span>3<small>stars</small></span></label><label><input type="radio" name="rating" value="4" required><span>4<small>stars</small></span></label><label><input type="radio" name="rating" value="5" required><span>5<small>stars</small></span></label></div></fieldset><div class="mt-3"><label class="form-label" for="public-feedback-comment">Comments (optional)</label><textarea class="form-control" id="public-feedback-comment" name="comment" rows="4" maxlength="1000"></textarea></div><p class="public-feedback-error" data-feedback-error role="alert" hidden></p><button class="btn btn-primary w-100 mt-4" type="submit" data-loading-text="Submitting…">Submit Feedback</button></form></div></section>
+          <section class="card public-feedback-complete text-center" data-feedback-complete hidden><div class="card-body p-5"><h2 class="h4">Thank you</h2><p class="mb-0 text-body-secondary">This ticket is complete and your feedback has been recorded.</p></div></section>
+        </section>
+          </div>
+  </main>
+
+  <footer class="public-footer mt-auto">
+  <div class="container public-shell-container py-5">
+    <div class="row g-4 align-items-start">
+      <div class="col-lg-5">
+        <a class="public-brand public-footer-brand" href="http://127.0.0.1:8766/after/">
+          <span class="public-brand-mark" aria-hidden="true"><img src="http://127.0.0.1:8766/after/assets/images/brand/smartqms-mark.svg?v=1787409080" alt="" width="36" height="36"></span>
+          <span>SmartQMS</span>
+        </a>
+        <p class="mt-3 mb-0">A privacy-conscious civic healthcare queue. Reserve your visit, arrive, and follow your place in line without creating an account.</p>
+      </div>
+      <div class="col-6 col-lg-3 offset-lg-1">
+        <h2 class="h6">For clients</h2>
+        <ul class="list-unstyled public-footer-links">
+          <li><a href="http://127.0.0.1:8766/after/queue/join/">Book a Visit</a></li>
+          <li><a href="http://127.0.0.1:8766/after/#secure-tracking">Track Queue</a></li>
+          <li><a href="http://127.0.0.1:8766/after/manage-reservation/">Manage Reservation</a></li>
+        </ul>
+      </div>
+      <div class="col-6 col-lg-3">
+        <h2 class="h6">Operations</h2>
+        <ul class="list-unstyled public-footer-links">
+          <li><a href="http://127.0.0.1:8766/after/login/">Staff/Admin Login</a></li>
+          <li><span>Check-in: 8:00 AM–3:30 PM</span></li>
+          <li><span>Public displays never show names</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="public-footer-legal">
+    <div class="container public-shell-container d-flex flex-column flex-sm-row justify-content-between gap-2 py-3">
+      <small>&copy; 2026 SmartQMS</small>
+      <small>Barangay health-center queue service</small>
+    </div>
+  </div>
+</footer>
+  
+  
+  
+  
+  
+  <script src="assets/vendor/bootstrap/bootstrap.bundle.min.js"></script><script src="assets/vendor/lucide/lucide.min.js"></script><script src="assets/vendor/chart.js/chart.umd.min.js"></script><script src="assets/js/theme.js"></script><script src="assets/js/language.js"></script><script src="assets/js/main.js"></script><script src="assets/js/shell.js"></script><script src="assets/js/admin.js"></script><script src="../review.js"></script></body>
+</html>

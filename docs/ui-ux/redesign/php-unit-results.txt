@@ -1,0 +1,146 @@
+[PASS] service adapters enforce system-managed identifiers and queue modes
+[PASS] staff and window validation retain account rules and configuration-only window fields
+[PASS] admin management pages use table first Bootstrap modal forms
+[PASS] management modal forms preserve request fields and edit URLs
+[PASS] destructive service confirmation is Bootstrap accessible and password remains private
+[PASS] shared validation and admin behavior own confirmation without window confirm
+[PASS] admin management styling is full width token driven and responsive
+[PASS] admin action feedback uses reusable Bootstrap toasts
+[PASS] health services mirrors the staff table workflow without count pills
+[PASS] admin sidebar brand is left aligned and uses the healthcare queue icon system
+[PASS] admin header provides a responsive Bootstrap navigation search
+[PASS] admin navigation and public entry points exclude removed activity log and settings features
+[PASS] admin logout uses a Bootstrap modal and preserves its secure form contract
+[PASS] all admin reports share one structured responsive layout
+[PASS] admin report controls preserve existing request and action contracts
+[PASS] admin report styling keeps controls cards chart and table consistent
+[PASS] admin report toolbar has no nested divider and report hovers stay in the blue system
+[PASS] admin report charts derive horizontal scroll width from data density
+[PASS] admin reports select chart types that match the underlying comparison
+[PASS] admin report print layout is a dedicated PDF-safe composition
+[PASS] admin chart presentation uses semantic non-green series and accessible line styles
+[PASS] shared interaction polish is pointer-aware and motion-safe
+[PASS] auth utilities declare the current OTP session keys
+[PASS] login completion declares the authenticated session contract
+[PASS] role redirection retains Staff and Admin destinations while clients return public
+[PASS] login credential normalization preserves raw passwords
+[PASS] login account status preserves generic credential disclosure
+[PASS] authentication password hashing retains bcrypt verification
+[PASS] OTP hash and expiry checks retain wrong expired and valid states
+[PASS] OTP flow metadata is limited to recovery and legacy registration
+[PASS] OTP session flow helpers retain all transient keys and cleanup
+[PASS] administrator password login bypasses the retired OTP challenge
+[PASS] role destination selection retains Staff and Admin while client roles use the landing page
+[PASS] authentication forms use the shared responsive composition and accessible controls
+[PASS] forgot password request reserves validation feedback height
+[PASS] authenticated roles use the shared responsive shell with restricted navigation
+[PASS] shared header search uses one component-level focus ring
+[PASS] client notification center keeps history and acknowledges only displayed owned rows
+[PASS] client feedback and ticket history use shared toasts and active display rules
+[PASS] staff workflow surfaces follow shared light and dark theme tokens
+[PASS] staff workspace uses the admin shell without translation or queue-mode labels
+[PASS] staff Skip and manual Void share one Bootstrap confirmation and submit once
+[PASS] Staff arrival UI exposes QR manual and walk-in workflows without classification
+[PASS] Staff arrival endpoints retain Staff role POST CSRF and request contracts
+[PASS] Staff workspace exposes lifecycle KPIs and strict horizontally scrollable FIFO table
+[PASS] Staff workspace only renders manual void while a ticket is being called
+[PASS] Queue timeout maintenance is system-wide idempotent and defaults to five minutes
+[PASS] Batch 8J Admin forms expose the approved simplified configuration fields
+[PASS] Staff batch printing is a constrained native form backed by a direct PDF endpoint
+[PASS] Public display exposes a fixed privacy-minimized serving and waiting board
+[PASS] Batch 8J analytics use arrival and service-start timestamps
+[PASS] Batch 8J report volume excludes Scheduled appointments
+[PASS] Batch 8J prediction capacity uses mapped counters and per-service waiting rows
+[PASS] Batch 8J model loader accepts only database-exported queue observations
+[PASS] blueprint compatibility schema preserves legacy entities and adds required aliases
+[PASS] unified login and public queue routes retain role and token safety
+[PASS] staff workstation exposes arrival check-in lifecycle and FIFO queue monitor zones
+[PASS] admin management exposes blueprint staff service and counter fields
+[PASS] public display is unauthenticated read only and updates calling tickets silently
+[PASS] ML training uses exported real queue history and provides FastAPI compatibility
+[PASS] blueprint HTTP inventory records public and staff compatibility endpoints
+[PASS] customer booking input normalizes identity phone and classification
+[PASS] customer booking requires service location identity and a Philippine mobile number
+[PASS] public no-account booking collects the guided reservation fields
+[PASS] appointment QR generation remains server side without a duplicate scanner dependency
+[PASS] customer booking controller validates each step and preserves native form submission
+[PASS] queue creation retains the existing endpoint and updates verified customer details transactionally
+[PASS] scheduled confirmation displays appointment details beside a private QR and prints cleanly
+[PASS] customer booking styling is theme-token driven and responsive
+[PASS] database bootstrap catches connection failures without exposing a stack trace
+[PASS] queue transaction state helper is available from the normal application bootstrap
+[PASS] phone normalization strips non-digits
+[PASS] Philippine mobile validation matches the current contract
+[PASS] shared validation primitives retain current accepted values
+[PASS] client type encoding remains stable
+[PASS] fallback wait calculation preserves current formula
+[PASS] flash feedback is stored, consumed once, and normalized
+[PASS] CSV export retains a formula-injection guard
+[PASS] HTTP contract inventory is complete and points to existing entry points
+[PASS] SmartQMS design system documents the approved civic healthcare contract
+[PASS] wireframe gallery covers public staff and admin journeys at target widths
+[PASS] production visual assets are local and use the shared SVG identity
+[PASS] shared semantic tokens preserve compatibility aliases and both themes
+[PASS] action blue and dimensional admin navigation follow the 60 30 10 contract
+[PASS] public theme controls are shared without changing queue form contracts
+[PASS] JavaScript ownership is separated across shared client staff admin and display files
+[PASS] feature scripts use one DOM-ready initializer guards and pagehide cleanup
+[PASS] client and staff fetches retain credentials CSRF and in-flight guards
+[PASS] page script loading follows public staff admin and display ownership
+[PASS] inline click and feedback handlers are removed from PHP views
+[PASS] removed legacy JavaScript globals have no source definitions
+[PASS] ML training uses the requested queue_data CSV and rejects synthetic artifacts
+[PASS] dashboard and ML reports reject corrupt waits and use queue_data CSV
+[PASS] production data-entry forms delegate expressible constraints to native HTML validation
+[PASS] authentication and account forms expose required email length pattern and confirmation constraints
+[PASS] queue management and feedback forms expose native selection pattern and range contracts
+[PASS] native validation JavaScript preserves server errors and gates side effects
+[PASS] action-only and filter forms keep their established validation contract
+[PASS] production bootstrap contains no fixed administrator or browser SMS prototype
+[PASS] production configuration fails closed and protects authenticated sessions
+[PASS] password reset responses and authority no longer disclose or trust a user id
+[PASS] reservation mutation endpoint accepts only private token sessions
+[PASS] reference compatibility status is coarse throttled and announced for sunset
+[PASS] ML prediction services reject missing bearer configuration and minimize health output
+[PASS] deployment health is administrator-only and secret-minimized
+[PASS] production requests verify schema without applying DDL
+[PASS] root is the public landing and login is Staff/Admin only
+[PASS] online booking is Scheduled and delays numbering and prediction until arrival
+[PASS] public journey shares one shell and projects configured service duration safely
+[PASS] reference tracking projection is privacy minimized while token tracking stays private
+[PASS] reservation management requires a private token session and keeps mutations transactional
+[PASS] Bootstrap 5.0.2 is served through public assets without opening Composer internals
+[PASS] report definitions retain all ten report keys
+[PASS] report aliases retain current normalization
+[PASS] report date range retains defaults and rejects invalid ranges
+[PASS] empty report and chart contracts retain expected keys
+[PASS] SMS configuration ignores database secrets and gives environment highest precedence
+[PASS] FMCSMS request matches the approved JSON contract and normalizes Philippine numbers
+[PASS] SMS provider rejects missing secrets, invalid numbers, and empty messages before networking
+[PASS] SMS provider transport is injectable and explicit provider failures are not accepted
+[PASS] Supabase URLs require HTTPS except for local development
+[PASS] Browser runtime configuration never projects the service-role credential
+[PASS] Provider role and ticket-status translations preserve local contracts
+[PASS] Provider service rows retain legacy-compatible aliases
+[PASS] Supabase response normalization exposes stable success and error envelopes
+[PASS] Supabase development schema defines the required normalized model and RLS boundary
+[PASS] Browser data adapters expose the approved provider-neutral contracts
+[PASS] Catalog HTTP facades remain provider-neutral and read-only
+[PASS] Supabase staff operations are transactional and service-role only
+[PASS] Protected staff endpoints preserve contracts and delegate to provider gateway
+[PASS] Staff pages load data adapters before staff behavior and use declarative provider actions
+[PASS] Admin management pages use the provider-neutral server adapter
+[PASS] Admin service ordering is authorized and transactional in Supabase
+[PASS] Queue browser adapter exposes every staff mutation used by the dashboard
+[PASS] Supabase queue realtime subscribes to the required tables with safe lifecycle fallbacks
+[PASS] Role dashboards consume queue updates without full-page reloads
+[PASS] Public live snapshot is redacted and realtime replication is explicit
+[PASS] ML response contract is authenticated, bounded, and stored with provenance
+[PASS] Server-only prediction secrets are absent from browser runtime adapters
+[PASS] Supabase Auth verification uses the publishable key and never service role credentials
+[PASS] Server ticket API derives prediction inputs and rejects browser supplied predictions
+[PASS] Branch and elevated-role mutations are service-role only and audited
+[PASS] Compatibility APIs enforce method role and stable JSON boundaries
+[PASS] Supabase rollout documents migration order secrets cutover and rollback
+
+Tests: 144 passed, 0 failed, 144 total

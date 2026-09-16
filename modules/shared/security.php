@@ -8,13 +8,89 @@ function isLoggedIn(): bool {
 }
 
 function requireLogin(string $role = ''): void {
-    if (!isLoggedIn()) {
+    if (!isLoggedIn() || authenticatedSessionExpired() || authenticatedPrincipalRevoked()) {
+        destroyLocalSessionState();
         header('Location: ' . APP_URL . '/index.php');
         exit();
     }
     if ($role && $_SESSION['role'] !== $role) {
         header('Location: ' . APP_URL . '/index.php');
         exit();
+    }
+    if (authenticatedPrincipalMustRotatePassword()
+        && !str_contains(str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '')), '/change-password/')) {
+        header('Location: ' . APP_URL . '/change-password/');
+        exit();
+    }
+
+    $now = time();
+    $_SESSION['auth_last_activity_at'] = $now;
+    $rotatedAt = (int) ($_SESSION['auth_rotated_at'] ?? 0);
+    if ($rotatedAt <= 0 || $now - $rotatedAt >= SESSION_ROTATE_SECONDS) {
+        session_regenerate_id(true);
+        $_SESSION['auth_rotated_at'] = $now;
+    }
+}
+
+function authenticatedPrincipalMustRotatePassword(): bool {
+    if (!empty($_SESSION['provider_user_id'])) {
+        return false;
+    }
+    global $conn;
+    if (!isset($conn) || !($conn instanceof mysqli)) {
+        return false;
+    }
+    $userId = (int) ($_SESSION['user_id'] ?? 0);
+    $stmt = $conn->prepare('SELECT must_change_password FROM users WHERE user_id = ? LIMIT 1');
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    return (int) ($stmt->get_result()->fetch_assoc()['must_change_password'] ?? 0) === 1;
+}
+
+function authenticatedPrincipalRevoked(): bool {
+    if (!empty($_SESSION['provider_user_id'])) {
+        return false;
+    }
+    global $conn;
+    if (!isset($conn) || !($conn instanceof mysqli)) {
+        return false;
+    }
+    $userId = (int) ($_SESSION['user_id'] ?? 0);
+    $sessionVersion = (int) ($_SESSION['session_version'] ?? 0);
+    if ($userId < 1 || $sessionVersion < 1) {
+        return true;
+    }
+    $stmt = $conn->prepare('SELECT is_active, session_version, role FROM users WHERE user_id = ? LIMIT 1');
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+    return !$user
+        || (int) $user['is_active'] !== 1
+        || (int) $user['session_version'] !== $sessionVersion
+        || (string) $user['role'] !== (string) ($_SESSION['role'] ?? '');
+}
+
+function authenticatedSessionExpired(?int $now = null): bool {
+    if (!isLoggedIn()) {
+        return false;
+    }
+    $now = $now ?? time();
+    $createdAt = (int) ($_SESSION['auth_created_at'] ?? 0);
+    $lastActivityAt = (int) ($_SESSION['auth_last_activity_at'] ?? 0);
+    return $createdAt <= 0
+        || $lastActivityAt <= 0
+        || $now - $createdAt >= SESSION_ABSOLUTE_TIMEOUT_SECONDS
+        || $now - $lastActivityAt >= SESSION_IDLE_TIMEOUT_SECONDS;
+}
+
+function destroyLocalSessionState(): void {
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], (bool) $params['secure'], (bool) $params['httponly']);
+    }
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_destroy();
     }
 }
 

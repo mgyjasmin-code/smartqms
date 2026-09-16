@@ -28,27 +28,32 @@ function withCharacterizationAdminSession(int $userId, callable $callback): mixe
     }
 }
 
-testCase('service catalog retains HTML and JSON writes and hard deletion without history', function (): void {
+testCase('service catalog keeps ML identity system managed and supports queue mode and ordering', function (): void {
     withTestTransaction(function (mysqli $conn): void {
         $adminId = characterizationAdminUser($conn, 'service');
+        $expectedCode = nextHealthServiceCode($conn);
+        $expectedEncoded = nextHealthServiceEncoded($conn);
         $serviceId = createHealthService(
             $conn,
-            'CHR-B601',
+            'TAMPERED-CODE',
             'Characterization Service',
-            11,
+            99,
             'Original',
             0,
             20,
             $adminId
         );
-        assertTrueValue(duplicateHealthServiceCode($conn, 'CHR-B601', 0));
-        assertFalseValue(duplicateHealthServiceCode($conn, 'CHR-B601', $serviceId));
+        assertTrueValue(duplicateHealthServiceCode($conn, $expectedCode, 0));
+        assertFalseValue(duplicateHealthServiceCode($conn, $expectedCode, $serviceId));
+        assertSameValue($expectedCode, findHealthService($conn, $serviceId)['service_code']);
+        assertSameValue($expectedEncoded, (int) findHealthService($conn, $serviceId)['service_encoded']);
 
         $html = serviceHtmlInput([
             'service_id' => $serviceId,
             'service_code' => 'chr-b602',
             'service_name' => 'HTML Service',
             'service_encoded' => '12',
+            'queue_mode' => 'specialized',
             'description' => 'HTML changed',
             'priority_only' => '1',
             'is_active' => '0',
@@ -56,13 +61,15 @@ testCase('service catalog retains HTML and JSON writes and hard deletion without
         ]);
         updateHealthServiceFromHtml($conn, $html);
         $afterHtml = findHealthService($conn, $serviceId);
-        assertSameValue('CHR-B602', $afterHtml['service_code']);
-        assertSameValue(12, (int) $afterHtml['service_encoded']);
+        assertSameValue($expectedCode, $afterHtml['service_code']);
+        assertSameValue($expectedEncoded, (int) $afterHtml['service_encoded']);
+        assertSameValue('specialized', $afterHtml['queue_mode']);
         assertSameValue(0, (int) $afterHtml['is_active']);
 
         updateHealthServiceFromJson($conn, [
             'service_id' => $serviceId,
             'service_name' => 'JSON Service',
+            'queue_mode' => 'central',
             'description' => 'JSON changed',
             'priority_only' => 0,
             'display_order' => 22,
@@ -72,8 +79,10 @@ testCase('service catalog retains HTML and JSON writes and hard deletion without
         ]);
         $afterJson = findHealthService($conn, $serviceId);
         assertSameValue('JSON Service', $afterJson['service_name']);
-        assertSameValue('CHR-B602', $afterJson['service_code']);
-        assertSameValue(12, (int) $afterJson['service_encoded']);
+        assertSameValue($expectedCode, $afterJson['service_code']);
+        assertSameValue($expectedEncoded, (int) $afterJson['service_encoded']);
+        assertSameValue('central', $afterJson['queue_mode']);
+        assertSameValue((int) $afterHtml['display_order'], (int) $afterJson['display_order']);
         assertSameValue(0, (int) $afterJson['is_active']);
         setHealthServiceActive($conn, $serviceId, 1);
         assertSameValue(1, (int) findHealthService($conn, $serviceId)['is_active']);
@@ -112,6 +121,7 @@ testCase('staff creation retains verified staff role duplicate lookup and transa
                 'first_name' => 'Batch',
                 'last_name' => 'Six',
                 'email' => 'CHARACTERIZATION_STAFF_B6@EXAMPLE.TEST',
+                'job_title' => 'Nurse',
                 'phone_number' => '09171234567',
                 'password' => 'password123',
             ]);
@@ -128,7 +138,7 @@ testCase('staff creation retains verified staff role duplicate lookup and transa
     });
 });
 
-testCase('staff administration updates safely and deletes or deactivates according to history', function (): void {
+testCase('staff administration updates safely and always deactivates to preserve history', function (): void {
     withTestTransaction(function (mysqli $conn): void {
         $adminId = characterizationAdminUser($conn, 'staff_crud');
         withCharacterizationAdminSession($adminId, function () use ($conn, $adminId): void {
@@ -136,6 +146,7 @@ testCase('staff administration updates safely and deletes or deactivates accordi
                 'first_name' => 'Characterization',
                 'last_name' => 'Editable',
                 'email' => 'characterization_staff_editable@example.test',
+                'job_title' => 'Doctor',
                 'phone_number' => '09181234567',
                 'password' => 'password123',
             ]);
@@ -149,6 +160,7 @@ testCase('staff administration updates safely and deletes or deactivates accordi
                 'first_name' => 'Characterization',
                 'last_name' => 'Updated',
                 'email' => 'characterization_staff_updated@example.test',
+                'job_title' => 'Doctor',
                 'phone_number' => '',
                 'password' => '',
             ]);
@@ -164,15 +176,15 @@ testCase('staff administration updates safely and deletes or deactivates accordi
             $afterHash = (string) $conn->query("SELECT password_hash FROM users WHERE user_id={$userId}")->fetch_assoc()['password_hash'];
             assertSameValue($beforeHash, $afterHash, 'A blank edit password must preserve the current hash.');
 
-            $hardDelete = deleteOrDeactivateStaffAccount($conn, $staffId, $adminId, false);
-            assertFalseValue($hardDelete['had_history']);
-            assertFalseValue($hardDelete['soft_deleted']);
-            assertSameValue(null, findStaffAccount($conn, $staffId));
+            $deactivated = deleteOrDeactivateStaffAccount($conn, $staffId, $adminId, false);
+            assertTrueValue($deactivated['soft_deleted']);
+            assertSameValue(0, (int) findStaffAccount($conn, $staffId)['is_active']);
 
             $historyInput = staffAccountInput([
                 'first_name' => 'Characterization',
                 'last_name' => 'Historical',
                 'email' => 'characterization_staff_historical@example.test',
+                'job_title' => 'Barangay Health Worker',
                 'password' => 'password123',
             ]);
             $historyUserId = createStaffAccount($conn, $historyInput, $adminId, false);
@@ -191,18 +203,21 @@ testCase('staff administration updates safely and deletes or deactivates accordi
     });
 });
 
-testCase('window administration retains optional assignments and all three statuses', function (): void {
+testCase('window administration configures shared and specialized routing without runtime ownership', function (): void {
     withTestTransaction(function (mysqli $conn): void {
         $adminId = characterizationAdminUser($conn, 'window');
-        $staffUserId = characterizationAdminUser($conn, 'window_staff', ROLE_STAFF);
-        $stmt = $conn->prepare("INSERT INTO staff (user_id, added_by) VALUES (?, ?)");
-        $stmt->bind_param('ii', $staffUserId, $adminId);
-        $stmt->execute();
-        $staffId = (int) $conn->insert_id;
-        $serviceId = createHealthService($conn, 'CHR-B604', 'Window Service', 14, '', 0, 24, $adminId);
+        $serviceId = createHealthService($conn, 'CHR-B604', 'Window Service', 14, '', 0, 24, $adminId, 1, 'specialized');
 
-        withCharacterizationAdminSession($adminId, function () use ($conn, $serviceId, $staffId): void {
-            $input = windowAdminInput(['window_name' => 'Characterization B6', 'status' => 'closed']);
+        withCharacterizationAdminSession($adminId, function () use ($conn, $serviceId): void {
+            $input = windowAdminInput([
+                'counter_number' => (string) nextCounterNumber($conn),
+                'window_name' => 'Characterization B6',
+                'location_description' => 'North wing',
+                'window_type' => 'shared',
+                'service_ids' => [(string) $serviceId],
+                'is_active' => '1',
+            ]);
+            assertSameValue([], validateWindowAdminRouting($conn, $input));
             assertFalseValue(saveAdminWindow($conn, $input));
             $windowId = (int) $conn->query("
                 SELECT window_id
@@ -214,23 +229,23 @@ testCase('window administration retains optional assignments and all three statu
             $window = findAdminWindow(listAdminWindows($conn), $windowId);
             assertSameValue(null, $window['service_id']);
             assertSameValue(null, $window['staff_id']);
+            assertSameValue('closed', $window['status']);
+            assertSameValue('Window Service', $window['queue_handled']);
 
-            foreach (['open', 'busy', 'closed'] as $status) {
-                $input['window_id'] = (string) $windowId;
-                $input['status'] = $status;
-                assertTrueValue(saveAdminWindow($conn, $input));
-                $window = findAdminWindow(listAdminWindows($conn), $windowId);
-                assertSameValue($status, $window['status']);
-            }
-
-            $input['service_id'] = (string) $serviceId;
-            $input['staff_id'] = (string) $staffId;
+            $input['window_id'] = (string) $windowId;
+            $input['window_type'] = 'specialized';
+            $input['service_ids'] = [(string) $serviceId];
+            $input['is_active'] = '0';
+            assertSameValue([], validateWindowAdminRouting($conn, $input));
             assertTrueValue(saveAdminWindow($conn, $input));
             $window = findAdminWindow(listAdminWindows($conn), $windowId);
             assertSameValue($serviceId, (int) $window['service_id']);
-            assertSameValue($staffId, (int) $window['staff_id']);
+            assertSameValue('specialized', $window['window_type']);
+            assertSameValue('Window Service', $window['queue_handled']);
+            assertSameValue(0, (int) $window['is_active']);
+            assertSameValue(null, $window['staff_id']);
+            assertSameValue('closed', $window['status']);
             assertTrueValue(count(listWindowServiceAssignments($conn)) > 0);
-            assertTrueValue(count(listWindowStaffAssignments($conn)) > 0);
         });
     });
 });

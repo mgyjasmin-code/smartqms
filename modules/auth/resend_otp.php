@@ -9,6 +9,11 @@ $flow = $_SESSION['otp_flow'] ?? '';
 $userId = (int) ($_SESSION['otp_user_id'] ?? 0);
 $lastSent = (int) ($_SESSION['otp_last_sent_at'] ?? 0);
 
+if ($flow === 'login') {
+    clearOtpSession();
+    redirectTo('login/');
+}
+
 if (!$flow || !$userId) {
     redirectWithFormFeedback('index.php', 'login', [], [], 'OTP session expired. Please try again.');
 }
@@ -29,6 +34,11 @@ if (!$resendThrottle['allowed']) {
     redirectWithFormFeedback($target, $formKey, [], [], authThrottleMessage((int) $resendThrottle['retry_after']));
 }
 recordAuthAttempt($conn, 'otp_resend', $throttleIdentifier, OTP_RESEND_ATTEMPT_LIMIT, OTP_RESEND_ATTEMPT_WINDOW_SECONDS);
+
+if ($flow === 'reset' && $userId < 1) {
+    markOtpSent();
+    redirectTo($target, ['msg' => 'otp_resent']);
+}
 
 $prefix = otpMessagePrefixForFlow($flow);
 

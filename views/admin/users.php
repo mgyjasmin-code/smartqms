@@ -21,8 +21,10 @@ $users = listAdminUsers($conn);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Users -- SmartQMS</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/style.css">
+  <?php require __DIR__ . '/../shared/includes/theme_boot.php'; ?>
+  <link href="<?= assetUrl('vendor/twbs/bootstrap/dist/css/bootstrap.min.css') ?>" rel="stylesheet">
+  <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
+  <link rel="stylesheet" href="<?= assetUrl('assets/css/admin.css') ?>">
 </head>
 <body>
   <main class="container py-4">
@@ -30,8 +32,8 @@ $users = listAdminUsers($conn);
     <div class="card p-4">
       <h1 class="h4">Users</h1>
       <?php if ($feedback['form_error']): ?><div class="alert alert-danger" role="alert"><?= htmlspecialchars($feedback['form_error']) ?></div><?php endif; ?>
-      <div class="table-responsive">
-        <table class="table">
+      <div class="table-responsive" tabindex="0" role="region" aria-label="User accounts">
+        <table class="table table-hover align-middle">
           <thead><tr><th>Name</th><th>Phone</th><th>Role</th><th>Verified</th><th>Status</th><th></th></tr></thead>
           <tbody>
             <?php foreach ($users as $user): ?>

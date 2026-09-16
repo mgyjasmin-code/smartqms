@@ -1,6 +1,9 @@
 # Database credentials -- never commit these
 config/database.php
 config/email.local.php
+config/sms.local.php
+config/supabase.local.php
+config/ml.local.php
 tests/config.local.php
 
 # Composer dependencies -- regenerate with composer install

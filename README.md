@@ -79,8 +79,9 @@ if ($conn->connect_error) {
 For local team/demo machines, the seed database includes this administrator account:
 
 ```text
-Email: admin@smartqms.local
-Password: smartQMSadmin!
+Production installations do not include a default administrator. Create the
+first administrator with `php scripts/bootstrap_admin.php`; credentials are
+provided through deployment environment variables and are never committed.
 ```
 
 These credentials are for local development and demos only. Change the admin password before using this system on any shared, public, or production-like machine.
@@ -111,7 +112,10 @@ Default mode is local log mode. OTP emails are written to:
 storage/logs/email_outbox.log
 ```
 
-For SMTP mode, create `config/email.local.php` from `config/email.example.php`, then set:
+For local development only, you may create `config/email.local.php` from
+`config/email.example.php`. Production ignores local mail configuration and
+requires the equivalent values from the deployment environment or secret
+manager:
 
 ```php
 define('EMAIL_DELIVERY_MODE', 'smtp');
@@ -119,7 +123,8 @@ define('EMAIL_SMTP_USERNAME', 'your-email@gmail.com');
 define('EMAIL_SMTP_PASSWORD', 'your-gmail-app-password');
 ```
 
-`config/email.local.php` is ignored by Git and must not be committed.
+`config/email.local.php` is ignored by Git and must not be committed or copied
+into a production artifact.
 
 ## SMS Modes
 
@@ -198,7 +203,8 @@ Use this flow to verify a local machine:
 1. Import `database/smartqms_final_v4.sql`.
 2. Run `composer install`.
 3. Open `http://localhost/smartqms`.
-4. Log in with `admin@smartqms.local` / `smartQMSadmin!`.
+4. Create the first administrator with `php scripts/bootstrap_admin.php`, then
+   sign in with the deployment-provided credentials and rotate the password.
 5. Add one staff account.
 6. Create or assign a service window.
 7. Set a display-board token.

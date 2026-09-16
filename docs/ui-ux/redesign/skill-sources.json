@@ -1,0 +1,37 @@
+[
+  {
+    "installed_at": "2026-09-07T19:57:59.7164750+08:00",
+    "repository": "emilkowalski/skills",
+    "revision": "d23d7f88a2e21c9e4b1418c7abe420f5c1052ba7",
+    "name": "emil-design-eng",
+    "path": "skills/emil-design-eng"
+  },
+  {
+    "installed_at": "2026-09-07T19:58:11.3326677+08:00",
+    "repository": "pbakaus/impeccable",
+    "revision": "dbdc470e70dbbda69f9b78ee38bc38ea1d3560b9",
+    "name": "impeccable",
+    "path": ".agents/skills/impeccable"
+  },
+  {
+    "installed_at": "2026-09-07T19:58:13.6764311+08:00",
+    "repository": "Leonxlnx/taste-skill",
+    "revision": "ccbc15639c97057cbfcf32ecebc38ef716e4bb37",
+    "name": "design-taste-frontend",
+    "path": "skills/taste-skill"
+  },
+  {
+    "installed_at": "2026-09-07T19:58:14.9616175+08:00",
+    "repository": "Leonxlnx/taste-skill",
+    "revision": "ccbc15639c97057cbfcf32ecebc38ef716e4bb37",
+    "name": "gpt-taste",
+    "path": "skills/gpt-tasteskill"
+  },
+  {
+    "installed_at": "2026-09-07T19:58:16.0641270+08:00",
+    "repository": "mchlkim/gpt-5.4-frontend-skill",
+    "revision": "95d15291c2486bd5189a1fdb627ff9f787ca7ac1",
+    "name": "chatgpt-5-4-frontend-skill",
+    "path": "."
+  }
+]

@@ -20,22 +20,24 @@ if (!isPositiveIdentifier($ticketId)) {
 }
 
 $staffId = getCurrentStaffId($conn);
-if (!$staffId) {
+if (!$staffId && smartqmsDataProviderMode() !== 'supabase') {
     jsonResponse(false, ['error' => 'No active window assigned to this staff account.'], 404);
 }
 
 try {
-    $result = skipTicketForStaff($conn, $staffId, $ticketId);
+    $result = smartqmsSkipForStaff($conn, (int) $staffId, (int) $_SESSION['user_id'], $ticketId);
     if ($result['status'] === 'no_window') {
         jsonResponse(false, ['error' => 'No active window assigned to this staff account.'], 404);
     }
     if ($result['status'] === 'ticket_not_found') {
         jsonResponse(false, ['error' => 'Serving ticket not found for your assigned window.'], 404);
     }
-    try {
-        processNearTurnAlerts($conn, (int) $result['service_id']);
-    } catch (Throwable $alertError) {
-        // Alert generation should not block ticket skipping.
+    if (smartqmsDataProviderMode() !== 'supabase') {
+        try {
+            processNearTurnAlerts($conn, (int) $result['service_id']);
+        } catch (Throwable $alertError) {
+            // Alert generation should not block ticket skipping.
+        }
     }
     jsonResponse(true);
 } catch (Throwable $e) {

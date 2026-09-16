@@ -21,12 +21,14 @@ testCase('admin management pages use table first Bootstrap modal forms', functio
         assertStringContains('class="modal fade admin-management-form-modal"', $source, $path);
         assertStringContains('id="' . $modalId . '"', $source, $path);
         assertStringContains('aria-labelledby="' . $titleId . '"', $source, $path);
-        $dialogClasses = $path === 'views/admin/services.php'
-            ? 'modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg'
-            : 'modal-dialog modal-dialog-centered modal-dialog-scrollable';
+        $dialogClasses = $path === 'views/admin/add_staff.php'
+            ? 'modal-dialog modal-dialog-centered modal-xl'
+            : 'modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl';
         assertStringContains($dialogClasses, $source, $path);
         assertStringContains('data-admin-management-modal', $source, $path);
-        assertStringContains('data-validation-errors-only', $source, $path);
+        assertFalseValue(str_contains($source, 'data-validation-errors-only'), $path . ' uses native constraint validation.');
+        assertFalseValue(str_contains($source, 'data-validate='), $path . ' does not retain duplicate JavaScript validation metadata.');
+        assertFalseValue(str_contains($source, 'novalidate'), $path . ' must allow native browser validation.');
         assertStringContains('data-bs-toggle="modal"', $source, $path);
         assertStringContains('data-bs-target="#' . $modalId . '"', $source, $path);
         assertStringContains('<span>' . $addLabel . '</span>', $source, $path);
@@ -47,43 +49,67 @@ testCase('management modal forms preserve request fields and edit URLs', functio
         assertStringContains('name="' . $field . '"', $staff);
     }
     assertStringContains('data-admin-modal-mode="<?= $isEditing ? \'edit\' : \'add\' ?>"', $staff);
+    assertStringContains('data-bs-backdrop="true"', $staff);
+    assertStringContains('data-bs-keyboard="true"', $staff);
+    assertFalseValue(str_contains($staff, 'modal-dialog modal-dialog-centered modal-dialog-scrollable'), 'Staff form avoids a nested mobile scroll region.');
     assertStringContains('add_staff.php?edit=', $staff);
     assertStringContains("includes/management_confirmation_modal.php", $staff);
-    assertFalseValue(str_contains($staff, 'modal-dialog-scrollable modal-lg'), 'Staff creation uses the compact Bootstrap modal width.');
+    assertStringContains('modal-dialog modal-dialog-centered modal-xl', $staff, 'Staff creation uses the spacious Bootstrap modal width.');
+    assertStringContains('form-check form-switch admin-setting-switch', $staff);
+    assertStringContains('<strong>Active account</strong>', $staff);
     assertFalseValue(str_contains($staff, 'Assign Window'), 'Window assignment is managed from the Service Windows page.');
-    assertStringContains('<th>Phone</th>', $staff);
+    foreach (['<th>Staff member</th>', '<th>Email</th>', '<th>Job title</th>', '<th>Status</th>', '<th>Current counter</th>'] as $column) {
+        assertStringContains($column, $staff);
+    }
+    assertFalseValue(str_contains($staff, '<th>Phone</th>'), 'Optional mobile numbers are edited in the form, not exposed in the account list.');
     assertStringContains('<th>Actions</th>', $staff);
     assertStringContains('data-lucide="pencil"', $staff);
-    assertStringContains('data-lucide="trash-2"', $staff);
+    assertStringContains('data-lucide="user-round-x"', $staff);
     assertStringContains('class="admin-row-action is-icon-only"', $staff);
     assertStringContains('class="admin-row-action is-danger is-icon-only"', $staff);
     assertStringContains('aria-label="Edit <?= htmlspecialchars($staffName, ENT_QUOTES) ?> staff account"', $staff);
-    assertStringContains('aria-label="Delete <?= htmlspecialchars($staffName, ENT_QUOTES) ?> staff account"', $staff);
+    assertStringContains('aria-label="Deactivate <?= htmlspecialchars($staffName, ENT_QUOTES) ?> staff account"', $staff);
     assertFalseValue(str_contains($staff, '<span>Edit</span>'), 'Staff Edit actions display only their SVG icon.');
-    assertFalseValue(str_contains($staff, '<span>Delete</span>'), 'Staff Delete actions display only their SVG icon.');
-    assertStringContains('data-admin-confirm-title="Delete this staff account?"', $staff);
+    assertFalseValue(str_contains($staff, '<span>Deactivate</span>'), 'Staff Deactivate actions display only their SVG icon.');
+    assertStringContains('data-admin-confirm-title="Deactivate this staff account?"', $staff);
     assertFalseValue(str_contains($staff, 'number_format(count($staffRows))'), 'The staff toolbar no longer displays a total pill.');
     assertStringContains('aria-label="Staff accounts table; scroll horizontally to view all columns"', $staff);
     assertStringContains('tabindex="0"', $staff);
 
     $services = adminManagementUiSource('views/admin/services.php');
-    foreach (['action', 'service_id', 'service_code', 'service_encoded', 'service_name', 'description', 'display_order', 'is_active', 'priority_only'] as $field) {
+    foreach (['action', 'service_id', 'service_code', 'service_encoded', 'service_name', 'queue_mode', 'description', 'display_order', 'fallback_duration_mins', 'is_active', 'is_hidden', 'priority_only'] as $field) {
         assertStringContains('name="' . $field . '"', $services);
     }
+    assertStringContains('readonly aria-readonly="true"', $services);
+    assertStringContains('<th>Service code</th>', $services);
+    assertFalseValue(str_contains($services, '<th>Estimated duration</th>'));
+    assertFalseValue(str_contains($services, '<th>Display order</th>'));
+    assertFalseValue(str_contains($services, 'name="action" value="reorder"'));
     assertStringContains('services.php?edit=', $services);
     assertStringContains('data-admin-modal-mode="<?= $isEditing ? \'edit\' : \'add\' ?>"', $services);
-    assertStringContains('<th>Order</th>', $services);
+    assertFalseValue(str_contains($services, '<th>Queue Handling</th>'), 'Legacy routing is no longer a normal service configuration column.');
+    assertStringContains('name="queue_mode"', $services);
+    assertStringContains('name="priority_only" value="0"', $services);
     assertStringContains('data-admin-confirm-action', $services);
     assertStringContains("includes/management_confirmation_modal.php", $services);
     assertFalseValue(str_contains($services, 'data-admin-confirm="'), 'Legacy browser confirmation must be removed.');
 
     $windows = adminManagementUiSource('views/admin/windows.php');
-    foreach (['window_id', 'window_name', 'service_id', 'staff_id', 'status'] as $field) {
+    foreach (['window_id', 'window_name', 'counter_number', 'location_description', 'window_type', 'service_id', 'service_ids[]', 'is_active', 'management_status'] as $field) {
         assertStringContains('name="' . $field . '"', $windows);
     }
+    assertFalseValue(str_contains($windows, 'name="staff_id"'), 'Runtime staff assignment is not an Admin contract.');
+    assertFalseValue(str_contains($windows, 'name="status"'), 'Runtime status is not an Admin contract.');
     assertStringContains('windows.php?edit=', $windows);
     assertStringContains('data-admin-modal-mode="<?= $isEditing ? \'edit\' : \'add\' ?>"', $windows);
-    assertFalseValue(str_contains($windows, 'modal-dialog-scrollable modal-lg'), 'Service Windows uses the same compact modal width as Staff Accounts.');
+    assertStringContains('modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl', $windows);
+    assertStringContains('admin-service-choice-grid', $windows);
+    assertStringContains('admin-status-choice-group', $windows);
+    foreach (['<th>Counter number</th>', '<th>Services offered</th>', '<th>Status</th>'] as $column) {
+        assertStringContains($column, $windows);
+    }
+    assertFalseValue(str_contains($windows, '<th>Configuration</th>'));
+    assertFalseValue(str_contains($windows, '<th>Runtime Status</th>'));
     assertStringContains('class="d-flex flex-row align-items-center gap-2 flex-shrink-0"', $windows);
     assertFalseValue(str_contains($windows, 'number_format(count($windows))'), 'The window toolbar no longer displays a total pill.');
     assertStringContains('aria-label="Service windows table; scroll horizontally to view all columns"', $windows);
@@ -132,13 +158,17 @@ testCase('shared validation and admin behavior own confirmation without window c
     assertStringContains("new CustomEvent('smartqms:request-confirmation'", $main);
     assertStringContains("form.hasAttribute('data-admin-confirm-form')", $main);
     assertStringContains('event.submitter || null', $main);
-    assertStringContains("const optionalEmpty = !rules.required && value === '';", $main);
-    assertStringContains("input.closest('form')?.hasAttribute('data-validation-errors-only') === true", $main);
-    assertStringContains("input.classList.toggle('is-valid', !errorsOnly && !error && !optionalEmpty);", $main);
-    assertStringContains("form.classList.toggle('was-validated', !errorsOnly);", $main);
-    assertStringContains('rules.password && value && value.length < 8', $main);
-    assertStringContains("input.dataset.validationDirty = 'false';", $main);
-    assertStringContains('const dirty = syncDirtyState();', $main);
+    assertStringContains('function clearServerFieldError', $main);
+    assertStringContains('function initPasswordConfirmations', $main);
+    assertStringContains("form.querySelectorAll('[data-confirm-password-for]')", $main);
+    assertStringContains("confirmation.setCustomValidity(mismatch ? 'Password entries do not match.' : '');", $main);
+    assertStringContains("typeof form.checkValidity === 'function'", $main);
+    assertStringContains('form.reportValidity?.();', $main);
+    assertStringContains("input.addEventListener('input', clearServerError);", $main);
+    assertFalseValue(str_contains($main, 'function validateField'));
+    assertFalseValue(str_contains($main, 'data-validation-errors-only'));
+    assertFalseValue(str_contains($main, "classList.toggle('is-valid'"));
+    assertFalseValue(str_contains($main, "classList.toggle('was-validated'"));
 
     $admin = adminManagementUiSource('assets/js/admin.js');
     foreach ([
@@ -155,7 +185,9 @@ testCase('shared validation and admin behavior own confirmation without window c
         'window.bootstrap.Modal.getOrCreateInstance',
         'window.bootstrap.Toast.getOrCreateInstance',
         'form.requestSubmit',
-        "field.dataset.validationDirty = 'false';",
+        "form.querySelectorAll('.is-invalid, .is-valid, [aria-invalid=\"true\"]')",
+        "form.querySelectorAll('[data-confirm-password-for]')",
+        "field.setCustomValidity('')",
     ] as $contract) {
         assertStringContains($contract, $admin);
     }
@@ -164,6 +196,10 @@ testCase('shared validation and admin behavior own confirmation without window c
 
 testCase('admin management styling is full width token driven and responsive', function (): void {
     $css = adminManagementUiSource('assets/css/admin.css');
+    assertStringContains(
+        '.admin-kpi-icon.is-blue { background: var(--admin-primary); color: var(--sq-button-primary-text); }',
+        $css
+    );
     assertStringContains('.admin-management-shell {', $css);
     assertStringContains('max-width: none;', $css);
     assertStringContains('.admin-management-form-modal', $css);
@@ -171,6 +207,12 @@ testCase('admin management styling is full width token driven and responsive', f
     assertStringContains('.admin-management-confirm-modal', $css);
     assertStringContains('.admin-confirm-summary', $css);
     assertStringContains('#staffAccountModal .admin-field', $css);
+    assertStringContains('#staffAccountModal .modal-dialog,', $css);
+    assertStringContains('#staffAccountModal .modal-content,', $css);
+    assertStringContains('overflow-y: auto;', $css);
+    assertStringContains('.admin-management-shell {', $css);
+    assertStringContains('animation: none;', $css);
+    assertStringContains('transform: none;', $css);
     assertStringContains('align-content: start;', $css);
     assertStringContains('.admin-management-form-modal .modal-footer .admin-action-button:not(.is-primary):hover', $css);
     assertStringContains('.admin-management-confirm-modal .modal-footer .admin-action-button:not(.is-primary):not(.is-danger):hover', $css);
@@ -321,6 +363,8 @@ testCase('admin header provides a responsive Bootstrap navigation search', funct
         'app-user-menu-item admin-user-menu-item',
         'data-app-theme-toggle',
         'data-app-theme-label',
+        'class="form-check-input" type="checkbox" role="switch"',
+        'aria-label="Dark mode"',
     ] as $contract) {
         assertStringContains($contract, $sharedHeader);
     }
@@ -348,6 +392,8 @@ testCase('admin header provides a responsive Bootstrap navigation search', funct
         "topbar?.classList.add('is-search-open')",
         "setAttribute('data-lucide', 'x')",
         "window.localStorage.setItem(THEME_KEY",
+        "toggle.matches('input[role=\"switch\"]')",
+        "toggle.checked = dark",
         'initSearch(root)',
     ] as $contract) {
         assertStringContains($contract, $admin);
@@ -372,6 +418,10 @@ testCase('admin header provides a responsive Bootstrap navigation search', funct
     ] as $contract) {
         assertStringContains($contract, $css);
     }
+    assertTrueValue(
+        (bool) preg_match('/\.admin-header-search \.input-group\s*\{[^}]*background:\s*var\(--sq-surface\);/s', $css),
+        'The Admin search icon and field must share the neutral surface background.'
+    );
 });
 
 testCase('admin navigation and public entry points exclude removed activity log and settings features', function (): void {

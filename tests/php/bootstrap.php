@@ -112,3 +112,9 @@ function withTestTransaction(callable $callback): mixed {
 function testFixturePrefix(): string {
     return 'characterization_';
 }
+
+function testNextCounterNumber(mysqli $connection): int {
+    return (int) ($connection->query(
+        'SELECT COALESCE(MAX(counter_number), 0) + 1 AS next_counter FROM service_windows'
+    )->fetch_assoc()['next_counter'] ?? 1);
+}

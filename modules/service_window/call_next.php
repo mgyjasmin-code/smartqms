@@ -3,10 +3,8 @@
  * SmartQMS -- Call Next Client
  * Staff clicks Call Next -> system finds the next ticket.
  *
- * ORDERING RULE (priority queue):
- *   ORDER BY priority_level DESC, issued_at ASC
- *   This ensures Senior/PWD clients always come before regular clients.
- *   Among same priority level, earlier arrival is served first.
+ * ORDERING RULE (strict FIFO):
+ *   Earlier verified check-ins are served first.
  */
 require_once '../../config/config.php';
 require_once '../../config/database.php';
@@ -19,11 +17,11 @@ requirePostRequest(true);
 requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and try again.', true);
 
 $staffId = getCurrentStaffId($conn);
-if (!$staffId) {
+if (!$staffId && smartqmsDataProviderMode() !== 'supabase') {
     jsonResponse(false, ['error' => 'Staff profile not found.'], 403);
 }
 try {
-    $result = callNextTicketForStaff($conn, $staffId);
+    $result = smartqmsCallNextForStaff($conn, (int) $staffId, (int) $_SESSION['user_id']);
     if ($result['status'] === 'no_window') {
         jsonResponse(false, ['error' => 'No active window assigned to this staff account.'], 404);
     }
@@ -39,13 +37,15 @@ try {
     if ($result['status'] === 'empty_queue') {
         jsonResponse(false, ['error' => 'No waiting tickets for this service.'], 404);
     }
-    try {
-        processNearTurnAlerts($conn, (int) $result['service_id']);
-    } catch (Throwable $alertError) {
-        // Alert generation should not block queue operations.
+    if (smartqmsDataProviderMode() !== 'supabase') {
+        try {
+            processNearTurnAlerts($conn, (int) $result['service_id']);
+        } catch (Throwable $alertError) {
+            // Alert generation should not block queue operations.
+        }
     }
 
-    jsonResponse(true, ['data' => $result['ticket']]);
+    jsonResponse(true, ['data' => $result['ticket'] ?? $result]);
 } catch (Throwable $e) {
     jsonResponse(false, ['error' => 'Could not call next ticket.'], 500);
 }

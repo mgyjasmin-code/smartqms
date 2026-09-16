@@ -48,12 +48,19 @@ class DatasetTests(unittest.TestCase):
 class ApiTests(unittest.TestCase):
     def setUp(self):
         self.previous_model = app_module.MODEL
+        self.previous_metadata = app_module.MODEL_METADATA
         app_module.MODEL = FixedModel()
+        app_module.MODEL_METADATA = {
+            'algorithm': 'Test model',
+            'model_version': 'qms-wait-test',
+            'metrics': {'mae': 1.0},
+        }
         app_module.app.config.update(TESTING=True)
         self.client = app_module.app.test_client()
 
     def tearDown(self):
         app_module.MODEL = self.previous_model
+        app_module.MODEL_METADATA = self.previous_metadata
 
     def test_health_contract(self):
         response = self.client.get('/health')
@@ -64,6 +71,9 @@ class ApiTests(unittest.TestCase):
         response = self.client.post('/predict', json=VALID_PAYLOAD)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()['predicted_wait_minutes'], 8.25)
+        self.assertEqual(response.get_json()['estimated_wait_minutes'], 8.25)
+        self.assertEqual(response.get_json()['model_version'], 'qms-wait-test')
+        self.assertGreater(response.get_json()['confidence'], 0)
 
     def test_model_missing(self):
         app_module.MODEL = None

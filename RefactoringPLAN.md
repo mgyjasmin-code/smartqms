@@ -1395,6 +1395,235 @@ the local Python runtime is restored. The CSV lacks service type, client
 classification, and active-window history, so per-category accuracy must not be
 inferred from it.
 
+### Batch 8G — Project-Wide Native HTML5 Form Validation
+
+Status: Implemented and verified.
+
+#### Native constraint contract
+
+- Production data-entry forms use browser constraint validation instead of the
+  retired JavaScript rule metadata and generated success states.
+- Login, registration, OTP verification, password reset, queue entry, Staff,
+  Health Service, Service Window, and Client feedback retain their established
+  routes, methods, field names, CSRF inputs, retained values, and PHP validation.
+- Required, email, minimum-length, six-digit OTP, Philippine mobile-number,
+  numeric-range, and required service-selection rules are expressed in HTML.
+- Optional staff phone, service description, and window assignments remain
+  valid when empty.
+- Password confirmation is the only cross-field browser rule and uses
+  `setCustomValidity()` because HTML cannot express equality between controls.
+
+#### Shared behavior and feedback
+
+- `assets/js/main.js` clears server-rendered field errors after edits, gates the
+  confirmation and busy-state flows behind `checkValidity()`, and delegates the
+  first-invalid-control tooltip and focus to the browser.
+- Client feedback checks native validity before beginning its AJAX request.
+- Admin modal reset clears PHP invalid state and custom password validity while
+  preserving Bootstrap modal focus and dismissal behavior.
+- Application-generated green valid states and their unused CSS were removed.
+  PHP errors remain inline and authoritative after a server round trip.
+- Search, report filters, OTP resend, logout, destructive confirmations, and
+  other action-only forms retain their existing behavior. The unlinked
+  `try.php` SMS prototype remains outside this production UI contract.
+
+Risk: Low. Native tooltip wording and presentation vary by browser and operating
+system language; server validation remains the security and business-rule
+authority.
+
+### Batch 8H — Secret-Safe FMCSMS Provider Adapter
+
+Status: Implemented; live delivery verification awaits local credentials.
+
+- The SMS boundary supports the approved FMCSMS HTTPS/JSON contract while
+  retaining Semaphore as a compatibility adapter and simulation as the default.
+- API credentials and the registered sending number are loaded only from the
+  ignored `config/sms.local.php` file or `SMARTQMS_SMS_*` environment variables.
+- Provider requests use TLS verification, bounded timeouts and response size,
+  deterministic Philippine mobile normalization, and no redirect following.
+- A CLI-only, explicit-opt-in smoke test sends exactly one generic message and
+  never prints the API key, recipient, sender number, or message body.
+- Existing queue alert generation and `sms_logs` behavior remain unchanged;
+  failed provider attempts now retain a non-secret diagnostic in `error_msg`.
+
+Risk: Medium until the approved FMCSMS API key, registered `FromNumber`, and an
+approved test recipient are configured locally and the one-message smoke test
+is accepted by the provider and received on-device.
+
+### SmartQMS Revision — Supabase Integration Phases 1–6
+
+Status: Implemented with local-environment gates passing; live Supabase and
+Python execution remain environment-blocked until development credentials and
+Python are available.
+
+- Phase 1 inventories and maps all current routes, fields, statuses, roles, and
+  identifiers in `docs/SUPABASE_MIGRATION_MAPPING.md`.
+- Phase 2 adds fail-safe `local`, `shadow`, and `supabase` provider modes, a
+  server-only REST client, browser-safe adapters, a normalized PostgreSQL
+  schema, RLS policies, and Realtime publication configuration.
+- Phase 3 implements the database-driven four-step customer booking flow while
+  preserving the existing PHP route and ticket presentation.
+- Phase 4 routes Staff queue mutations and Admin service/window/staff
+  operations through provider-neutral procedural gateways and transactional,
+  service-role-only PostgreSQL functions.
+- Phase 5 subscribes Client, Staff, and Admin surfaces to ticket, counter, and
+  queue-event changes; partial main-content refresh replaces full reloads.
+  Python responses now require bounded minutes, confidence, and a model version,
+  and MySQL/Supabase store prediction provenance with schema compatibility.
+- Phase 6 adds bearer-token verification, server-derived prediction inputs,
+  compatibility APIs, audited branch and Super Admin role RPCs, and the gated
+  migration/cutover/rollback runbook in `docs/SUPABASE_ROLLOUT_RUNBOOK.md`.
+
+The existing Admin and Staff layouts, local routes, session behavior, MySQL
+schema compatibility, queue ordering, and permission boundaries remain the
+default. Browser code receives only the Supabase publishable key; the
+service-role key and Python token remain server-only.
+
+### Batch 8I — Barangay Health QMS Blueprint Compatibility
+
+Status: Implemented; database migration and model retraining remain explicit
+operator actions.
+
+- The blueprint is implemented as an additive compatibility layer over the
+  established `smartqms` schema. Existing `users`, `health_services`,
+  `service_windows`, and `queue_tickets` remain authoritative, while username,
+  job title, service fallback/visibility, counter numbering, many-to-many
+  counter services, public ticket tokens, entry type, and lifecycle aliases
+  provide the requested interfaces without duplicating production entities.
+- Unified login accepts email or username. Staff are routed through an
+  intermediate, transactional counter-claim screen before entering their
+  workstation; existing Admin and Client redirects remain unchanged.
+- Public and kiosk intake creates new 256-bit (64-hex-character) tokenized
+  tickets while retaining compatibility with previously issued 128-bit links,
+  QR tracking links, and either waiting walk-ins or scheduled online entries.
+  The unauthenticated tracker polls every five seconds, exposes state-specific
+  messaging, and gates completed tickets behind one feedback response.
+- The Staff workstation implements the active-ticket, walk-in intake, and
+  waiting-grid zones. Recall, Start Service, Complete, Skip, manual Void, and
+  automatic timeout behavior share the existing transaction and permission
+  boundary.
+- Admin Staff management includes username/job title; Health Services includes
+  fallback minutes and visibility; Service Windows includes a counter number
+  and synchronized multi-service mappings.
+- `/public-display/` is an unauthenticated, read-only calling board with an
+  interaction-gated chime and text-to-speech announcement, a reduced-motion-
+  safe visual call emphasis, and a three-second refresh interval.
+- Call Next first executes the configured stale-calling cleanup (10 minutes by
+  default), and its guarded transition accepts both waiting walk-ins and
+  scheduled online entries without weakening priority/FIFO ordering.
+- `scripts/export_ml_history.php` atomically exports completed database queue
+  observations to `ml/dataset/queue_data.csv`. Random Forest remains a compared
+  deployment candidate, synthetic generation stays disabled, and both Flask
+  compatibility and FastAPI `/predict`/`/health` gateways enforce the same
+  verified artifact and feature contract.
+- Satisfaction, Predicted vs Actual, and ML Accuracy continue through the
+  existing database-backed report framework and bounded real-wait filters.
+
+Remaining risk: apply `database/upgrade_blueprint_2026_08_21.sql` only after a
+verified database backup. A verified model cannot be retrained until at least
+30 completed observations exist and the local Python runtime is restored.
+
+### Batch 8J — Public Landing, Arrival Check-In, Strict FIFO, and Staff Queue Operations
+
+Status: Implemented in five verified stages. This explicitly approved workflow
+supersedes the older Client-account, priority-order, and no-schema-change
+assumptions elsewhere in this historical plan.
+
+#### Stage 1 — Queue-domain and database foundation
+
+- `database/upgrade_arrival_checkin_fifo_2026_08_21.sql` is idempotent and the
+  canonical schema includes exact client-name fields, physical check-in and
+  Scheduled-expiry timestamps, check-in provenance, nullable pre-arrival queue
+  numbers, FIFO indexes, print batches, and number reservations.
+- Existing Client users and legacy ticket, classification, routing, and status
+  columns remain available for audit and database compatibility.
+- Legacy single-service counter assignments are copied idempotently into
+  `counter_services`; that mapping is authoritative after migration.
+- Active live rows have priority zero. Queue selection uses
+  `checked_in_at ASC, ticket_id ASC` and locks rows within transactions.
+- Online tickets remain Scheduled until arrival. Check-in assigns an available
+  reserved number first, otherwise the next independent daily service number.
+- Calling timeout is five minutes and is processed through one idempotent
+  lifecycle service.
+
+#### Stage 2 — No-account public workflow
+
+- `/` is a responsive Bootstrap Barangay Health Center landing page with Join
+  Live Queue, privacy-minimized reference lookup, and Staff/Admin Sign In.
+- `/login/` is the unified Staff/Admin authentication entry point. Historical
+  Client accounts remain stored but cannot register or authenticate through the
+  production interface.
+- `/queue/join/` collects first name, last name, Philippine mobile number, and
+  visible service. It creates a same-day Scheduled record without a queue
+  number or prediction and produces a 256-bit private tracking token and QR.
+- Reference lookup never exposes a name, phone, token, or internal identifier.
+  Private-token tracking retains live status and one-feedback-per-completed-
+  ticket behavior.
+
+#### Stage 3 — Arrival check-in and Staff lifecycle
+
+- `/staff/check-in/` provides Scan QR, Manual Input, and Walk-In Bootstrap tabs.
+  Camera access begins only after Staff interaction, prefers a front-facing
+  camera, uses `BarcodeDetector`, and always exposes Manual Input fallback.
+- QR and reference lookup are read-only. A shared Bootstrap confirmation locks
+  and checks in an unexpired Scheduled ticket exactly once.
+- Walk-In records enter Waiting immediately. Successful arrival records Staff,
+  method, physical time, number, activity, and prediction snapshot atomically.
+- Staff workspaces retain mandatory counter selection and expose KPI cards,
+  Call Next, Recall, Start, Complete, Skip, Void, and a responsive FIFO queue
+  table with the approved client and ticket columns.
+- `scripts/process_queue_timeouts.php` is the CLI entry point intended for a
+  once-per-minute Windows Task Scheduler job.
+
+#### Stage 4 — Configuration, print batches, and public display
+
+- Admin Staff fields are name, email, optional username, temporary/new
+  password, required designation (including required custom Other), and active
+  state.
+- Counters use system-generated `CNT-###` numbers, editable labels and active
+  state, and authoritative `counter_services` checkboxes.
+- Services use system-generated service number and ML category plus name,
+  description, standard duration, and Show/Hide/Archive. Legacy routing and
+  priority fields remain stored but are absent from normal configuration.
+- Staff may persist current-day, non-overlapping per-service ranges of at most
+  200 and download an A4 PDF containing eight anonymous queue slips. Dompdf is
+  Composer-managed; a missing batch never blocks normal numbering.
+- `/public-display/` and the Staff mirror share one privacy-minimized endpoint,
+  poll every three seconds, show distinct SERVING and WAITING regions, paginate
+  large waiting lists, and retain chime, flash, and supported speech for new
+  Calling tickets.
+
+#### Stage 5 — ML and reporting alignment
+
+- Active-counter prediction features count only active Staff counters mapped
+  through `counter_services`. Queue length counts only checked-in Waiting rows
+  for the requested service.
+- Actual wait is `COALESCE(checked_in_at, issued_at)` to
+  `COALESCE(started_at, served_at)`. The second value is only a historical
+  compatibility fallback; call and completion timestamps are not wait labels.
+- Dashboard volume, Queue Summary, Peak Hour, Daily/Monthly Stats, turnaround,
+  counter performance, and staff productivity exclude Scheduled records or use
+  completed lifecycle rows as appropriate.
+- `scripts/export_ml_history.php` writes only valid completed database
+  observations to `ml/dataset/queue_data.csv`. The Python loader rejects the
+  former five-column sample/synthetic format and requires the database-export
+  feature contract.
+- Model training remains safely gated at 30 valid observations and never
+  replaces a deployed artifact on insufficient input. PHP fallback prediction
+  remains active when no verified model exists.
+
+#### Operational follow-up
+
+- Configure at least one active Staff counter and its assigned services before
+  accepting public arrivals.
+- Register `php scripts/process_queue_timeouts.php` in Windows Task Scheduler
+  once per minute so calling expiry does not depend on an open browser.
+- Re-export and retrain only after 30 valid completed observations exist; the
+  implementation-time database export contained four valid observations, so
+  retraining was correctly refused by policy.
+- Camera verification still requires supported hardware, HTTPS/localhost
+  permission, and an authenticated Staff session.
+
 ## 6. Required Batch Report Format
 
 After every batch, report:
@@ -1450,3 +1679,64 @@ The refactor is complete only when:
 - Removing request-time schema compatibility DDL is deferred.
 - Changing display-token transport is deferred.
 - Any required production schema, route, API, session, or workflow change must stop implementation and request approval first.
+
+## Batch 8K — High-Fidelity Civic Healthcare UI/UX Redesign
+
+Status: implemented and verification-gated.
+
+### Objective
+
+Apply one accessible, responsive SmartQMS identity to the public, Staff, and
+Admin journeys while preserving the Batch 8J queue lifecycle, strict FIFO,
+database compatibility, routes, POST fields, CSRF, sessions, permissions, ML,
+reports, and printing behavior.
+
+### Implemented design contract
+
+- A repository design system now lives under `design-system/smartqms/`, with a
+  master specification and Public, Staff, and Admin page overrides.
+- The approved 60/30/10 hierarchy uses `#F4FAFF`, `#113264`, and `#0090FF`
+  through semantic `--sq-*` tokens. Accessible lifecycle colors remain
+  explicit exceptions and never communicate state by color alone.
+- Poppins owns headings and queue numbers; Inter owns interface and body copy.
+  Both are locally hosted with their licenses.
+- The refined heart/pulse/queue identity is one reusable local SVG. Lucide and
+  Chart.js are also served locally, eliminating production visual-asset CDN
+  requests from the shared application shell.
+- Shared focus, 44px target, spacing, surface, form, card, modal, table, toast,
+  chart, navigation, reduced-motion, and light/dark contracts are centralized
+  in `assets/css/style.css`. Existing variables remain available as migration
+  aliases; `admin.css` consumes the shared semantic tokens for Admin-only
+  analytics, report, and management layouts.
+
+### Wireframe gallery
+
+`docs/ui-ux/wireframes/` is a static, non-production comparison gallery. It
+contains fictional-only Public, Staff, and Admin screens with 1440px, 768px,
+and 390px frame controls plus light/dark and component-state controls. It makes
+no application API requests and is not linked from production navigation.
+
+### Production adoption
+
+- Public landing, booking, tracker, unified Staff/Admin login, and public
+  display use the shared identity, local typography, responsive surfaces, and
+  theme behavior. The landing page adds lifecycle, FIFO, same-day, and privacy
+  guidance without altering public intake or reference lookup.
+- The authenticated shell provides the same responsive navigation, search,
+  profile, theme, logout, toast, focus, and brand behavior to Staff and Admin.
+- Staff KPI, active-ticket, FIFO table, check-in, counter, batch, and display
+  surfaces use the shared component hierarchy; Staff actions and lifecycle
+  logic remain unchanged.
+- Admin dashboard, management tables/modals, and report toolbars, metrics,
+  scrollable charts, and exact tables consume the same tokens while retaining
+  their role-specific structure and contracts.
+
+### Compatibility and exit criteria
+
+- No database migration, endpoint, request method, API envelope, queue rule,
+  session key, role, or form field was introduced or changed by this batch.
+- Native HTML validation and PHP-authoritative validation remain intact.
+- Production visual assets are locally served; wireframes remain isolated.
+- Characterization tests cover the design documents, target gallery frames,
+  local assets, semantic token aliases, themes, and preserved login/booking
+  form contracts.

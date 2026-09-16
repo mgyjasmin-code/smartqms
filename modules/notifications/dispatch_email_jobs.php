@@ -9,7 +9,6 @@ requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and
 $userId = (int) (
     $_SESSION['otp_user_id']
     ?? $_SESSION['pending_user_id']
-    ?? $_SESSION['pending_login_user_id']
     ?? $_SESSION['reset_user_id']
     ?? 0
 );

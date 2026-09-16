@@ -1,0 +1,104 @@
+# SmartQMS Staff Workspace UI/UX Prompt
+
+Design and implement a single-page SmartQMS operational workspace for health-center staff. Use PHP 8.x, Bootstrap 5, vanilla JavaScript, Poppins, Lucide SVG, and shared SmartQMS healthcare tokens. The interface must be spacious, fast to scan, privacy-safe, responsive, and reliable under continuous daily use.
+
+## Product rules
+
+- The Staff operational workspace has no sidebar.
+- Staff may claim one enabled and unoccupied counter.
+- The claimed counter may serve several configured services.
+- Staff cannot switch counters while a ticket is Calling or In Service.
+- Call Next atomically selects the earliest eligible checked-in FIFO ticket.
+- A staff member controls only the ticket at their claimed counter.
+- Other counters may call or serve their own tickets concurrently.
+- Staff tables never show client names. Show queue number, service, source, and timestamps.
+- Uncommon or destructive actions use an overflow menu.
+- Do not add keyboard shortcuts.
+
+## Shared visual rules
+
+Use primary teal #006B73, government navy #174A6E, canvas #F4FAFA, white surfaces, text #102A43, and the shared dark theme. Use Poppins throughout, 48px primary controls, 44px minimum targets, 16px cards, and visible focus. Lifecycle states always include text, Lucide icon, and semantic color.
+
+## Top bar
+
+Create a compact responsive Bootstrap navbar containing shield and SmartQMS, date/time, staff identity, Tools dropdown, language, theme, and Logout. Tools contains Arrival Check-In and Batch Printing. On narrow screens, keep counter state and Tools reachable without hiding Logout.
+
+## Workspace layout
+
+Desktop at 992px and above:
+
+    Sticky 280–320px counter-control rail
+    Flexible main workspace
+      Completed Today | Serving | Waiting | Voided/Skipped
+      Now Serving / Calling
+      Active Waiting Queue
+      Optional read-only other-counter activity
+
+Tablet moves counter control above metrics. Mobile uses a full-width counter summary and opens counter selection in Bootstrap modal or offcanvas. Metric cards stack while tables remain semantic tables inside controlled table-responsive regions.
+
+## Counter control
+
+Show counter label, location, supported services, runtime state, current claim, and Claim/Release action. Available counters must be easy to scan. If claim fails because another staff member claimed it, explain the conflict, refresh counter availability, and keep the workspace stable.
+
+Block counter switching while active and state why. Release requires no destructive styling unless work remains; if an active ticket exists, prevent release and explain the required next action.
+
+## Operational metrics
+
+Create four spacious Bootstrap cards:
+
+- Completed Today
+- Serving
+- Waiting
+- Voided / Skipped
+
+Use tabular values, Lucide icons, plain labels, and contextual notes. Do not make cards clickable unless they perform a clearly labelled filter.
+
+## Now Serving / Calling
+
+Columns:
+
+    Queue Number | Service | Source | Checked In
+    Called | Status | Actions
+
+The table normally shows the active ticket at the claimed counter. It may show historical or read-only context, but action controls apply only to the staff member's current ticket.
+
+- Calling: visible Start Service; overflow includes Recall, Skip, Void.
+- In Service: visible Complete; overflow includes Void.
+- Completed, Skipped, or Voided rows have no operational actions.
+
+Recall, Skip, and Void require clear confirmations; Skip and Void require a reason. Use a top-right Bootstrap toast after successful call, but also update persistent table state.
+
+## Active Waiting Queue
+
+Columns:
+
+    FIFO Position | Queue Number | Service | Source
+    Checked In | Eligibility | Action
+
+Only the first eligible row exposes Call Next. Other rows show a plain explanation such as Waiting for the previous eligible ticket. If no counter is claimed, replace action controls with Select a counter first.
+
+## Arrival check-in
+
+Use three modes: reference search, scan when available, and walk-in. Client identity may appear only during this authorized confirmation flow. After check-in, show assigned queue number, secure QR, Print, and Return to Workspace.
+
+## Live behavior
+
+- Poll or subscribe without rearranging the page unexpectedly.
+- Crossfade changed ticket content and briefly highlight updated rows.
+- Announce important changes through aria-live polite.
+- Show connection loss and automatic recovery.
+- Prevent repeated action submissions.
+- Handle concurrent Call Next or counter-claim conflicts gracefully.
+
+## Required Bootstrap components
+
+Use navbar, grid, card, dropdown, offcanvas or modal, button, badge, alert, table, table-responsive, toast, spinner, placeholder, form controls, input-group, list-group, tooltip for icon-only supplemental help, and visually-hidden live text.
+
+## Required states
+
+Design no counter, counter available, counter conflict, no waiting tickets, active Calling, active In Service, successful completion, skipped, voided, loading, offline, stale queue, action conflict, validation error, and session expired.
+
+## Definition of done
+
+Staff can operate one claimed counter from a single responsive page without seeing client names. The next safe action is obvious, uncommon/destructive actions are contained, simultaneous counter operation is supported, and the workspace remains accessible from 320px through large desktop widths.
+

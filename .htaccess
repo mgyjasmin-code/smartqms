@@ -1,12 +1,27 @@
 # SmartQMS -- Apache Configuration
 Options -Indexes
 
+# Defense in depth for legacy deployments that still point Apache at the
+# repository root. Production should use an allow-listed public document root.
+RedirectMatch 404 (?i)^/smartqms/(?:try\.php|index\.html)$
+
+<FilesMatch "^(try\.php|index\.html)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^(?:config|database|docs|tests|scripts|storage|ml|vendor|\.git|\.github|\.agents|\.vscode)(?:/|$) - [F,L,NC]
+</IfModule>
+
 # PHP error handling (disable in production)
 # php_flag display_errors Off
 
 # Prevent direct access to sensitive local artifacts if they are ever placed
 # under the web root.
-<FilesMatch "\.(sql|sqlite|db|bak|env|ini|log|pkl|pyc|csv|docx)$">
+<FilesMatch "(^\.|\.(sql|sqlite|db|bak|env|ini|log|pkl|pyc|csv|docx|drawio|md|txt|json|lock|xml|ya?ml|toml|ps1|sh)$)">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>
@@ -26,3 +41,10 @@ Options -Indexes
     Deny from all
   </IfModule>
 </FilesMatch>
+
+<IfModule mod_headers.c>
+  Header always unset X-Powered-By
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "no-referrer"
+  Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>

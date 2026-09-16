@@ -4,12 +4,17 @@ require_once '../../config/database.php';
 require_once __DIR__ . '/auth_utils.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
-    redirectTo('index.php');
+    redirectTo('login/');
 }
 
-requireValidCsrf('index.php', 'login');
-logActivity($conn, 'logout', 'User signed out');
+requireValidCsrf('login/', 'login');
+$providerToken = (string) ($_SESSION['supabase_access_token'] ?? '');
+if (smartqmsDataProviderMode() === 'supabase' && $providerToken !== '') {
+    smartqmsSupabaseAuthRequest('POST', '/auth/v1/logout', null, $providerToken);
+} else {
+    logActivity($conn, 'logout', 'User signed out');
+}
 destroyAuthenticatedSession();
-header('Location: ' . APP_URL . '/index.php');
+header('Location: ' . APP_URL . '/login/');
 exit();
 ?>

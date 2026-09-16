@@ -21,6 +21,10 @@ function publicTicketUrl(string $referenceNumber): string {
     return APP_URL . '/views/client/ticket_lookup.php?ref=' . rawurlencode($referenceNumber);
 }
 
+function publicTokenTrackingUrl(string $token): string {
+    return APP_URL . '/track/?token=' . rawurlencode($token);
+}
+
 function queueQrRelativePath(string $referenceNumber, string $ticketId): string {
     $safeReference = preg_replace('/[^A-Za-z0-9_-]/', '-', $referenceNumber);
     $safeTicketId = preg_replace('/[^0-9]/', '', $ticketId);
@@ -50,7 +54,7 @@ function removeGeneratedQueueQr(string $relativePath): bool {
         : false;
 }
 
-function generateQR(string $referenceNumber, string $ticketId): string {
+function generateQueueQrForUrl(string $url, string $referenceNumber, string $ticketId): string {
     if (!class_exists(Builder::class)) {
         throw new RuntimeException('QR code package is not installed. Run composer install.');
     }
@@ -72,7 +76,7 @@ function generateQR(string $referenceNumber, string $ticketId): string {
             SvgWriter::WRITER_OPTION_EXCLUDE_SVG_WIDTH_AND_HEIGHT => false,
             SvgWriter::WRITER_OPTION_COMPACT => true,
         ])
-        ->data(publicTicketUrl($referenceNumber))
+        ->data($url)
         ->encoding(new Encoding('UTF-8'))
         ->errorCorrectionLevel(ErrorCorrectionLevel::High)
         ->size(320)
@@ -86,5 +90,14 @@ function generateQR(string $referenceNumber, string $ticketId): string {
     $result->saveToFile($filepath);
 
     return $relativePath;
+}
+
+
+function generateQR(string $referenceNumber, string $ticketId): string {
+    return generateQueueQrForUrl(publicTicketUrl($referenceNumber), $referenceNumber, $ticketId);
+}
+
+function generateTokenQR(string $token, string $referenceNumber, string $ticketId): string {
+    return generateQueueQrForUrl(publicTokenTrackingUrl($token), $referenceNumber, $ticketId);
 }
 ?>

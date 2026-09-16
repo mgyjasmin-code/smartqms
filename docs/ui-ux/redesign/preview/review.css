@@ -1,0 +1,2 @@
+.review-notice { padding: 6px 16px; background: #174a6e; color: white; text-align: center; font: 12px/1.5 Poppins, sans-serif; }
+.review-message { position: fixed; inset: auto 16px 16px; z-index: 9999; margin: auto; max-width: 520px; padding: 16px; border-radius: 12px; background: #174a6e; color: white; font: 14px/1.5 Poppins, sans-serif; }

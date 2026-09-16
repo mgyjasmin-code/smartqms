@@ -176,7 +176,7 @@ const confirmationForm = {
   dataset: {},
   classList: classList(['js-validated-form']),
   hasAttribute: name => name === 'data-admin-confirm-form',
-  querySelectorAll: selector => selector === '[data-validate]' ? [] : [],
+  querySelectorAll: () => [],
   querySelector: selector => selector === '[type="submit"]' ? confirmationSubmit : null,
   addEventListener(type, listener) {
     if (type === 'submit') confirmationSubmitHandler = listener;
@@ -224,7 +224,7 @@ const directForm = {
   dataset: {},
   classList: classList(['js-validated-form']),
   hasAttribute: () => false,
-  querySelectorAll: selector => selector === '[data-validate]' ? [] : [],
+  querySelectorAll: () => [],
   querySelector: selector => selector === '[type="submit"]' ? directSubmit : null,
   addEventListener(type, listener) {
     if (type === 'submit') directSubmitHandler = listener;
@@ -241,107 +241,132 @@ assert.equal(directPrevented, false, 'direct management form continues to native
 assert.equal(directForm.dataset.submitting, 'true', 'direct management form receives the shared busy state');
 assert.equal(directSubmit.disabled, true, 'direct management form prevents duplicate submission');
 
-const neutralValidationRuntime = runtime('main');
-const neutralValidationFormListeners = {};
-const neutralFeedback = {
-  id: '',
-  textContent: '',
+const nativeValidationRuntime = runtime('main');
+const nativeValidationFormListeners = {};
+const nativeFieldListeners = {};
+const nativeFeedback = {
+  textContent: 'This email is already registered.',
   classList: classList(['field-error']),
 };
-const optionalPasswordFeedback = {
-  id: '',
-  textContent: '',
-  classList: classList(['field-error']),
+const nativeFieldAttributes = { 'aria-invalid': 'true' };
+let nativeValidationForm = null;
+const nativeField = {
+  id: 'email',
+  name: 'email',
+  value: 'existing@example.test',
+  dataset: {},
+  classList: classList(['is-invalid']),
+  nextElementSibling: null,
+  parentElement: null,
+  addEventListener(eventName, listener) { nativeFieldListeners[eventName] = listener; },
+  closest(selector) { return selector === 'form' ? nativeValidationForm : null; },
+  getAttribute(name) { return nativeFieldAttributes[name] || null; },
+  removeAttribute(name) { delete nativeFieldAttributes[name]; },
 };
-let neutralValidationForm = null;
-function validationInput({ name, value, required, validate, type = 'text', feedback }) {
-  const listeners = {};
-  const attributes = {};
-  return {
-    id: name,
-    name,
-    value,
-    required,
-    type,
-    dataset: { validate },
-    classList: classList(),
-    nextElementSibling: null,
-    parentElement: null,
-    addEventListener(eventName, listener) { listeners[eventName] = listener; },
-    closest(selector) { return selector === 'form' ? neutralValidationForm : null; },
-    getAttribute(nameToRead) { return attributes[nameToRead] || ''; },
-    setAttribute(nameToSet, valueToSet) { attributes[nameToSet] = valueToSet; },
-    removeAttribute(nameToRemove) { delete attributes[nameToRemove]; },
-    listeners,
-    feedback,
-  };
-}
-const untouchedRequired = validationInput({
-  name: 'first_name',
-  value: 'John',
-  required: true,
-  validate: 'required',
-  feedback: neutralFeedback,
-});
-const optionalPassword = validationInput({
-  name: 'password',
-  value: '',
-  required: false,
-  validate: 'password',
-  type: 'password',
-  feedback: optionalPasswordFeedback,
-});
-const neutralValidationFields = [untouchedRequired, optionalPassword];
-neutralValidationForm = {
+nativeValidationForm = {
   dataset: {},
   classList: classList(['js-validated-form']),
-  hasAttribute: name => name === 'data-validation-errors-only',
-  querySelectorAll: selector => selector === '[data-validate]' ? neutralValidationFields : [],
+  hasAttribute: () => false,
+  checkValidity: () => true,
+  querySelectorAll(selector) {
+    if (selector === 'input:not([type="hidden"]), select, textarea') return [nativeField];
+    if (selector === '[data-confirm-password-for]') return [];
+    return [];
+  },
   querySelector(selector) {
-    const feedbackMatch = selector.match(/^\[data-field-error-for="(.+)"\]$/);
-    if (feedbackMatch) {
-      return neutralValidationFields.find(field => field.name === feedbackMatch[1])?.feedback || null;
-    }
-    if (selector === '[type="submit"]' || selector === '.is-invalid') return null;
+    if (selector === '[data-field-error-for="email"]') return nativeFeedback;
+    if (selector === '[type="submit"]') return null;
     return null;
   },
-  addEventListener(type, listener) { neutralValidationFormListeners[type] = listener; },
+  addEventListener(type, listener) { nativeValidationFormListeners[type] = listener; },
 };
-neutralValidationRuntime.state.validatedForms = [neutralValidationForm];
-neutralValidationRuntime.documentListeners.DOMContentLoaded[0]();
+nativeValidationRuntime.state.validatedForms = [nativeValidationForm];
+nativeValidationRuntime.documentListeners.DOMContentLoaded[0]();
+assert.equal(nativeField.classList.contains('is-invalid'), true, 'server error remains until the field is edited');
+nativeFieldListeners.input();
+assert.equal(nativeField.classList.contains('is-invalid'), false, 'editing clears the server invalid state');
+assert.equal(nativeField.classList.contains('is-valid'), false, 'editing never adds an application valid state');
+assert.equal(nativeFieldAttributes['aria-invalid'], undefined, 'editing clears server aria-invalid metadata');
+assert.equal(nativeFeedback.textContent, '', 'editing clears the matching server error message');
 
-untouchedRequired.listeners.blur();
-assert.equal(untouchedRequired.classList.contains('is-valid'), false, 'untouched edit values remain neutral');
-assert.equal(untouchedRequired.classList.contains('is-invalid'), false, 'untouched edit values are not invalid');
-optionalPassword.listeners.blur();
-assert.equal(optionalPassword.classList.contains('is-valid'), false, 'blank optional password remains neutral');
-assert.equal(optionalPassword.classList.contains('is-invalid'), false, 'blank optional password is not invalid');
-assert.equal(optionalPasswordFeedback.textContent, '', 'blank optional password has no error message');
+const passwordConfirmationRuntime = runtime('main');
+const confirmationListeners = {};
+const passwordListeners = {};
+const passwordSource = {
+  value: 'password-one',
+  addEventListener(type, listener) { passwordListeners[type] = listener; },
+};
+const passwordConfirmation = {
+  name: 'confirm_password',
+  value: 'password-two',
+  dataset: { confirmPasswordFor: 'password' },
+  classList: classList(),
+  nextElementSibling: null,
+  parentElement: null,
+  validityMessage: '',
+  setCustomValidity(message) { this.validityMessage = message; },
+  addEventListener(type, listener) { confirmationListeners[type] = listener; },
+  closest(selector) { return selector === 'form' ? passwordConfirmationForm : null; },
+  getAttribute() { return null; },
+  removeAttribute() {},
+};
+const passwordConfirmationForm = {
+  dataset: {},
+  classList: classList(['js-auth-form']),
+  elements: { namedItem: name => name === 'password' ? passwordSource : null },
+  hasAttribute: () => false,
+  checkValidity: () => passwordConfirmation.validityMessage === '',
+  querySelectorAll(selector) {
+    if (selector === '[data-confirm-password-for]') return [passwordConfirmation];
+    if (selector === 'input:not([type="hidden"]), select, textarea') return [passwordConfirmation];
+    return [];
+  },
+  querySelector: () => null,
+  addEventListener() {},
+};
+passwordConfirmationRuntime.state.validatedForms = [passwordConfirmationForm];
+passwordConfirmationRuntime.documentListeners.DOMContentLoaded[0]();
+assert.equal(passwordConfirmation.validityMessage, 'Password entries do not match.', 'mismatched passwords use native custom validity');
+passwordConfirmation.value = 'password-one';
+passwordListeners.input();
+assert.equal(passwordConfirmation.validityMessage, '', 'matching passwords clear native custom validity immediately');
+passwordSource.value = 'changed-password';
+passwordListeners.input();
+assert.equal(passwordConfirmation.validityMessage, 'Password entries do not match.', 'editing the source password resynchronizes confirmation validity');
 
-untouchedRequired.value = '';
-untouchedRequired.listeners.input();
-untouchedRequired.listeners.blur();
-assert.equal(untouchedRequired.classList.contains('is-invalid'), true, 'cleared required field becomes invalid after blur');
-assert.equal(neutralFeedback.textContent, 'This field is required.');
-
-untouchedRequired.value = 'Jane';
-untouchedRequired.listeners.input();
-assert.equal(untouchedRequired.classList.contains('is-invalid'), false, 'corrected required field clears its error');
-assert.equal(untouchedRequired.classList.contains('is-valid'), false, 'errors-only form keeps corrected fields neutral');
-
-optionalPassword.value = 'short';
-optionalPassword.listeners.input();
-optionalPassword.listeners.blur();
-assert.equal(optionalPassword.classList.contains('is-invalid'), true, 'entered short optional password is invalid');
-optionalPassword.value = '';
-optionalPassword.listeners.input();
-assert.equal(optionalPassword.classList.contains('is-invalid'), false, 'cleared optional password returns to neutral');
-assert.equal(optionalPasswordFeedback.textContent, '');
-
-let neutralSubmitPrevented = false;
-neutralValidationFormListeners.submit({ preventDefault() { neutralSubmitPrevented = true; } });
-assert.equal(neutralSubmitPrevented, false, 'valid errors-only form can submit');
-assert.equal(neutralValidationForm.classList.contains('was-validated'), false, 'errors-only form does not enable Bootstrap valid-state styling');
+const invalidNativeRuntime = runtime('main');
+let invalidSubmitHandler = null;
+let invalidReportCount = 0;
+let invalidBusyCount = 0;
+let invalidConfirmationCount = 0;
+const invalidNativeForm = {
+  dataset: {},
+  classList: classList(['js-validated-form']),
+  hasAttribute: name => name === 'data-admin-confirm-form',
+  checkValidity: () => false,
+  reportValidity() { invalidReportCount += 1; },
+  querySelectorAll: () => [],
+  querySelector(selector) {
+    if (selector === '[type="submit"]') {
+      invalidBusyCount += 1;
+      return null;
+    }
+    return null;
+  },
+  addEventListener(type, listener) {
+    if (type === 'submit') invalidSubmitHandler = listener;
+  },
+  dispatchEvent() { invalidConfirmationCount += 1; },
+};
+invalidNativeRuntime.state.validatedForms = [invalidNativeForm];
+invalidNativeRuntime.documentListeners.DOMContentLoaded[0]();
+let invalidSubmitPrevented = false;
+invalidSubmitHandler({ preventDefault() { invalidSubmitPrevented = true; } });
+assert.equal(invalidSubmitPrevented, true, 'invalid native form is prevented');
+assert.equal(invalidReportCount, 1, 'invalid native form reports the first invalid control');
+assert.equal(invalidConfirmationCount, 0, 'invalid native form emits no confirmation event');
+assert.equal(invalidNativeForm.dataset.submitting, undefined, 'invalid native form never enters the busy state');
+assert.equal(invalidBusyCount, 0, 'invalid native form never resolves or mutates its submit button');
 
 const passwordToggleRuntime = runtime('main');
 const passwordToggleListeners = {};
@@ -388,10 +413,14 @@ let managementResetCount = 0;
 let managementFocusCount = 0;
 let managementAutoShowCount = 0;
 const managementInvalidField = {
-  dataset: { validationDirty: 'true' },
+  dataset: {},
   classList: classList(['is-invalid']),
   removeAttribute() {},
   focus() { managementFocusCount += 1; },
+};
+let managementCustomValidity = 'Password entries do not match.';
+const managementConfirmationField = {
+  setCustomValidity(message) { managementCustomValidity = message; },
 };
 const managementFeedback = { textContent: 'Required.' };
 const managementForm = {
@@ -403,7 +432,8 @@ const managementForm = {
     return null;
   },
   querySelectorAll(selector) {
-    if (selector === '[data-validate]') return [managementInvalidField];
+    if (selector === '.is-invalid, .is-valid, [aria-invalid="true"]') return [managementInvalidField];
+    if (selector === '[data-confirm-password-for]') return [managementConfirmationField];
     if (selector === '.field-error') return [managementFeedback];
     return [];
   },
@@ -450,7 +480,7 @@ managementModalListeners['hidden.bs.modal']();
 assert.equal(managementResetCount, 1, 'dismissed add modal resets once');
 assert.equal(managementForm.classList.contains('was-validated'), false);
 assert.equal(managementInvalidField.classList.contains('is-invalid'), false);
-assert.equal(managementInvalidField.dataset.validationDirty, 'false');
+assert.equal(managementCustomValidity, '', 'dismissed add modal clears custom password validity');
 assert.equal(managementFeedback.textContent, '');
 managementAutoModalListeners['hidden.bs.modal']();
 assert.equal(managementRuntime.state.assignments, 1, 'dismissed edit/error modal returns to one clean URL');
@@ -572,4 +602,187 @@ assert.equal(modalHideCount, 1, 'confirm closes the Bootstrap modal');
 assert.equal(reviewedSubmitCount, 1, 'confirm requests exactly one real form submission');
 assert.equal(reviewedForm.dataset.adminConfirmed, 'true');
 
-process.stdout.write('JavaScript runtime contracts: all passed\n');
+const publicBookingSource = fs.readFileSync(path.join(root, 'assets', 'js', 'public_booking.js'), 'utf8');
+for (const contract of [
+  '[data-booking-service-input]',
+  'data-booking-review',
+  'smartqms:languagechange',
+  "const stepNames = ['Choose Service', 'Appointment Details', 'Review']",
+  'currentStep / steps.length',
+  "form.dataset.submitting === 'true'",
+  "form.setAttribute('aria-busy', 'true')",
+  "submitButton.setAttribute('aria-busy', 'true')",
+  'processingStatus.hidden = false',
+  'errorSummary.focus()',
+  "errorSummary?.addEventListener('click'",
+  "target.querySelector('input:checked, input, select, textarea, button')",
+  'invalid.reportValidity()',
+]) {
+  assert.equal(publicBookingSource.includes(contract), true, `public booking keeps ${contract}`);
+}
+
+const publicDatepickerSource = fs.readFileSync(path.join(root, 'assets', 'js', 'public_datepicker.js'), 'utf8');
+for (const contract of [
+  '[data-public-datepicker]',
+  "format: 'yyyy-mm-dd'",
+  'minDate: minimumDate',
+  'maxDate: maximumDate',
+  'window.Datepicker.locales.fil',
+  "input.type = originalType",
+  'smartqms:languagechange',
+]) {
+  assert.equal(publicDatepickerSource.includes(contract), true, `public datepicker keeps ${contract}`);
+}
+
+const staffActionSource = fs.readFileSync(path.join(root, 'assets', 'js', 'staff.js'), 'utf8');
+for (const contract of [
+  "activeButton.setAttribute('aria-busy', 'true')",
+  "activeButton.classList.add('is-loading')",
+  "activeButton.classList.remove('is-loading')",
+]) {
+  assert.equal(staffActionSource.includes(contract), true, `staff actions keep ${contract}`);
+}
+assert.equal(
+  staffActionSource.includes('activeButton.textContent = activeButton.dataset.loadingText'),
+  false,
+  'staff action loading state must not replace visible button content',
+);
+
+const adminSource = fs.readFileSync(path.join(root, 'assets', 'js', 'admin.js'), 'utf8');
+for (const contract of [
+  'const semanticSeriesStyles = {',
+  "predicted: { color: primaryColor, dash: [], pointStyle: 'circle' }",
+  "actual: { color: amber, dash: [8, 5], pointStyle: 'triangle' }",
+  'dataset.style_key',
+  'function openAdminPrintDialog(button)',
+  'function scheduleAdminPrintRestore(delay = 1200)',
+  "window.matchMedia?.('print').addEventListener?.('change'",
+  "window.addEventListener('focus', () => scheduleAdminPrintRestore(250))",
+  "button.setAttribute('aria-busy', 'true')",
+  "button.removeAttribute('aria-busy')",
+]) {
+  assert.equal(adminSource.includes(contract), true, `admin reports keep ${contract}`);
+}
+
+const publicDisplaySource = fs.readFileSync(path.join(root, 'assets', 'js', 'public_display.js'), 'utf8');
+for (const contract of [
+  'const visibleCapacity =',
+  "servingRows.slice(1)",
+  "waitingRows.slice(0, capacity)",
+  "'public-display-next-label', 'Next'",
+  'ResizeObserver',
+  '+${hiddenCount} more waiting',
+  "timeZone: 'Asia/Manila'",
+  "setConnectionState('offline')",
+  'window.setInterval(poll, 3000)',
+]) {
+  assert.equal(publicDisplaySource.includes(contract), true, `public display keeps ${contract}`);
+}
+for (const removed of [
+  'AudioContext',
+  'SpeechSynthesisUtterance',
+  'speechSynthesis',
+  'localStorage',
+  'renderRecent',
+  'recentRows',
+  'waitingPageIndex',
+  'payload.recent',
+]) {
+  assert.equal(publicDisplaySource.includes(removed), false, `public display removes ${removed}`);
+}
+
+async function runArrivalScannerContracts() {
+  const source = fs.readFileSync(path.join(root, 'assets', 'js', 'staff_arrival_scanner.js'), 'utf8');
+  let scanListener = null;
+  let startedCamera = '';
+  let instascanStops = 0;
+  const scannerWindow = {
+    location: { origin: 'https://qms.test' },
+    document: { hidden: false },
+    setInterval: () => 17,
+    clearInterval: () => {},
+    navigator: { mediaDevices: {} },
+    Instascan: {
+      Scanner: class {
+        addListener(event, listener) { if (event === 'scan') scanListener = listener; }
+        async start(camera) { startedCamera = String(camera.id); }
+        async stop() { instascanStops += 1; }
+      },
+      Camera: {
+        getCameras: async () => [
+          { id: 'front', name: 'Front Camera' },
+          { id: 'rear', name: 'Rear Camera' },
+        ],
+      },
+    },
+  };
+  vm.runInNewContext(source, { window: scannerWindow, URL });
+  const adapter = scannerWindow.SmartQmsArrivalScanner;
+  assert.equal(typeof adapter.create, 'function', 'arrival scanner exposes its adapter');
+  assert.equal(adapter.parseValue('A'.repeat(64)).lookup_type, 'token');
+  assert.equal(adapter.parseValue('BHC-2026-0042').lookup_value, 'BHC-2026-0042');
+  assert.equal(
+    adapter.parseValue(`https://qms.test/smartqms/track/?token=${'b'.repeat(64)}`).lookup_value,
+    'b'.repeat(64),
+    'same-origin private tracker QR is accepted',
+  );
+  assert.equal(adapter.parseValue(`https://evil.test/track/?token=${'b'.repeat(64)}`), null, 'foreign QR URLs are rejected');
+  assert.equal(adapter.parseValue(`https://qms.test/not-a-tracker/?token=${'b'.repeat(64)}`), null, 'unapproved local paths are rejected');
+
+  const video = { srcObject: null, async play() {} };
+  let validScans = 0;
+  const controller = adapter.create({
+    video,
+    expectedOrigin: scannerWindow.location.origin,
+    async onScan() { validScans += 1; },
+  });
+  const primary = await controller.start();
+  assert.equal(primary.engine, 'instascan', 'Instascan is the primary scanner');
+  assert.equal(primary.selectedId, 'rear', 'rear camera is preferred');
+  assert.equal(startedCamera, 'rear');
+  await Promise.all([
+    scanListener(`https://qms.test/smartqms/track/?token=${'c'.repeat(64)}`),
+    scanListener(`https://qms.test/smartqms/track/?token=${'c'.repeat(64)}`),
+  ]);
+  assert.equal(validScans, 1, 'one valid QR triggers one lookup');
+  assert.equal(instascanStops > 0, true, 'Instascan stops after a valid scan');
+
+  const switchController = adapter.create({ video, expectedOrigin: scannerWindow.location.origin });
+  await switchController.start();
+  await switchController.switchCamera('front');
+  assert.equal(startedCamera, 'front', 'staff can switch to another enumerated camera');
+  await switchController.stop();
+
+  let nativeTrackStops = 0;
+  let nativeConstraints = null;
+  scannerWindow.Instascan.Camera.getCameras = async () => { throw new Error('Instascan unavailable'); };
+  scannerWindow.BarcodeDetector = class { async detect() { return []; } };
+  scannerWindow.navigator.mediaDevices = {
+    async getUserMedia(constraints) {
+      nativeConstraints = constraints;
+      return { getTracks: () => [{ stop() { nativeTrackStops += 1; } }] };
+    },
+    async enumerateDevices() {
+      return [{ kind: 'videoinput', deviceId: 'native-rear', label: 'Back Camera' }];
+    },
+  };
+  const fallbackController = adapter.create({ video, expectedOrigin: scannerWindow.location.origin });
+  const fallback = await fallbackController.start();
+  assert.equal(fallback.engine, 'native', 'BarcodeDetector is used when Instascan fails');
+  assert.equal(nativeConstraints.video.facingMode.ideal, 'environment');
+  await fallbackController.stop();
+  assert.equal(nativeTrackStops > 0, true, 'native fallback releases its media track');
+
+  scannerWindow.Instascan = undefined;
+  scannerWindow.BarcodeDetector = undefined;
+  scannerWindow.navigator.mediaDevices = {};
+  const manualController = adapter.create({ video, expectedOrigin: scannerWindow.location.origin });
+  await assert.rejects(() => manualController.start(), /unavailable/i, 'unsupported browsers fall back to manual input');
+}
+
+runArrivalScannerContracts()
+  .then(() => process.stdout.write('JavaScript runtime contracts: all passed\n'))
+  .catch(error => {
+    console.error(error);
+    process.exitCode = 1;
+  });

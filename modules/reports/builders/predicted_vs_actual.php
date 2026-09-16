@@ -12,8 +12,8 @@ function buildPredictedVsActualReport(mysqli $conn, array $range): array {
                ROUND(
                    TIMESTAMPDIFF(
                        SECOND,
-                       qt.issued_at,
-                       COALESCE(qt.served_at, qt.called_at, qt.completed_at)
+                       COALESCE(qt.checked_in_at, qt.issued_at),
+                       COALESCE(qt.started_at, qt.served_at)
                    ) / 60,
                    2
                ) AS actual_wait_min,
@@ -22,8 +22,8 @@ function buildPredictedVsActualReport(mysqli $conn, array $range): array {
                        wl.predicted_wait_min -
                        TIMESTAMPDIFF(
                            SECOND,
-                           qt.issued_at,
-                           COALESCE(qt.served_at, qt.called_at, qt.completed_at)
+                           COALESCE(qt.checked_in_at, qt.issued_at),
+                           COALESCE(qt.started_at, qt.served_at)
                        ) / 60
                    ),
                    2
@@ -31,13 +31,16 @@ function buildPredictedVsActualReport(mysqli $conn, array $range): array {
         FROM wait_time_logs wl
         JOIN queue_tickets qt ON qt.ticket_id = wl.ticket_id
         JOIN health_services hs ON hs.service_id = qt.service_id
-        WHERE qt.completed_at IS NOT NULL
+        WHERE qt.status = 'completed'
+          AND qt.lifecycle_status = 'completed'
+          AND qt.completed_at IS NOT NULL
+          AND COALESCE(qt.started_at, qt.served_at) IS NOT NULL
           AND wl.predicted_wait_min IS NOT NULL
           AND wl.predicted_wait_min BETWEEN 0 AND 480
           AND TIMESTAMPDIFF(
                   SECOND,
-                  qt.issued_at,
-                  COALESCE(qt.served_at, qt.called_at, qt.completed_at)
+                  COALESCE(qt.checked_in_at, qt.issued_at),
+                  COALESCE(qt.started_at, qt.served_at)
               ) BETWEEN 0 AND 28800
           AND DATE(qt.completed_at) BETWEEN ? AND ?
         ORDER BY qt.completed_at DESC

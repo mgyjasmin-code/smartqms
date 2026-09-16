@@ -8,9 +8,9 @@ function roleDestinationPath(string $role): string {
         return 'views/admin/dashboard.php';
     }
     if ($role === ROLE_STAFF) {
-        return 'views/staff/dashboard.php';
+        return 'staff/select-counter/';
     }
-    return 'views/client/index.php';
+    return '';
 }
 
 function redirectAfterLogin(string $role, array $params = []): void {
@@ -20,7 +20,7 @@ function redirectAfterLogin(string $role, array $params = []): void {
 function otpFlowFormContext(string $flow): array {
     if ($flow === 'reset') {
         return [
-            'target' => 'views/client/forgot_password.php',
+            'target' => 'forgot-password/',
             'form_key' => 'forgot_password_otp',
         ];
     }

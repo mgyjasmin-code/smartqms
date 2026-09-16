@@ -93,18 +93,19 @@ Transient OTP/reset keys:
 
 | Key | Meaning |
 | --- | --- |
-| `otp_flow` | `register`, `login`, or `reset` |
+| `otp_flow` | `register` or `reset`; interactive login no longer uses OTP |
 | `otp_user_id` | User currently being verified |
 | `otp_started_at` | OTP flow start timestamp |
 | `otp_last_sent_at` | Resend-cooldown timestamp |
 | `pending_user_id` | Registration verification user |
-| `pending_login_user_id` | Login verification user |
 | `reset_user_id` | Password-reset verification user |
-| `reset_verified_user_id` | User allowed to submit the new password |
+| `reset_capability` | Single-use server-validated password-reset capability |
 
-Successful login regenerates the session identifier. `clearOtpSession()` clears
-all transient OTP/reset keys. Logout clears and destroys the authenticated
-session.
+Successful login regenerates the session identifier. Authenticated sessions
+expire after 30 minutes of inactivity or eight hours absolutely and rotate
+their identifier periodically. Local account changes increment a session
+version so existing sessions are revoked. `clearOtpSession()` clears all
+transient OTP/reset keys. Logout clears and destroys the authenticated session.
 
 Role destinations remain:
 
@@ -308,15 +309,18 @@ There are exactly three stylesheet entry points:
 
 | File | Ownership |
 | --- | --- |
-| `assets/css/style.css` | Authentication, public/client, shared, and staff components, states, responsive behavior, reduced motion, and ticket printing |
-| `assets/css/admin.css` | Admin tokens, light/dark themes, shell, components, reports, responsive rules, reduced motion, and report printing |
-| `assets/css/display.css` | Display-board tokens, layout, window cards, status colors, ticker, and update text |
+| `assets/css/style.css` | Authoritative `--sq-*` tokens and Bootstrap mappings; authentication, public/client, shared shell, staff components, responsive behavior, reduced motion, and ticket printing |
+| `assets/css/admin.css` | Admin-only management, analytics, chart, report, and report-print composition |
+| `assets/css/display.css` | Display-board layout, window cards, privacy-safe states, ticker, and update text |
 
 Do not introduce `@import`, a preprocessor, a CSS framework replacement, or a
-new stylesheet URL without approval. Add shared/client/staff tokens to
-`style.css`, admin theme tokens to `admin.css`, and display-only tokens to
-`display.css`. Keep media, theme, state, focus, reduced-motion, and print
-contexts separate when their cascade semantics differ.
+new stylesheet URL without approval. Public/auth/client/staff pages load
+Bootstrap plus `style.css`; Admin adds `admin.css`; public display adds
+`display.css`. Add semantic theme tokens to `style.css`, admin-only composition
+to `admin.css`, and display-only composition to `display.css`. Keep media,
+theme, state, focus, reduced-motion, and print contexts separate when their
+cascade semantics differ. See `docs/CSS_REFACTORING.md` for the measured
+baseline, publication workflow, and automated budget guard.
 
 ## Database setup and compatibility
 
@@ -408,7 +412,8 @@ ignored.
 | Shared browser behavior | `assets/js/main.js` |
 | Client/staff/admin/display behavior | The corresponding role script |
 | Shared/client/staff style | `assets/css/style.css` |
-| Admin style or theme token | `assets/css/admin.css` |
+| Shared semantic theme or Bootstrap mapping | `assets/css/style.css` |
+| Admin-only management, analytics, chart, or report style | `assets/css/admin.css` |
 | Display-board style | `assets/css/display.css` |
 | New behavioral contract | `tests/php/`, `tests/js/`, or `tests/contracts/` |
 

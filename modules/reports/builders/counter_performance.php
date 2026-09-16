@@ -14,7 +14,10 @@ function buildCounterPerformanceReport(mysqli $conn, array $range): array {
         JOIN queue_tickets qt ON qt.ticket_id = wl.ticket_id
         LEFT JOIN service_windows sw ON sw.window_id = qt.window_id
         LEFT JOIN health_services hs ON hs.service_id = qt.service_id
-        WHERE qt.completed_at IS NOT NULL
+        WHERE qt.status = 'completed'
+          AND qt.lifecycle_status = 'completed'
+          AND qt.completed_at IS NOT NULL
+          AND wl.actual_wait_min IS NOT NULL
           AND DATE(qt.completed_at) BETWEEN ? AND ?
         GROUP BY window_name, service_name
         ORDER BY tickets_served DESC, window_name

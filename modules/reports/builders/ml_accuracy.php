@@ -52,7 +52,11 @@ function mlQueueDataBaseline(): ?array {
             return null;
         }
         $columns = array_flip($header);
-        foreach (['arrival_time', 'wait_time', 'queue_length'] as $required) {
+        $isDatabaseExport = array_key_exists('actual_wait_minutes', $columns);
+        $requiredColumns = $isDatabaseExport
+            ? ['actual_wait_minutes', 'queue_length']
+            : ['arrival_time', 'wait_time', 'queue_length'];
+        foreach ($requiredColumns as $required) {
             if (!array_key_exists($required, $columns)) {
                 return null;
             }
@@ -61,19 +65,25 @@ function mlQueueDataBaseline(): ?array {
         $observations = [];
         $latestDatasetDate = null;
         while (($record = fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
+            $waitColumn = $isDatabaseExport ? 'actual_wait_minutes' : 'wait_time';
             $wait = filter_var(
-                $record[$columns['wait_time']] ?? null,
+                $record[$columns[$waitColumn]] ?? null,
                 FILTER_VALIDATE_FLOAT
             );
             $queueLength = filter_var(
                 $record[$columns['queue_length']] ?? null,
                 FILTER_VALIDATE_INT
             );
-            $capturedAt = DateTimeImmutable::createFromFormat(
-                'd-m-Y H.i',
-                trim((string) ($record[$columns['arrival_time']] ?? ''))
-            );
-            if ($wait === false || $queueLength === false || $capturedAt === false) {
+            $capturedAt = $isDatabaseExport
+                ? DateTimeImmutable::createFromFormat(
+                    'Y-m-d H:i:s',
+                    trim((string) ($record[$columns['observed_at'] ?? -1] ?? ''))
+                )
+                : DateTimeImmutable::createFromFormat(
+                    'd-m-Y H.i',
+                    trim((string) ($record[$columns['arrival_time']] ?? ''))
+                );
+            if ($wait === false || $queueLength === false) {
                 continue;
             }
             if ($wait < 0 || $wait > 480 || $queueLength < 0 || $queueLength > 500) {
@@ -83,7 +93,8 @@ function mlQueueDataBaseline(): ?array {
                 'queue_length' => $queueLength,
                 'actual_wait_min' => (float) $wait,
             ];
-            if ($latestDatasetDate === null || $capturedAt > $latestDatasetDate) {
+            if ($capturedAt !== false
+                && ($latestDatasetDate === null || $capturedAt > $latestDatasetDate)) {
                 $latestDatasetDate = $capturedAt;
             }
         }

@@ -5,13 +5,14 @@
 
 function buildPeakHourReport(mysqli $conn, array $range): array {
     $rows = reportFetchAll($conn, "
-        SELECT LPAD(HOUR(issued_at), 2, '0') AS hour_of_day,
-               CONCAT(LPAD(HOUR(issued_at), 2, '0'), ':00') AS hour_label,
+        SELECT LPAD(HOUR(COALESCE(checked_in_at, issued_at)), 2, '0') AS hour_of_day,
+               CONCAT(LPAD(HOUR(COALESCE(checked_in_at, issued_at)), 2, '0'), ':00') AS hour_label,
                COUNT(*) AS tickets
         FROM queue_tickets
-        WHERE DATE(issued_at) BETWEEN ? AND ?
-        GROUP BY HOUR(issued_at)
-        ORDER BY HOUR(issued_at)
+        WHERE lifecycle_status <> 'scheduled'
+          AND DATE(COALESCE(checked_in_at, issued_at)) BETWEEN ? AND ?
+        GROUP BY HOUR(COALESCE(checked_in_at, issued_at))
+        ORDER BY HOUR(COALESCE(checked_in_at, issued_at))
     ", 'ss', [$range['from'], $range['to']]);
 
     $columns = reportColumns([

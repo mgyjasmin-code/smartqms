@@ -18,8 +18,8 @@ The fresh schema includes:
 - Local demo admin account
 
 Local demo admin login:
-  Email: admin@smartqms.local
-  Password: smartQMSadmin!
+  No default administrator is installed. Use the CLI-only
+  scripts/bootstrap_admin.php command with deployment environment variables.
 
 This password is for local team/demo machines only. Change it before any shared
 or production-like use.

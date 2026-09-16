@@ -27,9 +27,17 @@ testCase('JavaScript ownership is separated across shared client staff admin and
         assertFalseValue(str_contains($main, "function {$function}"), $function . ' must not remain in main.js.');
     }
     assertFalseValue(str_contains($staff, 'function initStaffTheme'), 'Theme behavior belongs to shell.js.');
-    foreach (['initTheme', 'initSidebar', 'initSubmenus', 'initUserMenu', 'initSearch', 'initToasts'] as $function) {
+    foreach (['restoreShellOverlayState', 'initTheme', 'initSidebar', 'initSubmenus', 'initUserMenu', 'initSearch', 'initToasts'] as $function) {
         assertStringContains("function {$function}", $shell);
         assertFalseValue(str_contains($main, "function {$function}"), $function . ' must not be duplicated in main.js.');
+    }
+    foreach ([
+        "document.querySelector('.modal.show')",
+        "document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop')",
+        "body.classList.remove('modal-open')",
+        "window.addEventListener('pageshow'",
+    ] as $overlayContract) {
+        assertStringContains($overlayContract, $shell);
     }
     foreach (['initThemeToggle', 'initSidebar', 'initReportMenu', 'initAdminSearch', 'initUserMenu'] as $function) {
         assertFalseValue(str_contains(batch7Source('assets/js/admin.js'), "function {$function}"), $function . ' must not be duplicated in admin.js.');
@@ -56,23 +64,23 @@ testCase('client and staff fetches retain credentials CSRF and in-flight guards'
     }
 });
 
-testCase('page script loading follows authentication client staff admin and display ownership', function (): void {
-    $clientViews = [
-        'views/client/index.php',
-        'views/client/queue_status.php',
-        'views/client/ticket.php',
-    ];
-    foreach ($clientViews as $view) {
-        $source = batch7Source($view);
-        assertStringContains("includes/header.php", $source, $view);
-        assertStringContains("includes/footer.php", $source, $view);
-    }
+testCase('page script loading follows public staff admin and display ownership', function (): void {
+    $publicTracker = batch7Source('views/public/tracker.php');
+    assertStringContains("assetUrl('assets/js/main.js')", $publicTracker);
+    assertStringContains("assetUrl('assets/js/public_queue.js')", $publicTracker);
 
     $shared = batch7Source('views/shared/includes/shell_footer.php');
     assertTrueValue(strpos($shared, 'assets/js/main.js') < strpos($shared, 'assets/js/shell.js'));
-    assertStringContains("'scripts' => ['assets/js/client.js']", batch7Source('views/client/includes/header.php'));
-    assertStringContains("'scripts' => ['assets/js/staff.js']", batch7Source('views/staff/includes/header.php'));
-    assertStringContains("'scripts' => ['assets/js/admin.js']", batch7Source('views/admin/includes/header.php'));
+    $staffHeader = batch7Source('views/staff/includes/header.php');
+    foreach (['permissions.js', 'queue.js', 'realtime.js', 'staff.js'] as $staffScript) {
+        assertStringContains($staffScript, $staffHeader);
+    }
+    assertTrueValue(strpos($staffHeader, 'queue.js') < strpos($staffHeader, 'staff.js'));
+    $adminHeader = batch7Source('views/admin/includes/header.php');
+    foreach (['permissions.js', 'services.js', 'branches.js', 'admin.js'] as $adminScript) {
+        assertStringContains($adminScript, $adminHeader);
+    }
+    assertTrueValue(strpos($adminHeader, 'services.js') < strpos($adminHeader, 'admin.js'));
     $display = batch7Source('views/display/board.php');
     assertStringContains('assets/js/display.js', $display);
     assertFalseValue(str_contains($display, 'assets/js/main.js'));
@@ -84,10 +92,10 @@ testCase('inline click and feedback handlers are removed from PHP views', functi
         $source = file_get_contents($view) ?: '';
         assertFalseValue((bool) preg_match('/\son(?:click|submit)\s*=/i', $source), basename($view));
     }
-    $ticket = batch7Source('views/client/ticket.php');
+    $ticket = batch7Source('views/public/tracker.php');
     assertFalseValue(str_contains($ticket, 'feedbackForm.addEventListener'));
-    assertStringContains('data-feedback-form', $ticket);
-    assertStringContains('data-ticket-print', $ticket);
+    assertStringContains('data-public-feedback-form', $ticket);
+    assertStringContains('data-print-page', $ticket);
 });
 
 testCase('removed legacy JavaScript globals have no source definitions', function (): void {

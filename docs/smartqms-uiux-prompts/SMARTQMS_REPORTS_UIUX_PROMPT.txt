@@ -1,0 +1,112 @@
+# SmartQMS Reports UI/UX Prompt
+
+Design and implement ten separate SmartQMS report pages using PHP 8.x, Bootstrap 5, vanilla JavaScript, locally bundled Chart.js, Poppins, Lucide SVG, and the shared healthcare token system. Reports must explain operational reality, not merely decorate data.
+
+## Shared report shell
+
+Every report page contains:
+
+    Admin sidebar and top bar
+    Breadcrumb
+    Report title and plain-language description
+    Calculation or date-basis note
+    Relevant filter card
+    Apply | Reset | Export CSV | Print/PDF
+    KPI cards
+    Primary visualization
+    Written insight
+    Accessible exact-value table
+    Methodology accordion when clarification is needed
+
+Reports remain separate pages. Do not convert them into one tabbed report screen.
+
+## Design rules
+
+Use light-default healthcare colors: primary #006B73, secondary #174A6E, canvas #F4FAFA, strong text #102A43, and accessible dark equivalents. Use Poppins throughout. Charts use accessible series colors, shapes, direct labels where practical, restrained gridlines, exact-value tooltips, and no decorative 3D or gradients.
+
+Every chart requires a text summary and exact-value table. Status, comparison, and trend must not rely on color alone. Charts must reflow or gain a labelled horizontal-scroll region on narrow screens.
+
+## Report specifications
+
+### Queue Summary
+
+- Primary visual: stacked columns by outcome and date.
+- KPIs: checked in, completed, active, skipped/voided.
+- Sources: queue tickets, services, counters.
+- Date basis: physical check-in for arrivals; completion date for outcomes.
+
+### Predicted vs Actual Wait
+
+- Primary visual: paired line trend or scatter with predicted and actual values.
+- KPIs: predicted average, actual average, mean absolute error.
+- Only include tickets with a real prediction and actual service-start time.
+
+### Peak Hour Analysis
+
+- Primary visual: accessible day-by-hour heatmap.
+- KPIs: busiest hour, busiest day, peak arrivals.
+- Use physical check-in time, not online reservation creation.
+- Provide a table alternative because heatmap intensity is visual.
+
+### Counter Performance
+
+- Primary visual: ranked horizontal bars plus exact table.
+- KPIs: completed tickets, average service time, average wait, utilization.
+- Use historical ticket/event counter, not current counter assignment.
+
+### Turnaround Time
+
+- Primary visual: line trend with wait and service breakdown.
+- KPIs: median, average, and 90th percentile total time.
+- Total equals completed time minus physical check-in.
+
+### No-Show
+
+- Primary visual: stacked columns by no-show type.
+- KPIs: expired without check-in, no response after call, staff void.
+- Do not merge distinct reasons into one unexplained total.
+
+### Staff Productivity
+
+- Primary visual: ranked horizontal bars plus detailed table.
+- KPIs: completed, average service duration, skips, voids.
+- Use persisted historical actor events, not the staff member's current counter.
+
+### ML Accuracy
+
+- Primary visual: MAE and RMSE trend by model version.
+- KPIs: MAE, RMSE, sample size, version, last evaluation.
+- Clearly label synthetic/testing data and insufficient real samples.
+
+### Daily and Monthly Stats
+
+- Primary visual: daily lines and monthly columns with a granularity control.
+- KPIs: arrivals, completions, walk-in share, online-origin share.
+- Reservation totals use visit date; live queue totals use check-in time.
+
+### Satisfaction
+
+- Primary visual: 100% stacked rating distribution plus service ranking.
+- KPIs: average rating, response count, eligible completions, response rate.
+- Show anonymized comments and never expose client identity.
+
+## Filters
+
+Only show relevant filters. Available controls include date range, service, counter, staff, outcome/status, ticket source, model version, rating, and day/month granularity. Use Bootstrap form controls with Apply and Reset. Collapse secondary filters on small screens without hiding the active-filter summary.
+
+## Bootstrap components
+
+Use Admin offcanvas/sidebar shell, breadcrumb, card, grid, form-control, form-select, button group, badges, alerts, Chart.js canvas inside stable ratio or responsive containers, table-responsive, table, pagination, accordion, spinner, placeholder, tooltip only for exact supplemental values, and visually-hidden chart summaries.
+
+## Responsive and print
+
+At mobile widths, KPI cards stack, filter controls become one column, and wide charts use simplified ticks or a controlled labelled scroll region. Tables remain tables with horizontal scrolling. Print/PDF removes navigation, buttons, animation, and dark background; it includes report title, selected filters, generated time, KPIs, chart, and table.
+
+## Required states
+
+Design loading, no records, insufficient ML sample, invalid date range, failed load with Retry, stale data, export preparation, export failure, and print layout. A report with no valid observations says No data yet rather than implying a measured zero.
+
+## Definition of done
+
+All ten reports use the best visualization for their question, accurate calculations, relevant filters, accessible exact-value tables, CSV and print/PDF actions, responsive behavior, light/dark support, and privacy-safe content.
+

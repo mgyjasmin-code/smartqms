@@ -7,13 +7,14 @@ $displayToken = trim((string) ($_GET['token'] ?? ''));
 $statusUrl = APP_URL . '/modules/queue/status.php?token=' . rawurlencode($displayToken);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Queue Display -- SmartQMS</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Inter:wght@400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/display.css">
+  <link rel="stylesheet" href="<?= assetUrl('vendor/twbs/bootstrap/dist/css/bootstrap.min.css') ?>">
+  <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
+  <link rel="stylesheet" href="<?= assetUrl('assets/css/display.css') ?>">
 </head>
 <body>
   <div id="display-board" data-display-root data-status-url="<?= htmlspecialchars($statusUrl, ENT_QUOTES) ?>">
@@ -27,6 +28,7 @@ $statusUrl = APP_URL . '/modules/queue/status.php?token=' . rawurlencode($displa
       <div class="last-updated" id="last-updated"></div>
     </footer>
   </div>
-  <script src="<?= APP_URL ?>/assets/js/display.js"></script>
+  <script src="<?= assetUrl('vendor/twbs/bootstrap/dist/js/bootstrap.bundle.min.js') ?>"></script>
+  <script src="<?= assetUrl('assets/js/display.js') ?>"></script>
 </body>
 </html>

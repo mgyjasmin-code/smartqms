@@ -7,11 +7,13 @@ function buildTurnaroundTimeReport(mysqli $conn, array $range): array {
     $rows = reportFetchAll($conn, "
         SELECT DATE(completed_at) AS report_date,
                COUNT(*) AS completed_tickets,
-               ROUND(AVG(TIMESTAMPDIFF(MINUTE, issued_at, completed_at)), 2) AS avg_turnaround_min,
-               MIN(TIMESTAMPDIFF(MINUTE, issued_at, completed_at)) AS min_turnaround_min,
-               MAX(TIMESTAMPDIFF(MINUTE, issued_at, completed_at)) AS max_turnaround_min
+               ROUND(AVG(TIMESTAMPDIFF(MINUTE, COALESCE(checked_in_at, issued_at), completed_at)), 2) AS avg_turnaround_min,
+               MIN(TIMESTAMPDIFF(MINUTE, COALESCE(checked_in_at, issued_at), completed_at)) AS min_turnaround_min,
+               MAX(TIMESTAMPDIFF(MINUTE, COALESCE(checked_in_at, issued_at), completed_at)) AS max_turnaround_min
         FROM queue_tickets
-        WHERE completed_at IS NOT NULL
+        WHERE status = 'completed'
+          AND lifecycle_status = 'completed'
+          AND completed_at IS NOT NULL
           AND DATE(completed_at) BETWEEN ? AND ?
         GROUP BY report_date
         ORDER BY report_date DESC

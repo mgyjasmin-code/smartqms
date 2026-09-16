@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en" data-gallery-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartQMS High-Fidelity Wireframe Gallery</title>
+  <link rel="stylesheet" href="wireframes.css?v=8k2">
+</head>
+<body>
+  <header class="gallery-bar">
+    <a class="gallery-brand" href="#gallery-main">
+      <img src="../../../assets/images/brand/smartqms-mark.svg" alt="">
+      <span><strong>SmartQMS</strong><small>High-fidelity wireframes</small></span>
+    </a>
+    <div class="gallery-controls" aria-label="Wireframe controls">
+      <label>Journey
+        <select data-gallery-screen>
+          <option value="landing">Public landing</option>
+          <option value="booking">Online booking</option>
+          <option value="tracker">Appointment tracker</option>
+          <option value="login">Staff / Admin login</option>
+          <option value="display">Public display</option>
+          <option value="staff">Staff workspace</option>
+          <option value="checkin">Arrival check-in</option>
+          <option value="admin">Admin dashboard</option>
+          <option value="management">Admin management</option>
+          <option value="reports">Admin reports</option>
+        </select>
+      </label>
+      <div class="gallery-segmented" aria-label="Preview width">
+        <button type="button" data-gallery-width="1440" aria-pressed="true">1440</button>
+        <button type="button" data-gallery-width="768" aria-pressed="false">768</button>
+        <button type="button" data-gallery-width="390" aria-pressed="false">390</button>
+      </div>
+      <label>State
+        <select data-gallery-state>
+          <option value="default">Default</option>
+          <option value="empty">Empty</option>
+          <option value="loading">Loading</option>
+          <option value="error">Error</option>
+        </select>
+      </label>
+      <button class="gallery-theme" type="button" data-gallery-theme aria-pressed="false">Dark theme</button>
+    </div>
+  </header>
+
+  <main id="gallery-main" class="gallery-stage">
+    <p class="gallery-note">Static development artifact · fictional data · no API requests or production mutations</p>
+    <div class="gallery-device" data-gallery-device style="--preview-width: 1440px">
+      <section class="prototype" data-screen="landing">
+        <nav class="proto-nav">
+          <a class="proto-brand" href="#"><img src="../../../assets/images/brand/smartqms-mark.svg" alt=""><span>SmartQMS</span></a>
+          <div><a href="#journey">How it works</a><a href="#status">Check status</a><button class="btn secondary">Login</button></div>
+        </nav>
+        <div class="public-hero">
+          <div class="hero-copy">
+            <span class="eyebrow">Barangay health center queue</span>
+            <h1>Plan your visit.<br><em>Wait with confidence.</em></h1>
+            <p>Register before you arrive, check in at the health center, and follow your place in a fair first-in, first-out queue.</p>
+            <div class="button-row"><button class="btn primary">Join Live Queue</button><button class="btn secondary">Check Ticket Status</button></div>
+            <div class="trust-row"><span>✓ No client account</span><span>✓ Private QR tracker</span><span>✓ Same-day visit</span></div>
+          </div>
+          <div class="queue-illustration" aria-label="Illustration of a client moving through the health-center queue">
+            <div class="ill-card queue"><span>A-024</span><small>Waiting · 2 ahead</small></div>
+            <div class="ill-flow"><span></span><span></span><span></span></div>
+            <div class="ill-card counter"><small>Now serving</small><strong>A-021</strong><b>Counter 2</b></div>
+            <svg viewBox="0 0 480 240" aria-hidden="true"><path d="M60 174 C120 70 208 210 302 92 S430 68 444 44"/><circle cx="60" cy="174" r="8"/><circle cx="302" cy="92" r="8"/><circle cx="444" cy="44" r="8"/></svg>
+          </div>
+        </div>
+        <div class="journey-grid" id="journey">
+          <article><b>01</b><strong>Schedule</strong><p>Share your visit details for today.</p></article>
+          <article><b>02</b><strong>Check in</strong><p>Present your QR or reference on arrival.</p></article>
+          <article><b>03</b><strong>Join FIFO</strong><p>Receive a number in arrival order.</p></article>
+          <article><b>04</b><strong>Receive care</strong><p>Track your turn and proceed to the counter.</p></article>
+        </div>
+        <div class="lookup-band" id="status"><div><span class="eyebrow">Already registered?</span><h2>Check your ticket status</h2><p>Only operational queue details are shown.</p></div><form><label>Reference number<input value="BHC-2026-0124"></label><button class="btn primary">Check status</button></form></div>
+      </section>
+
+      <section class="prototype" data-screen="booking" hidden>
+        <div class="public-top"><a class="proto-brand"><img src="../../../assets/images/brand/smartqms-mark.svg" alt=""><span>SmartQMS</span></a><a>Return home</a></div>
+        <div class="focused-layout">
+          <aside class="context-panel"><span class="eyebrow">Today’s visit</span><h1>Join the live queue</h1><p>Complete your details now. Your appointment stays Scheduled until staff confirms your arrival.</p><ol><li class="active">Visit details</li><li>Appointment confirmed</li><li>Arrival check-in</li></ol></aside>
+          <form class="form-card"><div class="form-heading"><b>1 of 3</b><h2>Your visit details</h2><p>All fields are required.</p></div><div class="form-grid"><label>First name<input value="Maria"></label><label>Last name<input value="Santos"></label><label class="wide">Mobile number<input value="0917 123 4567"></label><label class="wide">Health service<select><option>General Consultation</option></select></label></div><div class="info-callout">A queue number is issued only after you physically check in.</div><button class="btn primary full">Confirm Appointment</button></form>
+        </div>
+      </section>
+
+      <section class="prototype" data-screen="tracker" hidden>
+        <div class="public-top"><a class="proto-brand"><img src="../../../assets/images/brand/smartqms-mark.svg" alt=""><span>SmartQMS</span></a><button class="btn secondary">Enable alerts</button></div>
+        <header class="tracker-title"><span class="status scheduled">Scheduled</span><h1>Appointment confirmed</h1><p>Present your QR code or reference when you arrive at the health center.</p></header>
+        <div class="tracker-layout"><article class="qr-card"><div class="fake-qr" aria-label="Fictional QR placeholder"></div><small>Private arrival code</small><strong>BHC-2026-0124</strong><div class="button-row"><button class="btn primary">Print ticket</button><button class="btn secondary">Return home</button></div></article><article class="details-card"><div class="details-head"><span>Maria Santos</span><strong>General Consultation</strong></div><dl><div><dt>Visit date</dt><dd>August 22, 2026</dd></div><div><dt>Queue number</dt><dd>Assigned at check-in</dd></div><div><dt>Current state</dt><dd>Scheduled</dd></div></dl><h2>Visit progress</h2><ol class="timeline"><li class="done"><b>Scheduled</b><span>Registration complete</span></li><li class="current"><b>Check-In</b><span>Present QR or reference</span></li><li><b>Waiting</b><span>Queue number assigned</span></li><li><b>Calling</b><span>Proceed to counter</span></li><li><b>In Progress</b><span>Service underway</span></li><li><b>Completed</b><span>Feedback available</span></li></ol></article></div>
+      </section>
+
+      <section class="prototype" data-screen="login" hidden>
+        <div class="login-layout"><aside><a class="proto-brand light"><img src="../../../assets/images/brand/smartqms-mark.svg" alt=""><span>SmartQMS</span></a><div><span class="eyebrow">Authorized workspace</span><h1>Coordinate care with a clearer queue.</h1><p>Staff manage arrivals and service. Administrators configure people, services, counters, and reports.</p><div class="login-stat"><strong>FIFO</strong><span>Fair arrival ordering</span></div></div><small>Barangay Health Center · Smart queue operations</small></aside><form class="login-card"><a class="back-link">← Return to public site</a><span class="eyebrow">Welcome back</span><h2>Staff / Admin sign in</h2><p>Use the account issued by your administrator.</p><label>Email address<input value="staff@smartqms.local"></label><label>Password<div class="password-field"><input type="password" value="password"><button type="button">Show</button></div></label><div class="form-split"><label><input type="checkbox"> Remember me</label><a>Forgot password?</a></div><button class="btn primary full">Sign in</button><div class="stable-message">Secure access · Sessions are role restricted</div></form></div>
+      </section>
+
+      <section class="prototype display-prototype" data-screen="display" hidden>
+        <header><a class="proto-brand light"><img src="../../../assets/images/brand/smartqms-mark.svg" alt=""><span>SmartQMS</span></a><div><strong>Barangay Health Center</strong><span>Live queue · Updated 10:42 AM</span></div><button>Announcements on</button></header><main><section class="serving-zone"><div class="zone-title"><span>Now serving</span><h1>Please proceed to your counter</h1></div><div class="serving-grid"><article><span>A-021</span><strong>Counter 2</strong><small>General Consultation</small></article><article><span>B-009</span><strong>Counter 4</strong><small>Immunization</small></article></div></section><section class="waiting-zone"><div class="zone-title"><span>Waiting</span><h2>Upcoming numbers</h2></div><div class="number-grid"><span>A-022</span><span>A-023</span><span>B-010</span><span>A-024</span><span>C-006</span><span>B-011</span><span>A-025</span><span>C-007</span></div></section></main><footer>Queue numbers only · Client information remains private <span>Page 1 of 2</span></footer>
+      </section>
+
+      <section class="prototype app-prototype" data-screen="staff" hidden>
+        <aside class="app-sidebar"><a class="proto-brand light"><img src="../../../assets/images/brand/smartqms-mark.svg" alt=""><span>SmartQMS</span></a><small>STAFF WORKSPACE</small><nav><a class="active">Queue Management</a><a>Arrival Check-In</a><a>My Window</a><a>Batch Printing</a><a>Public Display ↗</a></nav><div class="counter-mini"><span>Assigned counter</span><strong>Counter 2</strong><small>General Consultation</small></div></aside><div class="app-main"><header class="app-top"><button class="mobile-menu">☰</button><label><input placeholder="Search staff workspace"></label><button class="profile">MS <span>Maria Santos<br><small>Staff</small></span></button></header><main><div class="page-title"><div><span class="eyebrow">Queue operations</span><h1>Good morning, Maria</h1><p>Manage today’s arrivals in strict first-in, first-out order.</p></div><span class="status open">Counter 2 · Open</span></div><div class="kpi-grid five"><article><span>Tickets today</span><strong>38</strong><small>+6 since 9 AM</small></article><article><span>Calling / Service</span><strong>2</strong><small>Active now</small></article><article><span>Waiting</span><strong>12</strong><small>FIFO order</small></article><article><span>Completed</span><strong>21</strong><small>Today</small></article><article><span>Voided</span><strong>3</strong><small>No-shows</small></article></div><article class="operation-card"><div><span class="eyebrow">Currently calling</span><div class="active-number">A-021</div><strong>Elena Cruz · General Consultation</strong><small>Called 01:42 ago · BHC-2026-0118</small></div><div class="operation-actions"><button class="btn secondary">Recall</button><button class="btn primary">Start Service</button><button class="btn success">Complete</button><button class="btn danger">Void</button></div></article><article class="table-card"><div class="card-toolbar"><div><span class="eyebrow">Strict FIFO</span><h2>Waiting queue</h2></div><button class="btn secondary">Arrival Check-In</button></div><div class="table-scroll"><table><thead><tr><th>Queue</th><th>Client</th><th>Reference</th><th>Service</th><th>Entry</th><th>Checked in</th><th>Status</th></tr></thead><tbody><tr><td><b>A-022</b></td><td>Ramon Dela Cruz</td><td>BHC-2026-0121</td><td>General Consultation</td><td>Online</td><td>10:24 AM</td><td><span class="status waiting">Waiting</span></td></tr><tr><td><b>A-023</b></td><td>Leah Mendoza</td><td>BHC-2026-0122</td><td>General Consultation</td><td>Walk-in</td><td>10:31 AM</td><td><span class="status waiting">Waiting</span></td></tr></tbody></table></div></article></main></div>
+      </section>
+
+      <section class="prototype app-prototype" data-screen="checkin" hidden>
+        <aside class="app-sidebar compact"><a class="proto-brand light"><img src="../../../assets/images/brand/smartqms-mark.svg" alt=""><span>SmartQMS</span></a><nav><a>Queue Management</a><a class="active">Arrival Check-In</a><a>Batch Printing</a></nav></aside><div class="app-main"><header class="app-top"><button class="mobile-menu">☰</button><label><input placeholder="Search staff workspace"></label><button class="profile">MS</button></header><main><div class="page-title"><div><span class="eyebrow">Front desk</span><h1>Arrival Check-In</h1><p>Confirm scheduled clients or create an immediate walk-in ticket.</p></div></div><article class="tabs-card"><div class="tabs"><button class="active">Scan QR</button><button>Manual Input</button><button>Walk-In</button></div><div class="scan-layout"><div class="camera-panel"><div class="camera-frame"><span>QR</span><div class="scan-line"></div></div><h2>Scan the client’s QR code</h2><p>Camera access starts only after Staff interaction.</p><button class="btn primary">Start camera</button><a>Camera unavailable? Use Manual Input</a></div><div class="review-card"><span class="eyebrow">Appointment review</span><h2>Maria Santos</h2><dl><div><dt>Reference</dt><dd>BHC-2026-0124</dd></div><div><dt>Service</dt><dd>General Consultation</dd></div><div><dt>Appointment</dt><dd>Today · Scheduled</dd></div></dl><button class="btn primary full">Review and check in</button></div></div></article></main></div>
+      </section>
+
+      <section class="prototype app-prototype" data-screen="admin" hidden>
+        <aside class="app-sidebar"><a class="proto-brand light"><img src="../../../assets/images/brand/smartqms-mark.svg" alt=""><span>SmartQMS</span></a><small>ADMINISTRATION</small><nav><a class="active">Dashboard</a><a>Staff Accounts</a><a>Health Services</a><a>Service Windows</a><a>Reports</a></nav></aside><div class="app-main"><header class="app-top"><button class="mobile-menu">☰</button><label><input placeholder="Search pages and reports"></label><button class="profile">SA <span>System Administrator<br><small>Administrator</small></span></button></header><main><div class="page-title"><div><span class="eyebrow">Operations overview</span><h1>Health center at a glance</h1><p>Real-time queue volume and wait-time performance.</p></div><span class="updated">Updated 10:42 AM</span></div><div class="kpi-grid"><article><span>Tickets today</span><strong>38</strong><small>Checked in</small></article><article><span>Average wait</span><strong>8.4 <i>min</i></strong><small>Within target</small></article><article><span>Currently serving</span><strong>4</strong><small>Across 4 counters</small></article><article><span>Voided today</span><strong>3</strong><small>7.9% of arrivals</small></article></div><div class="dashboard-grid"><article class="chart-card"><div class="card-toolbar"><div><span class="eyebrow">Volume</span><h2>Tickets by hour</h2></div><span>Today</span></div><div class="fake-chart bars"><i style="--h:45%"></i><i style="--h:70%"></i><i style="--h:58%"></i><i style="--h:90%"></i><i style="--h:78%"></i><i style="--h:52%"></i></div></article><article class="chart-card"><div class="card-toolbar"><div><span class="eyebrow">Model performance</span><h2>Predicted vs actual wait</h2></div><span>7 days</span></div><div class="fake-chart lines"><svg viewBox="0 0 600 220"><polyline points="0,170 100,120 200,142 300,76 400,98 500,54 600,72"/><polyline points="0,180 100,132 200,126 300,92 400,82 500,70 600,64"/></svg></div></article></div></main></div>
+      </section>
+
+      <section class="prototype app-prototype" data-screen="management" hidden>
+        <aside class="app-sidebar"><a class="proto-brand light"><img src="../../../assets/images/brand/smartqms-mark.svg" alt=""><span>SmartQMS</span></a><nav><a>Dashboard</a><a class="active">Staff Accounts</a><a>Health Services</a><a>Service Windows</a><a>Reports</a></nav></aside><div class="app-main"><header class="app-top"><button class="mobile-menu">☰</button><label><input placeholder="Search pages and reports"></label><button class="profile">SA</button></header><main><div class="page-title"><div><span class="eyebrow">People and access</span><h1>Staff Accounts</h1><p>Create and maintain authorized health-center staff.</p></div></div><article class="table-card"><div class="card-toolbar"><div><span class="eyebrow">Directory</span><h2>Registered staff</h2></div><button class="btn primary">+ Add Staff</button></div><div class="table-scroll"><table><thead><tr><th>Name</th><th>Login</th><th>Designation</th><th>Status</th><th>Assigned counter</th><th>Actions</th></tr></thead><tbody><tr><td><b>Maria Santos</b></td><td>maria@smartqms.local</td><td>Midwife</td><td><span class="status open">Active</span></td><td>CNT-002</td><td><button class="icon-btn" aria-label="Edit Maria Santos">✎</button><button class="icon-btn danger-outline" aria-label="Deactivate Maria Santos">×</button></td></tr><tr><td><b>Daniel Reyes</b></td><td>daniel@smartqms.local</td><td>Nurse</td><td><span class="status open">Active</span></td><td>CNT-004</td><td><button class="icon-btn">✎</button><button class="icon-btn danger-outline">×</button></td></tr></tbody></table></div></article><div class="modal-demo"><div class="modal-card"><span class="eyebrow">Register staff</span><h2>Add Staff Account</h2><div class="form-grid"><label>First name<input value=""></label><label>Last name<input value=""></label><label class="wide">Email address<input></label><label>Designation<select><option>Choose title</option></select></label><label>Status<select><option>Active</option></select></label></div><div class="modal-actions"><button class="btn secondary">Cancel</button><button class="btn primary">Create Staff</button></div></div></div></main></div>
+      </section>
+
+      <section class="prototype app-prototype" data-screen="reports" hidden>
+        <aside class="app-sidebar"><a class="proto-brand light"><img src="../../../assets/images/brand/smartqms-mark.svg" alt=""><span>SmartQMS</span></a><nav><a>Dashboard</a><a>Staff Accounts</a><a>Health Services</a><a>Service Windows</a><a class="active">Reports</a></nav></aside><div class="app-main"><header class="app-top"><button class="mobile-menu">☰</button><label><input placeholder="Search pages and reports"></label><button class="profile">SA</button></header><main><div class="page-title"><div><span class="eyebrow">Analytics</span><h1>Queue Summary</h1><p>Tickets grouped by day, service, window, and status.</p></div></div><div class="report-toolbar"><label>From<input type="date" value="2026-08-01"></label><label>To<input type="date" value="2026-08-22"></label><button class="btn primary">Apply</button><button class="btn secondary">Export CSV</button><button class="btn secondary">Print</button></div><div class="kpi-grid"><article><span>Total tickets</span><strong>284</strong><small>All statuses</small></article><article><span>Waiting</span><strong>12</strong><small>Currently queued</small></article><article><span>Serving</span><strong>4</strong><small>At counters</small></article><article><span>Completed</span><strong>247</strong><small>Selected period</small></article></div><article class="chart-card"><div class="card-toolbar"><div><span class="eyebrow">Trend</span><h2>Queue volume by service</h2></div><span>Scrollable when dense</span></div><div class="chart-scroll"><div class="fake-chart bars wide"><i style="--h:72%"></i><i style="--h:88%"></i><i style="--h:54%"></i><i style="--h:93%"></i><i style="--h:68%"></i><i style="--h:46%"></i><i style="--h:76%"></i><i style="--h:58%"></i></div></div><div class="insight">The selected period has 284 checked-in tickets across configured services.</div></article><article class="table-card"><div class="card-toolbar"><h2>Report table</h2></div><div class="table-scroll"><table><thead><tr><th>Date</th><th>Service</th><th>Counter</th><th>Waiting</th><th>Completed</th><th>Voided</th></tr></thead><tbody><tr><td>2026-08-22</td><td>General Consultation</td><td>CNT-002</td><td>8</td><td>32</td><td>2</td></tr></tbody></table></div></article></main></div>
+      </section>
+
+      <div class="state-overlay" data-state-overlay hidden><div class="state-card"><strong data-state-title>Loading interface</strong><p data-state-copy>The static gallery is showing a component state.</p></div></div>
+    </div>
+  </main>
+  <script src="wireframes.js?v=8k2"></script>
+</body>
+</html>

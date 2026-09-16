@@ -34,7 +34,9 @@ function queueStatusNextTickets(mysqli $conn): array {
         FROM queue_tickets qt
         JOIN health_services hs ON hs.service_id=qt.service_id
         WHERE qt.status='waiting'
-        ORDER BY qt.priority_level DESC, qt.issued_at ASC
+          AND qt.lifecycle_status='waiting'
+          AND qt.checked_in_at IS NOT NULL
+        ORDER BY qt.checked_in_at ASC, qt.ticket_id ASC
         LIMIT 8
     ")->fetch_all(MYSQLI_ASSOC);
 }

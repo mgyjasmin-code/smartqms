@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartQMS — Unified Login Page Wireframe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-bg:        #F4FAFF;
+      --color-surface:   #FFFFFF;
+      --color-muted-bg:  #EDF4FB;
+      --color-border:    #D4E5F5;
+      --color-muted-fg:  #64748B;
+      --color-navy:      #113264;
+      --color-navy-90:   #1a4282;
+      --color-navy-10:   rgba(17,50,100,0.08);
+      --color-blue:      #0090FF;
+      --color-blue-hover:#0078DD;
+      --color-blue-10:   rgba(0,144,255,0.10);
+      --color-success:   #16A34A;
+      --color-danger:    #DC2626;
+      --font-heading: 'Lexend', sans-serif;
+      --font-body:    'Source Sans 3', sans-serif;
+      --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
+      --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px;
+      --sp-12:48px; --sp-16:64px;
+      --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-xl:24px;
+      --shadow-sm:  0 1px 3px rgba(17,50,100,0.08);
+      --shadow-md:  0 4px 12px rgba(17,50,100,0.10);
+      --shadow-lg:  0 8px 32px rgba(17,50,100,0.14);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-body); background: var(--color-bg);
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+    h1,h2,h3,h4 { font-family: var(--font-heading); }
+
+    /* Wireframe Banner */
+    .wf-banner {
+      background: var(--color-navy); color: #fff;
+      text-align: center; padding: 8px 24px;
+      font-family: var(--font-heading); font-size: 12px; font-weight: 500; letter-spacing: 0.05em;
+    }
+
+    /* ===== LOGIN LAYOUT ===== */
+    .login-layout {
+      display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: calc(100vh - 36px);
+    }
+
+    /* LEFT PANEL — 30% Navy accent */
+    .login-left {
+      background: var(--color-navy); position: relative; overflow: hidden;
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: var(--sp-12) var(--sp-12) var(--sp-10);
+    }
+    .login-left::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 80% 20%, rgba(0,144,255,0.20) 0%, transparent 60%);
+    }
+    .login-left::after {
+      content: ''; position: absolute; bottom: -80px; right: -80px;
+      width: 320px; height: 320px; border-radius: 50%;
+      background: rgba(0,144,255,0.08); border: 2px solid rgba(0,144,255,0.15);
+    }
+    .ll-top { position: relative; }
+    .ll-logo { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-12); }
+    .ll-logo-icon {
+      width: 44px; height: 44px; background: var(--color-blue);
+      border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+    }
+    .ll-logo-icon svg { width: 24px; height: 24px; fill: #fff; }
+    .ll-logo-text { font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: #fff; }
+    .ll-tagline { font-size: 12px; color: rgba(255,255,255,0.50); font-family: var(--font-heading); font-weight: 500; margin-top: 2px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .ll-heading { font-size: clamp(26px, 3vw, 38px); font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: var(--sp-5); }
+    .ll-heading span { color: var(--color-blue); }
+    .ll-desc { font-size: 15px; color: rgba(255,255,255,0.60); line-height: 1.7; max-width: 340px; margin-bottom: var(--sp-10); }
+    .ll-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--sp-4); }
+    .ll-stat { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); border-radius: var(--radius-md); padding: var(--sp-4); }
+    .ll-stat-num { font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: #fff; }
+    .ll-stat-num span { color: var(--color-blue); }
+    .ll-stat-lbl { font-size: 12px; color: rgba(255,255,255,0.50); margin-top: var(--sp-1); }
+    .ll-roles { display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-8); }
+    .ll-role-chip {
+      display: flex; align-items: center; gap: var(--sp-2);
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px; padding: 8px 16px;
+      font-family: var(--font-heading); font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.80);
+    }
+    .ll-role-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .ll-back-link {
+      display: inline-flex; align-items: center; gap: var(--sp-2);
+      color: rgba(255,255,255,0.50); font-size: 13px; font-family: var(--font-heading); font-weight: 500;
+      text-decoration: none; transition: color 150ms; position: relative;
+    }
+    .ll-back-link:hover { color: rgba(255,255,255,0.85); }
+    .ll-back-link svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    /* RIGHT PANEL — 60% Light neutral */
+    .login-right {
+      display: flex; align-items: center; justify-content: center;
+      padding: var(--sp-12) var(--sp-10);
+      background: var(--color-bg);
+    }
+    .login-form-wrap { width: 100%; max-width: 420px; }
+    .login-form-title { font-size: 28px; font-weight: 700; color: var(--color-navy); margin-bottom: var(--sp-2); }
+    .login-form-subtitle { font-size: 15px; color: var(--color-muted-fg); margin-bottom: var(--sp-8); line-height: 1.6; }
+
+    /* Role Switcher */
+    .role-switcher {
+      display: flex; background: var(--color-muted-bg); border-radius: var(--radius-md);
+      padding: 4px; margin-bottom: var(--sp-8); border: 1px solid var(--color-border);
+    }
+    .role-tab {
+      flex: 1; padding: 10px; border-radius: calc(var(--radius-md) - 2px);
+      font-family: var(--font-heading); font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none; background: transparent;
+      color: var(--color-muted-fg); transition: all 200ms; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .role-tab.active {
+      background: var(--color-surface); color: var(--color-navy);
+      box-shadow: var(--shadow-sm);
+    }
+    .role-tab svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    /* Form Elements */
+    .form-card {
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl); padding: var(--sp-8); box-shadow: var(--shadow-md);
+    }
+    .form-group { margin-bottom: var(--sp-5); }
+    .form-label {
+      display: block; font-family: var(--font-heading); font-size: 13px;
+      font-weight: 600; color: var(--color-navy); margin-bottom: var(--sp-2);
+    }
+    .form-input-wrap { position: relative; }
+    .form-input {
+      width: 100%; padding: 13px 16px 13px 44px;
+      border-radius: var(--radius-md); border: 1.5px solid var(--color-border);
+      background: var(--color-bg); font-family: var(--font-body); font-size: 15px;
+      color: var(--color-navy); transition: all 150ms;
+    }
+    .form-input:focus { outline: none; border-color: var(--color-blue); background: var(--color-surface); box-shadow: 0 0 0 3px rgba(0,144,255,0.12); }
+    .form-input::placeholder { color: #94A3B8; }
+    .form-input-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; stroke: var(--color-muted-fg); fill: none; stroke-width: 2;
+      pointer-events: none;
+    }
+    .form-input-action {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; stroke: var(--color-muted-fg); fill: none; stroke-width: 2;
+      cursor: pointer;
+    }
+    .form-options {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: var(--sp-6);
+    }
+    .form-checkbox-group { display: flex; align-items: center; gap: 8px; }
+    .form-checkbox { width: 16px; height: 16px; accent-color: var(--color-blue); cursor: pointer; }
+    .form-checkbox-label { font-size: 14px; color: var(--color-muted-fg); cursor: pointer; }
+    .form-forgot { font-family: var(--font-heading); font-size: 13px; font-weight: 600; color: var(--color-blue); text-decoration: none; }
+    .form-forgot:hover { color: var(--color-blue-hover); }
+
+    /* Error Alert */
+    .alert-error {
+      display: flex; align-items: flex-start; gap: var(--sp-3);
+      background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.20);
+      border-radius: var(--radius-md); padding: var(--sp-4); margin-bottom: var(--sp-5);
+    }
+    .alert-error svg { width: 18px; height: 18px; stroke: var(--color-danger); fill: none; stroke-width: 2; min-width: 18px; margin-top: 1px; }
+    .alert-error-text { font-size: 14px; color: var(--color-danger); line-height: 1.5; }
+
+    /* Submit Button */
+    .btn-submit {
+      width: 100%; padding: 14px; border-radius: var(--radius-md);
+      background: var(--color-blue); color: #fff; border: none; cursor: pointer;
+      font-family: var(--font-heading); font-size: 16px; font-weight: 700;
+      box-shadow: 0 4px 12px rgba(0,144,255,0.30); transition: all 200ms;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-submit:hover { background: var(--color-blue-hover); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,144,255,0.36); }
+    .btn-submit svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+    .form-divider { display: flex; align-items: center; gap: 12px; margin: var(--sp-6) 0; }
+    .form-divider-line { flex: 1; height: 1px; background: var(--color-border); }
+    .form-divider-text { font-size: 13px; color: var(--color-muted-fg); font-family: var(--font-heading); white-space: nowrap; }
+
+    /* Security Badge */
+    .security-badge {
+      display: flex; align-items: center; gap: var(--sp-3);
+      background: var(--color-muted-bg); border: 1px solid var(--color-border);
+      border-radius: var(--radius-md); padding: var(--sp-3) var(--sp-4); margin-top: var(--sp-5);
+    }
+    .security-badge svg { width: 20px; height: 20px; stroke: var(--color-navy); fill: none; stroke-width: 1.8; min-width: 20px; }
+    .security-badge-text { font-size: 13px; color: var(--color-muted-fg); }
+    .security-badge-text strong { color: var(--color-navy); }
+
+    /* Quick Access Pills (admin visual) */
+    .quick-access { margin-top: var(--sp-5); }
+    .quick-access-title { font-family: var(--font-heading); font-size: 12px; font-weight: 600; color: var(--color-muted-fg); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: var(--sp-3); }
+    .quick-access-pills { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+    .qa-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--color-muted-bg); border: 1px solid var(--color-border);
+      border-radius: 999px; padding: 6px 14px; font-size: 13px; font-family: var(--font-heading);
+      font-weight: 500; color: var(--color-navy); cursor: default;
+    }
+    .qa-pill svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    /* Footer */
+    .login-footer { text-align: center; margin-top: var(--sp-6); font-size: 13px; color: var(--color-muted-fg); }
+    .login-footer a { color: var(--color-blue); font-weight: 500; text-decoration: none; }
+
+    /* Password Strength */
+    .pw-strength { margin-top: var(--sp-2); }
+    .pw-strength-bars { display: flex; gap: 4px; margin-bottom: 4px; }
+    .pw-bar { flex: 1; height: 4px; border-radius: 99px; background: var(--color-border); }
+    .pw-bar.filled { background: var(--color-blue); }
+    .pw-strength-label { font-size: 12px; color: var(--color-muted-fg); }
+
+    @media (max-width: 768px) {
+      .login-layout { grid-template-columns: 1fr; }
+      .login-left { display: none; }
+      .login-right { padding: var(--sp-8) var(--sp-6); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wf-banner">📐 WIREFRAME · SmartQMS · 02 — Unified Login Page (Staff & Admin) · 60/30/10 Color Rule Applied</div>
+
+  <div class="login-layout">
+
+    <!-- ===== LEFT PANEL (30% Navy) ===== -->
+    <div class="login-left">
+      <div class="ll-top">
+        <div class="ll-logo">
+          <div class="ll-logo-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm14 3a3 3 0 100-6 3 3 0 000 6z"/></svg>
+          </div>
+          <div>
+            <div class="ll-logo-text">SmartQMS</div>
+            <div class="ll-tagline">Barangay Health Center</div>
+          </div>
+        </div>
+
+        <h2 class="ll-heading">Staff Portal<br/>Access &amp; <span>Control</span></h2>
+        <p class="ll-desc">
+          Secure login for authorized health center personnel. 
+          Manage queues, check-in patients, and access your workspace in one place.
+        </p>
+
+        <div class="ll-roles">
+          <div class="ll-role-chip">
+            <div class="ll-role-dot" style="background:#0090FF;"></div>
+            System Admin
+          </div>
+          <div class="ll-role-chip">
+            <div class="ll-role-dot" style="background:#22c55e;"></div>
+            Health Staff
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="ll-stats">
+          <div class="ll-stat">
+            <div class="ll-stat-num">3</div>
+            <div class="ll-stat-lbl">Active Counters</div>
+          </div>
+          <div class="ll-stat">
+            <div class="ll-stat-num">14</div>
+            <div class="ll-stat-lbl">In Queue Now</div>
+          </div>
+          <div class="ll-stat">
+            <div class="ll-stat-num">72</div>
+            <div class="ll-stat-lbl">Served Today</div>
+          </div>
+        </div>
+        <div style="margin-top:24px;">
+          <a class="ll-back-link" href="01-landing-page.html">
+            <svg viewBox="0 0 24 24"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back to Public Site
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RIGHT PANEL (60% Neutral) ===== -->
+    <div class="login-right">
+      <div class="login-form-wrap">
+        <h1 class="login-form-title">Welcome Back</h1>
+        <p class="login-form-subtitle">Sign in to access your SmartQMS dashboard and manage today's queue.</p>
+
+        <!-- Role Switcher -->
+        <div class="role-switcher">
+          <button class="role-tab active">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Staff
+          </button>
+          <button class="role-tab">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Admin
+          </button>
+        </div>
+
+        <!-- Error Alert (sample) -->
+        <div class="alert-error" style="display:none;">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div class="alert-error-text">Invalid credentials. Please check your email/username and password and try again.</div>
+        </div>
+
+        <!-- Login Form Card -->
+        <div class="form-card">
+          <div class="form-group">
+            <label class="form-label" for="email">Email Address or Username</label>
+            <div class="form-input-wrap">
+              <svg class="form-input-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <input class="form-input" id="email" type="email" placeholder="staff@bhc.gov.ph" autocomplete="email" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <div class="form-input-wrap">
+              <svg class="form-input-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input class="form-input" id="password" type="password" placeholder="Enter your password" autocomplete="current-password" />
+              <svg class="form-input-action" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </div>
+          </div>
+
+          <div class="form-options">
+            <div class="form-checkbox-group">
+              <input type="checkbox" class="form-checkbox" id="remember" />
+              <label class="form-checkbox-label" for="remember">Keep me signed in</label>
+            </div>
+            <a href="#" class="form-forgot">Forgot password?</a>
+          </div>
+
+          <button class="btn-submit">
+            <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Sign In to Dashboard
+          </button>
+
+          <div class="security-badge">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div class="security-badge-text"><strong>Secure Connection</strong> — This portal is for authorized health center personnel only.</div>
+          </div>
+        </div>
+
+        <!-- Admin-only section preview -->
+        <div style="margin-top:20px;background:var(--color-muted-bg);border:1px dashed var(--color-border);border-radius:var(--radius-lg);padding:16px;">
+          <div style="font-family:var(--font-heading);font-size:12px;font-weight:700;color:var(--color-muted-fg);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:12px;">Admin Access Only</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div class="qa-pill">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Staff Management
+            </div>
+            <div class="qa-pill">
+              <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              Counter Config
+            </div>
+            <div class="qa-pill">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+              Service Config
+            </div>
+            <div class="qa-pill">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Analytics
+            </div>
+          </div>
+        </div>
+
+        <div class="login-footer">
+          Need help? Contact your system administrator · <a href="01-landing-page.html">← Public Site</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

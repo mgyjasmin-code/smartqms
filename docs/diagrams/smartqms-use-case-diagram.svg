@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+<title id="title">Smart QMS - Use Case Diagram</title><desc id="desc">Use case diagram for Smart Queue Management System.</desc>
+<defs>
+  <style>
+    .bg{fill:#f8fafc}.title{font:700 38px Arial,sans-serif;fill:#0f172a}.sub{font:400 19px Arial,sans-serif;fill:#475569}
+    .boundary{fill:#eff6ff;stroke:#93c5fd;stroke-width:3}.boundarylabel{font:700 22px Arial,sans-serif;fill:#1d4ed8;letter-spacing:1px}
+    .entity{fill:#fff;stroke:#64748b;stroke-width:3}.process{fill:#e0f2fe;stroke:#0284c7;stroke-width:3}.service{fill:#f0fdf4;stroke:#16a34a;stroke-width:3}.store{fill:#eef2ff;stroke:#4f46e5;stroke-width:3}
+    .erd{fill:#fff;stroke:#0284c7;stroke-width:3}.erdhead{fill:#e0f2fe}.uc{fill:#fff;stroke:#0284c7;stroke-width:3}
+    .label{font:700 26px Arial,sans-serif;fill:#0f172a}.small{font:400 21px Arial,sans-serif;fill:#334155}.tiny{font:400 18px Arial,sans-serif;fill:#334155}
+    .flow{fill:none;stroke:#475569;stroke-width:3;marker-end:url(#arrow)}.line{fill:none;stroke:#475569;stroke-width:3}.flowlabel{font:400 18px Arial,sans-serif;fill:#334155;paint-order:stroke;stroke:#f8fafc;stroke-width:7px;stroke-linejoin:round}
+    .relation{font:700 18px Arial,sans-serif;fill:#475569;paint-order:stroke;stroke:#f8fafc;stroke-width:7px}.accent{fill:#0284c7}
+  </style>
+  <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0 0L11 6L0 12z" fill="#475569"/></marker>
+</defs>
+
+<rect class="bg" width="1600" height="900"/><text class="title" x="70" y="62">Smart QMS - Use Case Diagram</text><text class="sub" x="70" y="94">Functions available to clients, service staff and administrators</text>
+<rect class="boundary" x="350" y="125" width="890" height="730" rx="22"/><text class="boundarylabel" x="390" y="163">SMART QMS</text>
+<rect class="entity" x="60" y="290" width="220" height="100" rx="14"/><text class="label" x="117" y="335">Client</text><text class="small" x="95" y="364">Web / mobile user</text>
+<rect class="entity" x="1320" y="345" width="220" height="100" rx="14"/><text class="label" x="1351" y="390">Service Staff</text><text class="small" x="1350" y="419">Window operator</text>
+<rect class="entity" x="60" y="700" width="220" height="100" rx="14"/><text class="label" x="90" y="745">Administrator</text><text class="small" x="100" y="774">System manager</text>
+<ellipse class="uc" cx="610" cy="205" rx="185" ry="44"/><text class="label" x="502" y="214">Register / Sign In</text>
+<ellipse class="uc" cx="610" cy="315" rx="185" ry="44"/><text class="label" x="490" y="324">Join or Schedule Queue</text>
+<ellipse class="uc" cx="610" cy="425" rx="185" ry="44"/><text class="label" x="475" y="434">Track Ticket &amp; Wait Time</text>
+<ellipse class="uc" cx="610" cy="535" rx="185" ry="44"/><text class="label" x="476" y="544">Receive Alerts / Feedback</text>
+<ellipse class="uc" cx="980" cy="270" rx="185" ry="44"/><text class="label" x="870" y="279">Check In / Call Next</text>
+<ellipse class="uc" cx="980" cy="380" rx="185" ry="44"/><text class="label" x="852" y="389">Start / Complete Service</text>
+<ellipse class="uc" cx="980" cy="490" rx="185" ry="44"/><text class="label" x="865" y="499">Skip, Void &amp; Recall</text>
+<ellipse class="uc" cx="980" cy="600" rx="185" ry="44"/><text class="label" x="855" y="609">Manage Window Status</text>
+<ellipse class="uc" cx="610" cy="690" rx="185" ry="44"/><text class="label" x="485" y="699">Manage Users &amp; Staff</text>
+<ellipse class="uc" cx="970" cy="735" rx="185" ry="52"/><text class="label" x="877" y="727">Manage Services</text><text class="label" x="916" y="758">&amp; Windows</text>
+<ellipse class="uc" cx="610" cy="800" rx="185" ry="44"/><text class="label" x="495" y="809">View Analytics &amp; Reports</text>
+<path class="line" d="M280 340H425V205"/><path class="line" d="M280 340H425V315"/><path class="line" d="M280 340H425V425"/><path class="line" d="M280 340H425V535"/>
+<path class="line" d="M1320 395H1165V270"/><path class="line" d="M1320 395H1165V380"/><path class="line" d="M1320 395H1165V490"/><path class="line" d="M1320 395H1165V600"/>
+<path class="line" d="M280 750H425V690"/><path class="line" d="M280 750H785V735"/><path class="line" d="M280 750H425V800"/>
+</svg>

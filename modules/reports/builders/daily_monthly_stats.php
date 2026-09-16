@@ -5,18 +5,20 @@
 
 function buildDailyMonthlyStatsReport(mysqli $conn, array $range): array {
     $daily = reportFetchAll($conn, "
-        SELECT DATE(issued_at) AS period_label, 'daily' AS period_type, COUNT(*) AS tickets
+        SELECT DATE(COALESCE(checked_in_at, issued_at)) AS period_label, 'daily' AS period_type, COUNT(*) AS tickets
         FROM queue_tickets
-        WHERE DATE(issued_at) BETWEEN ? AND ?
-        GROUP BY DATE(issued_at)
+        WHERE lifecycle_status <> 'scheduled'
+          AND DATE(COALESCE(checked_in_at, issued_at)) BETWEEN ? AND ?
+        GROUP BY DATE(COALESCE(checked_in_at, issued_at))
         ORDER BY period_label DESC
     ", 'ss', [$range['from'], $range['to']]);
 
     $monthly = reportFetchAll($conn, "
-        SELECT DATE_FORMAT(issued_at, '%Y-%m') AS period_label, 'monthly' AS period_type, COUNT(*) AS tickets
+        SELECT DATE_FORMAT(COALESCE(checked_in_at, issued_at), '%Y-%m') AS period_label, 'monthly' AS period_type, COUNT(*) AS tickets
         FROM queue_tickets
-        WHERE DATE(issued_at) BETWEEN ? AND ?
-        GROUP BY DATE_FORMAT(issued_at, '%Y-%m')
+        WHERE lifecycle_status <> 'scheduled'
+          AND DATE(COALESCE(checked_in_at, issued_at)) BETWEEN ? AND ?
+        GROUP BY DATE_FORMAT(COALESCE(checked_in_at, issued_at), '%Y-%m')
         ORDER BY period_label DESC
     ", 'ss', [$range['from'], $range['to']]);
 

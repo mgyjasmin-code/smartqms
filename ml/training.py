@@ -95,6 +95,7 @@ def train_and_compare(frame):
 
 
 def build_artifact(model, best, row_count: int, train_count: int, test_count: int) -> dict:
+    trained_at = datetime.now(timezone.utc)
     return {
         "artifact_version": ARTIFACT_VERSION,
         "model": model,
@@ -102,7 +103,8 @@ def build_artifact(model, best, row_count: int, train_count: int, test_count: in
             "training_source": TRAINING_SOURCE,
             "feature_names": list(FEATURE_COLS),
             "target_name": TARGET_COL,
-            "trained_at": datetime.now(timezone.utc).isoformat(),
+            "trained_at": trained_at.isoformat(),
+            "model_version": f"qms-wait-v2-{trained_at.strftime('%Y%m%d')}",
             "row_count": row_count,
             "train_count": train_count,
             "test_count": test_count,

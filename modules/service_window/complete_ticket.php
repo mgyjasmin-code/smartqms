@@ -16,27 +16,29 @@ requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and
 
 $staffId = getCurrentStaffId($conn);
 $ticketId = (int) ($_POST['ticket_id'] ?? 0);
-if (!$staffId || !isPositiveIdentifier($ticketId)) {
+if ((!$staffId && smartqmsDataProviderMode() !== 'supabase') || !isPositiveIdentifier($ticketId)) {
     jsonResponse(false, ['error' => 'Missing staff or ticket.'], 422);
 }
 
 try {
-    $result = completeTicketForStaff($conn, $staffId, $ticketId);
+    $result = smartqmsCompleteForStaff($conn, (int) $staffId, (int) $_SESSION['user_id'], $ticketId);
     if ($result['status'] === 'no_window') {
         jsonResponse(false, ['error' => 'No active window assigned to this staff account.'], 404);
     }
     if ($result['status'] === 'ticket_not_found') {
         jsonResponse(false, ['error' => 'Serving ticket not found for your assigned window.'], 404);
     }
-    try {
-        processNearTurnAlerts($conn, (int) $result['service_id']);
-    } catch (Throwable $alertError) {
-        // Alert generation should not block ticket completion.
+    if (smartqmsDataProviderMode() !== 'supabase') {
+        try {
+            processNearTurnAlerts($conn, (int) $result['service_id']);
+        } catch (Throwable $alertError) {
+            // Alert generation should not block ticket completion.
+        }
     }
     jsonResponse(true, ['data' => [
         'ticket_id' => $result['ticket_id'],
-        'actual_wait_min' => $result['actual_wait_min'],
-        'actual_service_dur' => $result['actual_service_dur'],
+        'actual_wait_min' => $result['actual_wait_min'] ?? $result['actual_wait_minutes'] ?? 0,
+        'actual_service_dur' => $result['actual_service_dur'] ?? $result['actual_service_seconds'] ?? 0,
     ]]);
 } catch (Throwable $e) {
     jsonResponse(false, ['error' => 'Could not complete ticket.'], 500);

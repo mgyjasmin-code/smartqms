@@ -1,0 +1,102 @@
+# SmartQMS Admin Workspace UI/UX Prompt
+
+Design and implement the SmartQMS Administrator workspace using PHP 8.x server-rendered views, Bootstrap 5, vanilla JavaScript, Poppins, Lucide SVG, Chart.js where needed, and the shared healthcare design tokens. The Admin interface must feel modern, clean, spacious, trustworthy, and appropriate for a government health center.
+
+## Shell
+
+Retain the Admin sidebar.
+
+- Desktop 992px and above: persistent 264–280px sidebar.
+- Below 992px: Bootstrap offcanvas sidebar opened from the top bar.
+- Top bar: menu trigger when needed, page search, language, theme, profile, and Logout.
+- Highlight the current destination through icon, text weight, and indicator.
+- Preserve page, filter, and scroll state when navigation closes.
+
+Default to light theme with a persistent toggle. Use primary #006B73, government navy #174A6E, canvas #F4FAFA, surface #FFFFFF, text #102A43, and full dark semantic equivalents. Use Poppins and Lucide only.
+
+## Navigation
+
+Primary destinations:
+
+- Dashboard
+- Staff Accounts
+- Health Services
+- Service Windows
+- Reports with ten separate links
+
+Keep logout and destructive account actions visually separated from normal navigation.
+
+## Dashboard
+
+Create four to six summary metric cards, a daily queue trend, peak-period insight, counter-runtime summary, and recent administrative activity. Use the dashboard for orientation; do not duplicate the full report pages.
+
+## Staff Accounts
+
+List columns:
+
+    Staff member | Email | Job title | Status
+    Current counter | Actions
+
+Create/edit fields:
+
+    First name | Last name | Required unique email
+    Temporary password on create | Job title optional
+    Mobile optional | Active/Inactive
+
+Do not include optional username, permanent counter assignment, specialized capability, or live counter controls. Current counter is read-only. Deactivate staff with history rather than deleting them.
+
+Use a spacious list card, table-responsive region, Add Staff primary button, labelled actions, password show/hide control, inline validation, busy state, and confirmation for deactivation.
+
+## Health Services
+
+List columns:
+
+    Service | Daily capacity | Reserved today
+    Supported counters | Client availability | Actions
+
+Create/edit fields:
+
+    Service name | Client-facing bilingual description
+    Maximum reservations per visit date
+    Estimated service duration
+    Available to clients | Display order optional
+
+Do not expose system service code or ML category as editable fields. Archive or hide services with history. Warn when changing availability while future reservations exist. Use service ordering controls with text alternatives and avoid drag-only interaction.
+
+## Service Windows
+
+List columns:
+
+    Counter | Location | Services served | Current staff
+    Runtime status | Configuration | Actions
+
+Create/edit fields:
+
+    Counter label | Location optional
+    Searchable service checklist | Enabled for staff selection
+
+Runtime status and current staff are read-only. Do not include Shared/Specialized, Central Queue, current staff assignment, or Open/Busy/Closed controls. Warn before disabling an active counter.
+
+## Form and modal architecture
+
+Use full pages for complex creation/editing or a large Bootstrap modal only when the form remains short and does not create nested dialogs. On mobile, dialogs become near-full-screen and remain scrollable. Show persistent labels, helper text, required/optional wording, inline errors, first-invalid focus, retained values, and stable busy states.
+
+## Tables and actions
+
+Use comfortable 56px rows, tabular numerals, readable wrapping, pagination, search, and relevant filters. Tables remain semantic inside labelled table-responsive regions. Show the common safe edit action directly when space allows; place archive, deactivate, and destructive actions in a dropdown overflow menu.
+
+## Required Bootstrap components
+
+Use container-fluid, grid, offcanvas, nav, navbar, dropdown, breadcrumb, cards, buttons, forms, form-switch, input-group, list-group, alerts, badges, modal, toast, table, table-responsive, pagination, collapse for secondary filters, spinner, placeholder, tooltip only for supplemental help, and visually-hidden utilities.
+
+## Responsive and accessibility requirements
+
+Test 320, 390, 576, 768, 992, 1280, 1440, and 1920px plus 200% zoom. The page itself must not scroll horizontally. Keep the mobile menu, page title, primary action, filters, and table reachable. Meet WCAG 2.2 AA, visible focus, 44px targets, modal focus return, reduced motion, and status text plus icon.
+
+## Required states
+
+Design loading, empty, no results, validation failure, duplicate email, future-reservation conflict, active-counter conflict, save success, provider/server failure, permission failure, concurrent modification, and session expired.
+
+## Definition of done
+
+The Admin workspace retains a responsive sidebar and provides clear configuration without mixing runtime operations into Admin forms. Staff, services, and counters preserve history through deactivation or archiving and remain consistent across light and dark themes.

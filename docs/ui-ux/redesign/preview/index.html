@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SmartQMS · Redesign review</title>
+  <link rel="stylesheet" href="gallery.css">
+</head>
+<body>
+  <header class="review-header">
+    <p class="brand">SmartQMS <span>Design review</span></p>
+    <h1>A clearer visit, from arrival to care.</h1>
+    <p>Review the four representative screens before the remaining workflows are updated. These are the application’s views with fictional data. Booking and queue actions are inactive here.</p>
+  </header>
+  <main>
+    <form class="review-controls" aria-label="Preview controls" onsubmit="return false">
+      <label>Screen<select id="screen"><option value="landing">Landing page</option><option value="tracker">Private tracker</option><option value="staff">Staff dashboard</option><option value="admin">Administrator dashboard</option></select></label>
+      <fieldset><legend>Version</legend><div class="segments"><button type="button" data-phase="before" aria-pressed="false">Before</button><button type="button" data-phase="after" aria-pressed="true">After</button></div></fieldset>
+      <label>Screen width<select id="width"><option value="360">360 · Small phone</option><option value="390" selected>390 · Phone</option><option value="768">768 · Tablet</option><option value="1024">1024 · Laptop</option><option value="1440">1440 · Desktop</option></select></label>
+      <label>Theme<select id="theme"><option value="light">Light</option><option value="dark" selected>Dark</option></select></label>
+      <a id="open-preview" href="after/landing.html" target="_blank" rel="noopener">Open full screen ↗</a>
+    </form>
+    <div class="review-note" id="screen-note" role="status"></div>
+    <div class="preview-rail"><iframe id="preview" title="SmartQMS landing page, after redesign" src="after/landing.html"></iframe></div>
+    <section class="comparison"><h2>Desktop and mobile comparisons</h2><p>Captured in the dark theme at 1440px and 390px. Select an image to open the full capture.</p><div class="screenshots" id="screenshots"></div></section>
+    <footer>Review scope: visual hierarchy, task order, readability, and consistency. End-to-end workflows, camera hardware, printing, full translation coverage, and remaining screens still need the rollout verification described in the delivery report.</footer>
+  </main>
+  <script src="gallery.js"></script>
+</body>
+</html>

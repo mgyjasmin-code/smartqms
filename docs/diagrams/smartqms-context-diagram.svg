@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+<title id="title">Smart QMS - Context Diagram</title><desc id="desc">Context diagram for Smart Queue Management System.</desc>
+<defs>
+  <style>
+    .bg{fill:#f8fafc}.title{font:700 38px Arial,sans-serif;fill:#0f172a}.sub{font:400 19px Arial,sans-serif;fill:#475569}
+    .boundary{fill:#eff6ff;stroke:#93c5fd;stroke-width:3}.boundarylabel{font:700 22px Arial,sans-serif;fill:#1d4ed8;letter-spacing:1px}
+    .entity{fill:#fff;stroke:#64748b;stroke-width:3}.process{fill:#e0f2fe;stroke:#0284c7;stroke-width:3}.service{fill:#f0fdf4;stroke:#16a34a;stroke-width:3}.store{fill:#eef2ff;stroke:#4f46e5;stroke-width:3}
+    .erd{fill:#fff;stroke:#0284c7;stroke-width:3}.erdhead{fill:#e0f2fe}.uc{fill:#fff;stroke:#0284c7;stroke-width:3}
+    .label{font:700 26px Arial,sans-serif;fill:#0f172a}.small{font:400 21px Arial,sans-serif;fill:#334155}.tiny{font:400 18px Arial,sans-serif;fill:#334155}
+    .flow{fill:none;stroke:#475569;stroke-width:3;marker-end:url(#arrow)}.line{fill:none;stroke:#475569;stroke-width:3}.flowlabel{font:400 18px Arial,sans-serif;fill:#334155;paint-order:stroke;stroke:#f8fafc;stroke-width:7px;stroke-linejoin:round}
+    .relation{font:700 18px Arial,sans-serif;fill:#475569;paint-order:stroke;stroke:#f8fafc;stroke-width:7px}.accent{fill:#0284c7}
+  </style>
+  <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0 0L11 6L0 12z" fill="#475569"/></marker>
+</defs>
+
+<rect class="bg" width="1600" height="900"/><text class="title" x="70" y="62">Smart QMS - Context Diagram</text><text class="sub" x="70" y="94">External users and services that exchange data with the system</text>
+<rect class="process" x="530" y="245" width="540" height="330" rx="24"/><text class="label" x="690" y="360">SMART QMS</text><text class="label" x="615" y="398">Queue Management System</text><text class="small" x="660" y="445">Web application and operational data</text><text class="small" x="660" y="473">for tickets, queues, services and reports</text>
+<rect class="entity" x="75" y="175" width="270" height="108" rx="14"/><text class="label" x="155" y="222">Client</text><text class="small" x="130" y="252">Web / mobile user</text>
+<rect class="entity" x="75" y="635" width="270" height="108" rx="14"/><text class="label" x="115" y="682">Administrator</text><text class="small" x="133" y="712">System manager</text>
+<rect class="entity" x="1255" y="175" width="270" height="108" rx="14"/><text class="label" x="1315" y="222">Service Staff</text><text class="small" x="1325" y="252">Window operator</text>
+<rect class="entity" x="1255" y="400" width="270" height="108" rx="14"/><text class="label" x="1300" y="447">Public Display</text><text class="small" x="1320" y="477">Live queue board</text>
+<rect class="service" x="1255" y="635" width="270" height="108" rx="14"/><text class="label" x="1320" y="682">External Services</text><text class="small" x="1305" y="712">ML prediction and notifications</text>
+<path class="flow" d="M345 215H530"/><text class="flowlabel" x="358" y="192">registration, booking, queue request</text><path class="flow" d="M530 275H345"/><text class="flowlabel" x="362" y="303">ticket, QR, status and alerts</text>
+<path class="flow" d="M345 675H425V615H530"/><text class="flowlabel" x="350" y="650">configuration and report request</text><path class="flow" d="M530 555H425V710H345"/><text class="flowlabel" x="355" y="735">dashboards and reports</text>
+<path class="flow" d="M1070 215H1255"/><text class="flowlabel" x="1090" y="192">check-in and queue actions</text><path class="flow" d="M1255 275H1070"/><text class="flowlabel" x="1085" y="303">next ticket and window state</text>
+<path class="flow" d="M1070 455H1255"/><text class="flowlabel" x="1090" y="432">live queue and window status</text>
+<path class="flow" d="M1070 545H1255V680"/><text class="flowlabel" x="1080" y="610">features, alerts and delivery status</text><path class="flow" d="M1255 715H1070"/><text class="flowlabel" x="1110" y="742">prediction result</text>
+</svg>

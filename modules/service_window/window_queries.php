@@ -31,7 +31,90 @@ function getStaffWindow(mysqli $conn, int $staffId): ?array {
     ");
     $stmt->bind_param('i', $staffId);
     $stmt->execute();
-    return $stmt->get_result()->fetch_assoc() ?: null;
+    $window = $stmt->get_result()->fetch_assoc() ?: null;
+    if ($window) {
+        $names = getWindowServiceNames($conn, (int) $window['window_id']);
+        if ($names !== '') {
+            $window['service_name'] = $names;
+        } elseif (($window['window_type'] ?? 'shared') === 'shared' && empty($window['service_name'])) {
+            $window['service_name'] = 'All services';
+        }
+    }
+    return $window;
+}
+
+function getWindowServiceIds(mysqli $conn, array $window): array {
+    $windowId = (int) ($window['window_id'] ?? 0);
+    $hasCounterServices = smartqmsTableExists($conn, 'counter_services');
+    if ($windowId > 0 && $hasCounterServices) {
+        $stmt = $conn->prepare("
+            SELECT cs.service_id
+            FROM counter_services cs
+            JOIN health_services hs ON hs.service_id = cs.service_id
+            WHERE cs.counter_id = ? AND hs.is_active = 1
+            ORDER BY hs.display_order, hs.service_name
+        ");
+        $stmt->bind_param('i', $windowId);
+        $stmt->execute();
+        $ids = array_map('intval', array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'service_id'));
+        if ($ids) {
+            return $ids;
+        }
+        $mapping = $conn->prepare('SELECT 1 FROM counter_services WHERE counter_id = ? LIMIT 1');
+        $mapping->bind_param('i', $windowId);
+        $mapping->execute();
+        if ($mapping->get_result()->fetch_row()) {
+            return [];
+        }
+    }
+
+    $serviceId = (int) ($window['service_id'] ?? 0);
+    if ($serviceId > 0) {
+        return [$serviceId];
+    }
+
+    if (($window['window_type'] ?? 'shared') === 'shared') {
+        $visibility = smartqmsTableHasColumn($conn, 'health_services', 'is_hidden')
+            ? 'AND is_hidden = 0'
+            : '';
+        $result = $conn->query("SELECT service_id FROM health_services WHERE is_active = 1 {$visibility} ORDER BY display_order, service_name");
+        return $result ? array_map('intval', array_column($result->fetch_all(MYSQLI_ASSOC), 'service_id')) : [];
+    }
+
+    return [];
+}
+
+function getWindowServiceNames(mysqli $conn, int $windowId): string {
+    if (!smartqmsTableExists($conn, 'counter_services')) {
+        return '';
+    }
+    $stmt = $conn->prepare("
+        SELECT GROUP_CONCAT(hs.service_name ORDER BY hs.display_order SEPARATOR ', ') AS service_names
+        FROM counter_services cs
+        JOIN health_services hs ON hs.service_id = cs.service_id AND hs.is_active = 1
+        WHERE cs.counter_id = ?
+    ");
+    $stmt->bind_param('i', $windowId);
+    $stmt->execute();
+    return trim((string) ($stmt->get_result()->fetch_assoc()['service_names'] ?? ''));
+}
+
+function getWindowServices(mysqli $conn, array $window): array {
+    $ids = getWindowServiceIds($conn, $window);
+    if (!$ids) {
+        return [];
+    }
+    $idList = implode(',', array_map('intval', $ids));
+    $visibility = smartqmsTableHasColumn($conn, 'health_services', 'is_hidden')
+        ? 'AND is_hidden = 0'
+        : '';
+    $result = $conn->query("
+        SELECT service_id, service_name, priority_only
+        FROM health_services
+        WHERE is_active = 1 AND service_id IN ({$idList}) {$visibility}
+        ORDER BY display_order, service_name
+    ");
+    return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 }
 
 function getStaffWindowForUpdate(mysqli $conn, int $staffId): ?array {
@@ -89,12 +172,36 @@ function getNextWaitingTicketForUpdate(mysqli $conn, int $serviceId): ?array {
     $stmt = $conn->prepare("
         SELECT *
         FROM queue_tickets
-        WHERE status = 'waiting' AND service_id = ?
-        ORDER BY priority_level DESC, issued_at ASC
+        WHERE status = 'waiting'
+          AND lifecycle_status = 'waiting'
+          AND checked_in_at IS NOT NULL
+          AND service_id = ?
+        ORDER BY checked_in_at ASC, ticket_id ASC
         LIMIT 1
         FOR UPDATE
     ");
     $stmt->bind_param('i', $serviceId);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_assoc() ?: null;
+}
+
+function getNextWaitingTicketForWindowForUpdate(mysqli $conn, array $window): ?array {
+    $serviceIds = getWindowServiceIds($conn, $window);
+    if (!$serviceIds) {
+        return null;
+    }
+    $idList = implode(',', array_map('intval', $serviceIds));
+    $stmt = $conn->prepare("
+        SELECT *
+        FROM queue_tickets
+        WHERE status = 'waiting'
+          AND lifecycle_status = 'waiting'
+          AND checked_in_at IS NOT NULL
+          AND service_id IN ({$idList})
+        ORDER BY checked_in_at ASC, ticket_id ASC
+        LIMIT 1
+        FOR UPDATE
+    ");
     $stmt->execute();
     return $stmt->get_result()->fetch_assoc() ?: null;
 }
@@ -104,13 +211,17 @@ function getExpiredServingTicketsForUpdate(
     int $windowId,
     int $timeoutMinutes
 ): array {
+    $lifecycle = smartqmsTableHasColumn($conn, 'queue_tickets', 'lifecycle_status')
+        ? "AND lifecycle_status = 'calling'"
+        : '';
     $stmt = $conn->prepare("
         SELECT *
         FROM queue_tickets
         WHERE status = 'serving'
           AND window_id = ?
           AND called_at IS NOT NULL
-          AND TIMESTAMPDIFF(MINUTE, called_at, NOW()) >= ?
+          {$lifecycle}
+          AND TIMESTAMPDIFF(SECOND, called_at, NOW()) >= (? * 60)
         FOR UPDATE
     ");
     $stmt->bind_param('ii', $windowId, $timeoutMinutes);
@@ -119,13 +230,16 @@ function getExpiredServingTicketsForUpdate(
 }
 
 function getStaffWindowCurrentTicket(mysqli $conn, int $windowId): ?array {
+    $clientName = smartqmsTableHasColumn($conn, 'queue_tickets', 'client_name')
+        ? "COALESCE(NULLIF(qt.client_name, ''), CONCAT_WS(' ', u.first_name, u.last_name), 'Queue client')"
+        : "COALESCE(CONCAT_WS(' ', u.first_name, u.last_name), 'Queue client')";
     $stmt = $conn->prepare("
         SELECT qt.*,
-               CONCAT(u.first_name, ' ', u.last_name) AS client_name,
+               {$clientName} AS client_name,
                u.first_name AS client_first_name,
                u.last_name AS client_last_name
         FROM queue_tickets qt
-        JOIN users u ON u.user_id = qt.user_id
+        LEFT JOIN users u ON u.user_id = qt.user_id
         WHERE qt.window_id = ? AND qt.status = 'serving'
         ORDER BY qt.called_at DESC
         LIMIT 1
@@ -133,6 +247,70 @@ function getStaffWindowCurrentTicket(mysqli $conn, int $windowId): ?array {
     $stmt->bind_param('i', $windowId);
     $stmt->execute();
     return $stmt->get_result()->fetch_assoc() ?: null;
+}
+
+function getStaffWindowWaitingTicketsForWindow(mysqli $conn, array $window, int $limit = 20): array {
+    $limit = max(1, min(100, $limit));
+    $serviceIds = getWindowServiceIds($conn, $window);
+    if (!$serviceIds) {
+        return [];
+    }
+    $idList = implode(',', array_map('intval', $serviceIds));
+    $clientName = smartqmsTableHasColumn($conn, 'queue_tickets', 'client_name')
+        ? "COALESCE(NULLIF(qt.client_name, ''), CONCAT_WS(' ', u.first_name, u.last_name), 'Queue client')"
+        : "COALESCE(CONCAT_WS(' ', u.first_name, u.last_name), 'Queue client')";
+    $stmt = $conn->prepare("
+        SELECT qt.*, hs.service_name,
+               {$clientName} AS client_name,
+               u.first_name AS client_first_name,
+               u.last_name AS client_last_name
+        FROM queue_tickets qt
+        JOIN health_services hs ON hs.service_id = qt.service_id
+        LEFT JOIN users u ON u.user_id = qt.user_id
+        WHERE qt.status = 'waiting'
+          AND qt.lifecycle_status = 'waiting'
+          AND qt.checked_in_at IS NOT NULL
+          AND qt.service_id IN ({$idList})
+        ORDER BY qt.checked_in_at ASC, qt.ticket_id ASC
+        LIMIT {$limit}
+    ");
+    $stmt->execute();
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+function getStaffWindowKpis(mysqli $conn, array $window): array {
+    $kpis = [
+        'tickets_today' => 0,
+        'active' => 0,
+        'waiting' => 0,
+        'completed' => 0,
+        'voided' => 0,
+    ];
+    $serviceIds = getWindowServiceIds($conn, $window);
+    if (!$serviceIds) {
+        return $kpis;
+    }
+    $idList = implode(',', array_map('intval', $serviceIds));
+    $result = $conn->query("
+        SELECT
+          SUM(CASE WHEN DATE(COALESCE(checked_in_at, issued_at)) = CURDATE()
+                        AND checked_in_at IS NOT NULL THEN 1 ELSE 0 END) AS tickets_today,
+          SUM(CASE WHEN status = 'serving'
+                        AND lifecycle_status IN ('calling', 'in-progress') THEN 1 ELSE 0 END) AS active,
+          SUM(CASE WHEN status = 'waiting' AND lifecycle_status = 'waiting'
+                        AND checked_in_at IS NOT NULL THEN 1 ELSE 0 END) AS waiting,
+          SUM(CASE WHEN status = 'completed' AND lifecycle_status = 'completed'
+                        AND DATE(completed_at) = CURDATE() THEN 1 ELSE 0 END) AS completed,
+          SUM(CASE WHEN status IN ('voided', 'skipped') AND lifecycle_status = 'void'
+                        AND DATE(COALESCE(voided_at, issued_at)) = CURDATE() THEN 1 ELSE 0 END) AS voided
+        FROM queue_tickets
+        WHERE service_id IN ({$idList})
+    ");
+    $row = $result ? ($result->fetch_assoc() ?: []) : [];
+    foreach (array_keys($kpis) as $key) {
+        $kpis[$key] = (int) ($row[$key] ?? 0);
+    }
+    return $kpis;
 }
 
 function getStaffWindowWaitingTickets(mysqli $conn, int $serviceId, int $limit = 20): array {
@@ -146,8 +324,11 @@ function getStaffWindowWaitingTickets(mysqli $conn, int $serviceId, int $limit =
         FROM queue_tickets qt
         JOIN health_services hs ON hs.service_id = qt.service_id
         JOIN users u ON u.user_id = qt.user_id
-        WHERE qt.status = 'waiting' AND qt.service_id = ?
-        ORDER BY qt.priority_level DESC, qt.issued_at ASC
+        WHERE qt.status = 'waiting'
+          AND qt.lifecycle_status = 'waiting'
+          AND qt.checked_in_at IS NOT NULL
+          AND qt.service_id = ?
+        ORDER BY qt.checked_in_at ASC, qt.ticket_id ASC
         LIMIT {$limit}
     ");
     $stmt->bind_param('i', $serviceId);

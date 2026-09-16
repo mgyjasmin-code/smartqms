@@ -169,12 +169,13 @@ function createServiceWindowConcurrencyFixtures(mysqli $conn): array {
     $serviceId = (int) $conn->insert_id;
 
     $windowName = 'Characterization Concurrency Window';
+    $counterNumber = testNextCounterNumber($conn);
     $windowStatus = 'open';
     $stmt = $conn->prepare("
-        INSERT INTO service_windows (window_name, service_id, staff_id, status)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO service_windows (counter_number, window_name, service_id, staff_id, status)
+        VALUES (?, ?, ?, ?, ?)
     ");
-    $stmt->bind_param('siis', $windowName, $serviceId, $staffId, $windowStatus);
+    $stmt->bind_param('isiis', $counterNumber, $windowName, $serviceId, $staffId, $windowStatus);
     $stmt->execute();
 
     return [
@@ -204,14 +205,17 @@ function insertServiceWindowConcurrencyTicket(
         ? date('Y-m-d H:i:s', time() - 900)
         : null;
     $servedAt = $calledAt;
+    $checkedInAt = date('Y-m-d H:i:s', time() - 1200 + $clientIndex);
+    $lifecycleStatus = $status === 'serving' ? 'in-progress' : 'waiting';
     $stmt = $conn->prepare("
         INSERT INTO queue_tickets
           (user_id, window_id, service_id, reference_number, ticket_number,
-           client_type, priority_level, status, called_at, served_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           client_type, priority_level, status, lifecycle_status, checked_in_at,
+           called_at, served_at, started_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->bind_param(
-        'iiisssisss',
+        'iiisssissssss',
         $userId,
         $windowId,
         $serviceId,
@@ -220,7 +224,10 @@ function insertServiceWindowConcurrencyTicket(
         $clientType,
         $priority,
         $status,
+        $lifecycleStatus,
+        $checkedInAt,
         $calledAt,
+        $servedAt,
         $servedAt
     );
     $stmt->execute();

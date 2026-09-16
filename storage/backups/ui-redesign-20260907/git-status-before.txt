@@ -1,0 +1,229 @@
+ M .gitignore
+ M .htaccess
+ M README.md
+ M RefactoringPLAN.md
+ M assets/css/admin.css
+ M assets/css/display.css
+ M assets/css/style.css
+ M assets/js/admin.js
+ M assets/js/client.js
+ M assets/js/main.js
+ M assets/js/shell.js
+ M assets/js/staff.js
+ M composer.json
+ M composer.lock
+ M config/config.php
+ M config/helpers.php
+ M database/README.txt
+ M database/smartqms_final_v4.sql
+ M database/upgrade_stabilization_2026_07_10.sql
+ M display.php
+ M docs/ARCHITECTURE.md
+ M index.php
+ M ml/README.md
+ M ml/app.py
+ M ml/data_pipeline.py
+ M ml/requirements.txt
+ M ml/test_app.py
+ M ml/training.py
+ M modules/admin/staff_accounts.php
+ M modules/admin/users.php
+ M modules/admin/window_admin.php
+ M modules/auth/auth_queries.php
+ M modules/auth/auth_redirects.php
+ M modules/auth/auth_session.php
+ M modules/auth/forgot_password.php
+ M modules/auth/login.php
+ M modules/auth/logout.php
+ M modules/auth/otp_service.php
+ M modules/auth/register.php
+ M modules/auth/resend_otp.php
+ M modules/auth/verify_otp.php
+ M modules/notifications/dispatch_email_jobs.php
+ M modules/notifications/email_sender.php
+ M modules/notifications/sms_sender.php
+ M modules/queue/get_prediction.php
+ M modules/queue/join_queue.php
+ M modules/queue/prediction.php
+ M modules/queue/qr_generate.php
+ M modules/queue/queue_queries.php
+ M modules/queue/status_queries.php
+ M modules/queue/ticket_service.php
+ M modules/queue/void_checker.php
+ M modules/reports/builders/counter_performance.php
+ M modules/reports/builders/daily_monthly_stats.php
+ M modules/reports/builders/ml_accuracy.php
+ M modules/reports/builders/no_show.php
+ M modules/reports/builders/peak_hour.php
+ M modules/reports/builders/predicted_vs_actual.php
+ M modules/reports/builders/queue_summary.php
+ M modules/reports/builders/staff_productivity.php
+ M modules/reports/builders/turnaround_time.php
+ M modules/reports/export_csv.php
+ M modules/reports/report_chart.php
+ M modules/service_window/call_next.php
+ M modules/service_window/complete_ticket.php
+ M modules/service_window/skip_ticket.php
+ M modules/service_window/ticket_actions.php
+ M modules/service_window/void_ticket.php
+ M modules/service_window/window_queries.php
+ M modules/service_window/window_status.php
+ M modules/settings/health_services_mgmt.php
+ M modules/settings/service_catalog.php
+ M modules/shared/schema_compat.php
+ M modules/shared/security.php
+ M tests/contracts/http_contracts.php
+ M tests/js/run.js
+ M tests/php/bootstrap.php
+ M tests/php/integration/admin_characterization_test.php
+ M tests/php/integration/auth_characterization_test.php
+ M tests/php/integration/database_schema_test.php
+ M tests/php/integration/queue_characterization_test.php
+ M tests/php/integration/service_window_characterization_test.php
+ M tests/php/unit/admin_characterization_test.php
+ M tests/php/unit/admin_management_ui_characterization_test.php
+ M tests/php/unit/admin_reports_ui_characterization_test.php
+ M tests/php/unit/auth_session_characterization_test.php
+ M tests/php/unit/auth_ui_characterization_test.php
+ M tests/php/unit/batch8e_ui_characterization_test.php
+ M tests/php/unit/helpers_characterization_test.php
+ M tests/php/unit/javascript_characterization_test.php
+ M tests/php/unit/ml_real_data_characterization_test.php
+ M tests/php/verify_queue_concurrency.php
+ M tests/php/verify_service_window_concurrency.php
+ D try.php
+ M views/admin/add_staff.php
+ M views/admin/dashboard.php
+ M views/admin/includes/header.php
+ M views/admin/ml_logs.php
+ M views/admin/reports.php
+ M views/admin/services.php
+ M views/admin/users.php
+ M views/admin/windows.php
+ M views/client/feedback.php
+ M views/client/forgot_password.php
+ M views/client/includes/header.php
+ M views/client/index.php
+ M views/client/queue_status.php
+ M views/client/register.php
+ M views/client/ticket.php
+ M views/client/ticket_lookup.php
+ M views/client/verify_otp.php
+ M views/display/board.php
+ M views/shared/includes/shell_footer.php
+ M views/shared/includes/shell_header.php
+ D views/staff/activity_log.php
+ M views/staff/dashboard.php
+ M views/staff/includes/context.php
+ M views/staff/includes/header.php
+ D views/staff/window.php
+?? .agents/
+?? .env.example
+?? .github/
+?? "New Implementation Plan.md"
+?? SECURITY.md
+?? SMART-QMS-REVISION-IMPLEMENTATION.md
+?? SmartQMS_Final_Implementation_Specification.md
+?? api/
+?? assets/images/
+?? assets/js/client/
+?? assets/js/language.js
+?? assets/js/public_booking.js
+?? assets/js/public_datepicker.js
+?? assets/js/public_display.js
+?? assets/js/public_queue.js
+?? assets/js/staff_arrival_scanner.js
+?? assets/js/theme.js
+?? change-password/
+?? config/ml.example.php
+?? config/ml.php
+?? config/sms.example.php
+?? config/supabase.example.php
+?? config/supabase.php
+?? database/migrations/
+?? database/supabase/
+?? database/upgrade_arrival_checkin_fifo_2026_08_21.sql
+?? database/upgrade_blueprint_2026_08_21.sql
+?? database/upgrade_hybrid_queue_2026_08_18.sql
+?? database/upgrade_prediction_metadata_2026_08_20.sql
+?? design-system/
+?? docs/DEPLOYMENT.md
+?? docs/Grp25-IT225-Chapters123-widcomments-July9-2026-updated.docx
+?? docs/SMARTQMS_COMPLETE_UIUX_PROMPT_ARCHITECTURE.md
+?? docs/SMARTQMS_COMPLETE_UIUX_PROMPT_ARCHITECTURE.txt
+?? docs/SMARTQMS_FINAL_LIFECYCLE.md
+?? docs/SMARTQMS_IMPLEMENTATION_PLAN.md
+?? docs/SMARTQMS_IMPLEMENTATION_PLAN.txt
+?? docs/SMARTQMS_UIUX_BUILD_PROMPT.md
+?? docs/SMARTQMS_UIUX_BUILD_PROMPT.txt
+?? docs/SUPABASE_MIGRATION_MAPPING.md
+?? docs/SUPABASE_ROLLOUT_RUNBOOK.md
+?? docs/_working/
+?? docs/diagrams/
+?? docs/smartqms-uiux-prompts/
+?? docs/ui-ux/
+?? docs/wireframes/
+?? forgot-password/
+?? login/
+?? manage-reservation/
+?? ml/main.py
+?? modules/feedback/public_submit.php
+?? modules/integrations/
+?? modules/notifications/sms_provider.php
+?? modules/queue/arrival_service.php
+?? modules/queue/create_print_batch.php
+?? modules/queue/customer_booking.php
+?? modules/queue/print_batch_service.php
+?? modules/queue/public_display_status.php
+?? modules/queue/public_intake.php
+?? modules/queue/public_reference_status.php
+?? modules/queue/public_ticket_status.php
+?? modules/queue/reservation_management.php
+?? modules/queue/service_availability.php
+?? modules/queue/staff_arrival_lookup.php
+?? modules/queue/staff_check_in.php
+?? modules/queue/staff_walk_in.php
+?? modules/service_window/claim_counter.php
+?? modules/service_window/counter_claim.php
+?? modules/service_window/recall_ticket.php
+?? modules/service_window/start_service.php
+?? modules/settings/staff_capabilities_mgmt.php
+?? modules/shared/database.php
+?? modules/shared/security_events.php
+?? panel-suggestion.docx
+?? public-display/
+?? queue/
+?? scripts/
+?? staff/
+?? storage/backups/
+?? tests/php/integration/arrival_fifo_foundation_test.php
+?? tests/php/integration/hybrid_queue_characterization_test.php
+?? tests/php/integration/public_scheduled_booking_test.php
+?? tests/php/integration/stage5_alignment_test.php
+?? tests/php/integration/ticket_print_batch_test.php
+?? tests/php/unit/batch8j_staff_arrival_characterization_test.php
+?? tests/php/unit/batch8j_stage4_characterization_test.php
+?? tests/php/unit/batch8j_stage5_characterization_test.php
+?? tests/php/unit/blueprint_implementation_characterization_test.php
+?? tests/php/unit/customer_booking_flow_characterization_test.php
+?? tests/php/unit/database_connection_characterization_test.php
+?? tests/php/unit/high_fidelity_ui_characterization_test.php
+?? tests/php/unit/native_form_validation_characterization_test.php
+?? tests/php/unit/production_security_characterization_test.php
+?? tests/php/unit/public_no_account_flow_characterization_test.php
+?? tests/php/unit/sms_provider_characterization_test.php
+?? tests/php/unit/supabase_integration_characterization_test.php
+?? tests/php/unit/supabase_operations_characterization_test.php
+?? tests/php/unit/supabase_realtime_ml_characterization_test.php
+?? tests/php/unit/supabase_security_api_characterization_test.php
+?? track/
+?? verify-login/
+?? views/public/
+?? views/shared/includes/language_control.php
+?? views/shared/includes/public_footer.php
+?? views/shared/includes/public_header.php
+?? views/shared/includes/public_theme_toggle.php
+?? views/shared/includes/theme_boot.php
+?? views/staff/batch_printing.php
+?? views/staff/check_in.php
+?? views/staff/select_counter.php

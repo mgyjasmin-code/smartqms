@@ -15,9 +15,12 @@ function setAdminUserActive(mysqli $conn, int $userId, int $isActive, int $curre
     if (!isPositiveIdentifier($userId) || $userId === $currentUserId) {
         return false;
     }
-    $stmt = $conn->prepare("UPDATE users SET is_active=? WHERE user_id=?");
+    $stmt = $conn->prepare("UPDATE users SET is_active=?, session_version=session_version+1 WHERE user_id=?");
     $stmt->bind_param('ii', $isActive, $userId);
     $stmt->execute();
     logActivity($conn, 'user_status_updated', 'user_id=' . $userId);
+    recordSecurityEvent($conn, 'account_status_changed', 'success', 'account', (string) $userId, [
+        'reason' => $isActive === 1 ? 'activated' : 'deactivated',
+    ]);
     return true;
 }

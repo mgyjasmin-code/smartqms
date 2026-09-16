@@ -83,6 +83,22 @@ testCase('stored OTP verification retains valid wrong expired and clear behavior
     });
 });
 
+testCase('password reset capability is hashed expiring and single use', function (): void {
+    prepareAuthCharacterizationSchema();
+    withTestTransaction(function (mysqli $conn): void {
+        $user = createCharacterizationAuthUser($conn, 'reset_capability', ROLE_STAFF);
+        $userId = (int) $user['user_id'];
+        $token = createPasswordResetCapability($conn, $userId);
+        assertTrueValue(preg_match('/^[a-f0-9]{64}$/', $token) === 1);
+
+        $stored = $conn->query('SELECT nonce_hash FROM password_reset_capabilities WHERE user_id=' . $userId . ' ORDER BY capability_id DESC LIMIT 1')->fetch_assoc();
+        assertSameValue(hash('sha256', $token), $stored['nonce_hash']);
+        assertSameValue(null, consumePasswordResetCapability($conn, str_repeat('0', 64)));
+        assertSameValue($userId, consumePasswordResetCapability($conn, $token));
+        assertSameValue(null, consumePasswordResetCapability($conn, $token));
+    });
+});
+
 testCase('OTP issuance replaces pending jobs without sending email', function (): void {
     prepareAuthCharacterizationSchema();
     withTestTransaction(function (mysqli $conn): void {

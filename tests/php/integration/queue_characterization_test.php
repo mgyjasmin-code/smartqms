@@ -46,13 +46,20 @@ function characterizationInsertTicket(
 ): int {
     $reference = 'BHC-2099-' . $suffix;
     $ticketNumber = 'C-' . $suffix;
-    $statement = $connection->prepare("INSERT INTO queue_tickets (user_id, service_id, reference_number, ticket_number, client_type, priority_level, status, issued_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $statement->bind_param('iisssiss', $userId, $serviceId, $reference, $ticketNumber, $clientType, $priority, $status, $issuedAt);
+    $lifecycle = match ($status) {
+        'serving' => 'calling',
+        'completed' => 'completed',
+        'voided', 'skipped' => 'void',
+        default => 'waiting',
+    };
+    $checkedInAt = in_array($status, ['waiting', 'serving', 'completed', 'skipped'], true) ? $issuedAt : null;
+    $statement = $connection->prepare("INSERT INTO queue_tickets (user_id, service_id, reference_number, ticket_number, client_type, priority_level, status, lifecycle_status, issued_at, checked_in_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $statement->bind_param('iisssissss', $userId, $serviceId, $reference, $ticketNumber, $clientType, $priority, $status, $lifecycle, $issuedAt, $checkedInAt);
     $statement->execute();
     return $connection->insert_id;
 }
 
-testCase('active ticket lookup includes waiting and serving but excludes terminal states', function (): void {
+testCase('active ticket lookup includes scheduled waiting calling and in-progress but excludes terminal states', function (): void {
     withTestTransaction(function (mysqli $connection): void {
         $fixtures = characterizationQueueFixtures($connection);
         $owner = $fixtures['users']['owner'];
@@ -62,11 +69,15 @@ testCase('active ticket lookup includes waiting and serving but excludes termina
         $waitingId = characterizationInsertTicket($connection, $owner, $serviceId, '9102', 'regular', 0, 'waiting', '2037-01-01 09:00:00');
         assertSameValue($waitingId, (int) getActiveTicket($connection, $owner)['ticket_id']);
 
-        $connection->query("UPDATE queue_tickets SET status='completed' WHERE ticket_id=" . $waitingId);
+        $connection->query("UPDATE queue_tickets SET status='completed', lifecycle_status='completed' WHERE ticket_id=" . $waitingId);
         assertSameValue(null, getActiveTicket($connection, $owner));
 
         $servingId = characterizationInsertTicket($connection, $owner, $serviceId, '9103', 'regular', 0, 'serving', '2037-01-01 10:00:00');
         assertSameValue($servingId, (int) getActiveTicket($connection, $owner)['ticket_id']);
+
+        $connection->query("UPDATE queue_tickets SET status='completed', lifecycle_status='completed' WHERE ticket_id=" . $servingId);
+        characterizationInsertTicket($connection, $owner, $serviceId, '9104', 'regular', 0, 'skipped', '2037-01-01 11:00:00');
+        assertSameValue(null, getActiveTicket($connection, $owner));
     });
 });
 
@@ -128,7 +139,7 @@ testCase('completed ticket accepts exactly one feedback submission', function ()
     });
 });
 
-testCase('priority ordering remains priority first and FIFO within a priority level', function (): void {
+testCase('live ordering is strict FIFO and ignores legacy priority values', function (): void {
     withTestTransaction(function (mysqli $connection): void {
         $fixtures = characterizationQueueFixtures($connection);
         $users = $fixtures['users'];
@@ -138,14 +149,14 @@ testCase('priority ordering remains priority first and FIFO within a priority le
         characterizationInsertTicket($connection, $users['senior'], $serviceId, '9203', 'senior', 1, 'waiting', '2037-01-01 08:30:00');
         characterizationInsertTicket($connection, $users['pwd'], $serviceId, '9204', 'pwd', 1, 'waiting', '2037-01-01 08:45:00');
 
-        $statement = $connection->prepare("SELECT client_type FROM queue_tickets WHERE service_id=? AND status='waiting' ORDER BY priority_level DESC, issued_at ASC");
+        $statement = $connection->prepare("SELECT client_type FROM queue_tickets WHERE service_id=? AND status='waiting' ORDER BY checked_in_at ASC, ticket_id ASC");
         $statement->bind_param('i', $serviceId);
         $statement->execute();
-        assertSameValue(['senior', 'pwd', 'regular', 'regular'], array_column($statement->get_result()->fetch_all(MYSQLI_ASSOC), 'client_type'));
+        assertSameValue(['regular', 'senior', 'pwd', 'regular'], array_column($statement->get_result()->fetch_all(MYSQLI_ASSOC), 'client_type'));
     });
 });
 
-testCase('people ahead retains current priority and FIFO semantics', function (): void {
+testCase('people ahead follows check-in FIFO and ignores legacy priority', function (): void {
     withTestTransaction(function (mysqli $connection): void {
         $fixtures = characterizationQueueFixtures($connection);
         $users = $fixtures['users'];
@@ -156,19 +167,19 @@ testCase('people ahead retains current priority and FIFO semantics', function ()
         characterizationInsertTicket($connection, $users['senior'], $serviceId, '9304', 'senior', 1, 'waiting', '2037-01-01 09:30:00');
 
         $ticket = $connection->query('SELECT * FROM queue_tickets WHERE ticket_id=' . $targetId)->fetch_assoc();
-        assertSameValue(2, peopleAhead($connection, $ticket));
+        assertSameValue(1, peopleAhead($connection, $ticket));
     });
 });
 
-testCase('prediction snapshot retains feature, fallback, and priority-only metadata', function (): void {
+testCase('prediction snapshot retains features while live priority remains disabled', function (): void {
     withTestTransaction(function (mysqli $connection): void {
         $fixtures = characterizationQueueFixtures($connection);
         $snapshot = queuePredictionSnapshot($connection, $fixtures['service_id'], 'senior');
         assertTrueValue(is_array($snapshot));
-        assertArrayHasKeys(['service', 'features', 'queue_length', 'active_windows', 'avg_service_time', 'priority_level', 'fallback_wait_min'], $snapshot);
+        assertArrayHasKeys(['service', 'availability', 'features', 'queue_length', 'active_windows', 'avg_service_time', 'priority_level', 'fallback_wait_min'], $snapshot);
         assertArrayHasKeys(['queue_length', 'hour_of_day', 'day_of_week', 'service_type_encoded', 'client_type_encoded', 'active_windows', 'avg_service_time'], $snapshot['features']);
         assertSameValue(1, (int) $snapshot['service']['priority_only']);
-        assertSameValue(1, $snapshot['priority_level']);
+        assertSameValue(0, $snapshot['priority_level']);
         assertSameValue(1, $snapshot['features']['client_type_encoded']);
     });
 });
@@ -179,9 +190,9 @@ testCase('queue classification retains regular senior and PWD contracts', functi
     assertSameValue('pwd', normalizeQueueClientType('pwd'));
     assertSameValue('regular', normalizeQueueClientType('unexpected'));
     assertSameValue(0, queuePriorityLevelForClientType('regular'));
-    assertSameValue(1, queuePriorityLevelForClientType('senior'));
-    assertSameValue(1, queuePriorityLevelForClientType('pwd'));
-    assertFalseValue(queueServiceAllowsClientType(['priority_only' => 1], 'regular'));
+    assertSameValue(0, queuePriorityLevelForClientType('senior'));
+    assertSameValue(0, queuePriorityLevelForClientType('pwd'));
+    assertTrueValue(queueServiceAllowsClientType(['priority_only' => 1], 'regular'));
     assertTrueValue(queueServiceAllowsClientType(['priority_only' => 1], 'senior'));
     assertTrueValue(queueServiceAllowsClientType(['priority_only' => 1], 'pwd'));
     assertTrueValue(queueServiceAllowsClientType(['priority_only' => 0], 'regular'));
@@ -449,13 +460,14 @@ testCase('queue and display status read models retain their response projections
         $users = $fixtures['users'];
         $serviceId = (int) $fixtures['service_id'];
         $windowName = 'Characterization Window';
+        $counterNumber = testNextCounterNumber($connection);
         $status = 'open';
         $isActive = 1;
         $stmt = $connection->prepare("
-            INSERT INTO service_windows (window_name, service_id, status, is_active)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO service_windows (counter_number, window_name, service_id, status, is_active)
+            VALUES (?, ?, ?, ?, ?)
         ");
-        $stmt->bind_param('sisi', $windowName, $serviceId, $status, $isActive);
+        $stmt->bind_param('isisi', $counterNumber, $windowName, $serviceId, $status, $isActive);
         $stmt->execute();
 
         characterizationInsertTicket($connection, $users['regular_early'], $serviceId, '9601', 'regular', 0, 'waiting', '2037-01-01 08:00:00');
@@ -478,7 +490,7 @@ testCase('queue and display status read models retain their response projections
             $next,
             static fn(array $ticket): bool => $ticket['service_name'] === 'Characterization Queue'
         ));
-        assertSameValue('senior', $characterizationNext[0]['client_type']);
+        assertSameValue('regular', $characterizationNext[0]['client_type']);
 
         $originalSession = $_SESSION;
         $originalGet = $_GET;

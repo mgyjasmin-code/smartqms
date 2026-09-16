@@ -6,7 +6,7 @@
  * BUSINESS RULES:
  *  - One active ticket per client at a time
  *    (status = waiting OR serving)
- *  - Priority clients (senior/pwd) get priority_level = 1
+ *  - Legacy priority fields remain compatibility-only; live ordering is FIFO
  *  - Reference number format: BHC-YYYY-NNNN
  *  - QR code generated and saved to /assets/qr/
  *  - ML API called for predicted wait time
@@ -21,18 +21,30 @@ requireLogin(ROLE_CLIENT);
 
 requirePostRequest(false, 'views/client/index.php', 'join_queue');
 
-$serviceId = (int) ($_POST['service_id'] ?? 0);
-$clientType = normalizeQueueClientType((string) ($_POST['client_type'] ?? 'regular'));
-$oldInput = [
-    'service_id' => (string) $serviceId,
-    'client_type' => $clientType,
-];
+$userId = (int) $_SESSION['user_id'];
+$profile = smartqmsCustomerBookingProfile($conn, $userId);
+$booking = smartqmsCustomerBookingInput($_POST, $profile);
+$serviceId = (int) $booking['service_id'];
+$clientType = $booking['client_type'];
+$oldInput = $booking;
 
 requireValidCsrf('views/client/index.php', 'join_queue', $oldInput);
 
-$userId = (int) $_SESSION['user_id'];
 if (getActiveTicket($conn, $userId)) {
     redirectTo('views/client/ticket.php', ['msg' => 'active']);
+}
+
+$fieldErrors = smartqmsCustomerBookingErrors($booking);
+$branches = smartqmsListBranches($conn);
+if (!smartqmsCustomerBookingBranch($branches, $booking['branch_id'])) {
+    $fieldErrors['branch_id'] = 'Choose an available health-center location.';
+}
+if ($booking['phone_number'] !== ''
+    && smartqmsCustomerPhoneBelongsToAnotherUser($conn, $booking['phone_number'], $userId)) {
+    $fieldErrors['phone_number'] = 'That phone number is already used by another account.';
+}
+if ($fieldErrors) {
+    redirectWithFormFeedback('views/client/index.php', 'join_queue', $fieldErrors, $oldInput);
 }
 
 $priorityLevel = queuePriorityLevelForClientType($clientType);
@@ -54,7 +66,8 @@ if (!queueServiceAllowsClientType($service, $clientType)) {
     ], $oldInput);
 }
 
-$mlPrediction = requestMlWaitEstimate($snapshot['features'], 2);
+$mlResult = requestMlPrediction($snapshot['features'], 2);
+$mlPrediction = $mlResult !== null ? (float) $mlResult['estimated_wait_minutes'] : null;
 
 try {
     $result = createQueueTicket(
@@ -64,7 +77,9 @@ try {
         $clientType,
         $priorityLevel,
         $snapshot,
-        $mlPrediction
+        $mlPrediction,
+        $booking,
+        $mlResult
     );
     if (!$result['created']) {
         redirectTo('views/client/ticket.php', ['msg' => 'active']);
@@ -74,6 +89,8 @@ try {
     } catch (Throwable $alertError) {
         // Alert generation should not block ticket creation.
     }
+    $_SESSION['name'] = trim($booking['first_name'] . ' ' . $booking['last_name']);
+    $_SESSION['phone'] = $booking['phone_number'];
     redirectTo('views/client/ticket.php');
 } catch (Throwable $e) {
     redirectWithFormFeedback('views/client/index.php', 'join_queue', [], $oldInput, 'Could not create queue ticket.');

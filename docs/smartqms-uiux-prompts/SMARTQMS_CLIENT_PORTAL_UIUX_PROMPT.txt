@@ -1,0 +1,89 @@
+# SmartQMS Client Portal UI/UX Prompt
+
+Design and implement the SmartQMS public and client experience as a clean, simple, modern, government-oriented healthcare service. Use PHP 8.x server-rendered views, Bootstrap 5, vanilla JavaScript, self-hosted Poppins, locally bundled Lucide SVG icons, and the shared SmartQMS token system. Default to light theme and provide a persistent dark-theme toggle. Support English and Filipino through a language control.
+
+## Product rules
+
+- Clients are guests. Do not create Client login, registration, password, or account-dashboard screens.
+- Booking reserves a future visit date, not an appointment time.
+- A booking reference is generated after reservation.
+- A queue number is generated only after physical check-in.
+- Online reservations and walk-ins share strict FIFO based on physical check-in.
+- One active reservation is permitted per phone number per visit date.
+- Reference-only lookup shows privacy-safe status.
+- Reschedule or cancellation requires reference plus the last four mobile-number digits.
+- One secure QR tracker is generated at check-in and later hosts feedback.
+
+## Shared visual rules
+
+- Primary #006B73, hover #00575E, active #00464C.
+- Government navy #174A6E; canvas #F4FAFA; surface #FFFFFF.
+- Strong text #102A43; muted text #486581; border #C7D9DE.
+- Dark canvas #0B1F26; dark surface #102A33; dark primary #5ED4D1.
+- Poppins at 16px body and 1.6 line-height.
+- Buttons and form controls are at least 48px high.
+- Use 12px control radius, 16px card radius, generous whitespace, and restrained shadows.
+- Use Lucide only. Pair all status colors with icons and written labels.
+- Provide visible focus, keyboard access, 200% zoom support, and reduced motion.
+
+## Page architecture
+
+### Landing page
+
+Create a responsive public navbar with the shield, SmartQMS, Book a Visit, Track Queue, language, and theme controls. The hero immediately emphasizes Book a Visit and Track Queue. Follow with service hours, How It Works, service cards, queue-tracking explanation, privacy/accessibility reassurance, FAQ accordion, and footer.
+
+Use Bootstrap navbar, container, responsive grid, cards, buttons, badges, accordion, and offcanvas navigation. Keep both main actions visible above the fold on mobile.
+
+### Guided booking
+
+Build five stages:
+
+1. Choose Service
+2. Choose Visit Date
+3. Your Details
+4. Review
+5. Confirmation
+
+Use a horizontal labelled stepper on desktop and Step X of 5 plus Bootstrap progress on mobile. Preserve values when moving backward. Use service cards with name, bilingual description, availability, and unavailable reason.
+
+Collect first name, last name, Philippine mobile number, service, visit date, and consent. Use visible labels, helper text, validation on blur and submit, retained server errors, and a loading state that prevents duplicate submission.
+
+Confirmation shows a copyable reference number, service, visit date, check-in window, and a clear statement that the queue number will be assigned at arrival.
+
+### Track and manage
+
+Reference lookup uses one focused Bootstrap input-group and returns only safe status, service, visit date, and next instruction. Do not show name or full mobile number.
+
+Manage Reservation verifies reference plus last four digits. Reschedule shows only eligible dates with capacity. Cancellation uses a danger button and confirmation modal. Use one neutral verification error.
+
+### QR queue tracker
+
+The secure tracker shows queue number, service, lifecycle badge, visual progress timeline, people ahead, predicted wait, last-updated time, connection state, and next instruction.
+
+- Waiting: emphasize people ahead and estimated wait.
+- Calling: display Proceed to Counter X as the dominant instruction.
+- In Service: show a calm service-in-progress state.
+- Completed: show optional anonymous feedback.
+
+The tracker may offer browser notifications only after useful content is visible. Denying permission must not reduce tracking functionality.
+
+### Feedback
+
+Show required 1–5 rating, optional comment, and optional tags for Waiting time, Staff assistance, Service process, and Facility. Include a reminder not to enter personal or medical information. Allow one response per completed ticket and show a clear success state.
+
+## Responsive requirements
+
+Optimize for desktop and laptop while remaining complete at 320, 390, 576, 768, 992, 1280, and 1440px. Use 16px mobile gutters, 24px tablet gutters, and 32px desktop gutters. The booking card max width is approximately 860px. Cards stack on narrow screens; primary actions become full width. No page-level horizontal scrolling.
+
+## Required Bootstrap components
+
+Use navbar, offcanvas, grid, card, button, form-control, form-select, form-check, input-group, progress, badge, alert, modal, toast, accordion, spinner, placeholder, ratio, tooltip only as supplemental help, and visually-hidden accessibility utilities.
+
+## Required states
+
+Design loading, empty, no availability, invalid reference, duplicate booking, full capacity, expired reservation, cancellation success, offline tracker, stale tracker, notification denied, completed, feedback submitted, session timeout, and server recovery states.
+
+## Definition of done
+
+The portal is bilingual, account-free, privacy-safe, responsive, accessible, and visually consistent in light and dark themes. Booking, reference tracking, reservation management, QR tracking, and feedback are fully represented without changing FIFO or backend security rules.
+

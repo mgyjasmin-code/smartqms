@@ -1,0 +1,200 @@
+[
+  {
+    "scrollWidth": 320,
+    "smallControls": [],
+    "theme": "light",
+    "width": 320,
+    "screen": "landing"
+  },
+  {
+    "scrollWidth": 320,
+    "smallControls": [],
+    "theme": "light",
+    "width": 320,
+    "screen": "tracker"
+  },
+  {
+    "scrollWidth": 305,
+    "smallControls": [],
+    "theme": "light",
+    "width": 320,
+    "screen": "staff"
+  },
+  {
+    "scrollWidth": 305,
+    "smallControls": [
+      {
+        "h": 38,
+        "text": "Close Administrator navigation",
+        "w": 38
+      }
+    ],
+    "theme": "light",
+    "width": 320,
+    "screen": "admin"
+  },
+  {
+    "scrollWidth": 378,
+    "smallControls": [],
+    "theme": "light",
+    "width": 360,
+    "screen": "landing"
+  },
+  {
+    "scrollWidth": 378,
+    "smallControls": [],
+    "theme": "light",
+    "width": 360,
+    "screen": "tracker"
+  },
+  {
+    "scrollWidth": 345,
+    "smallControls": [],
+    "theme": "light",
+    "width": 360,
+    "screen": "staff"
+  },
+  {
+    "scrollWidth": 345,
+    "smallControls": [
+      {
+        "h": 38,
+        "text": "Close Administrator navigation",
+        "w": 38
+      }
+    ],
+    "theme": "light",
+    "width": 360,
+    "screen": "admin"
+  },
+  {
+    "scrollWidth": 378,
+    "smallControls": [],
+    "theme": "light",
+    "width": 390,
+    "screen": "landing"
+  },
+  {
+    "scrollWidth": 378,
+    "smallControls": [],
+    "theme": "light",
+    "width": 390,
+    "screen": "tracker"
+  },
+  {
+    "scrollWidth": 375,
+    "smallControls": [],
+    "theme": "light",
+    "width": 390,
+    "screen": "staff"
+  },
+  {
+    "scrollWidth": 375,
+    "smallControls": [
+      {
+        "h": 38,
+        "text": "Close Administrator navigation",
+        "w": 38
+      }
+    ],
+    "theme": "light",
+    "width": 390,
+    "screen": "admin"
+  },
+  {
+    "scrollWidth": 753,
+    "smallControls": [],
+    "theme": "light",
+    "width": 768,
+    "screen": "landing"
+  },
+  {
+    "scrollWidth": 753,
+    "smallControls": [],
+    "theme": "light",
+    "width": 768,
+    "screen": "tracker"
+  },
+  {
+    "scrollWidth": 753,
+    "smallControls": [],
+    "theme": "light",
+    "width": 768,
+    "screen": "staff"
+  },
+  {
+    "scrollWidth": 753,
+    "smallControls": [
+      {
+        "h": 38,
+        "text": "Close Administrator navigation",
+        "w": 38
+      }
+    ],
+    "theme": "light",
+    "width": 768,
+    "screen": "admin"
+  },
+  {
+    "scrollWidth": 1009,
+    "smallControls": [],
+    "theme": "light",
+    "width": 1024,
+    "screen": "landing"
+  },
+  {
+    "scrollWidth": 1009,
+    "smallControls": [],
+    "theme": "light",
+    "width": 1024,
+    "screen": "tracker"
+  },
+  {
+    "scrollWidth": 1009,
+    "smallControls": [],
+    "theme": "light",
+    "width": 1024,
+    "screen": "staff"
+  },
+  {
+    "scrollWidth": 1009,
+    "smallControls": [
+      {
+        "h": 38,
+        "text": "Close Administrator navigation",
+        "w": 38
+      }
+    ],
+    "theme": "light",
+    "width": 1024,
+    "screen": "admin"
+  },
+  {
+    "scrollWidth": 1425,
+    "smallControls": [],
+    "theme": "light",
+    "width": 1440,
+    "screen": "landing"
+  },
+  {
+    "scrollWidth": 1425,
+    "smallControls": [],
+    "theme": "light",
+    "width": 1440,
+    "screen": "tracker"
+  },
+  {
+    "scrollWidth": 1425,
+    "smallControls": [],
+    "theme": "light",
+    "width": 1440,
+    "screen": "staff"
+  },
+  {
+    "scrollWidth": 1425,
+    "smallControls": [],
+    "theme": "light",
+    "width": 1440,
+    "screen": "admin"
+  }
+]

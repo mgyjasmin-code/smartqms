@@ -5,6 +5,12 @@
     "require": {
         "phpmailer/phpmailer": "^7.1",
         "endroid/qr-code": "^5.1",
-        "twbs/bootstrap": "5.0.2"
+        "twbs/bootstrap": "5.3.8",
+        "dompdf/dompdf": "^3.1"
+    },
+    "scripts": {
+        "publish-bootstrap": "@php scripts/publish_bootstrap.php",
+        "check-bootstrap": "@php scripts/publish_bootstrap.php --check",
+        "audit-css": "@php scripts/css_audit.php"
     }
 }

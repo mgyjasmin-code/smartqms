@@ -24,16 +24,18 @@ $rows = $conn->query("
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ML Logs -- SmartQMS</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <?php require __DIR__ . '/../shared/includes/theme_boot.php'; ?>
+  <link href="<?= assetUrl('vendor/twbs/bootstrap/dist/css/bootstrap.min.css') ?>" rel="stylesheet">
   <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
+  <link rel="stylesheet" href="<?= assetUrl('assets/css/admin.css') ?>">
 </head>
 <body>
   <main class="container py-4">
     <a href="dashboard.php" class="btn btn-link px-0">Back to dashboard</a>
     <div class="card p-4">
       <h1 class="h4 mb-3">ML Prediction Logs</h1>
-      <div class="table-responsive">
-        <table class="table">
+      <div class="table-responsive" tabindex="0" role="region" aria-label="Machine-learning prediction logs">
+        <table class="table table-hover align-middle">
           <thead>
             <tr>
               <th>Ticket</th>

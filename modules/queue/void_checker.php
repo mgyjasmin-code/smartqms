@@ -27,7 +27,7 @@ if (!$staffId) {
     jsonResponse(false, ['error' => 'No active window assigned to this staff account.'], 404);
 }
 
-$timeout = max(1, (int) getSetting($conn, 'void_timeout_minutes', '10'));
+$timeout = max(1, (int) getSetting($conn, 'void_timeout_minutes', '5'));
 try {
     $result = voidExpiredTicketsForStaff($conn, $staffId, $timeout);
     if ($result['status'] === 'no_window') {

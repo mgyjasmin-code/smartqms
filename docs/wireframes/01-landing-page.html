@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartQMS — Landing Page Wireframe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== DESIGN TOKENS (60/30/10 Rule) ===== */
+    :root {
+      /* 60% Neutral */
+      --color-bg:        #F4FAFF;
+      --color-surface:   #FFFFFF;
+      --color-muted-bg:  #EDF4FB;
+      --color-border:    #D4E5F5;
+      --color-muted-fg:  #64748B;
+      /* 30% Accent */
+      --color-navy:      #113264;
+      --color-navy-90:   #1a4282;
+      --color-navy-10:   rgba(17,50,100,0.08);
+      /* 10% CTA */
+      --color-blue:      #0090FF;
+      --color-blue-hover:#0078DD;
+      --color-blue-10:   rgba(0,144,255,0.10);
+      /* Semantic */
+      --color-success:   #16A34A;
+      --color-warning:   #D97706;
+      --color-danger:    #DC2626;
+      --color-info:      #0284C7;
+      /* Typography */
+      --font-heading: 'Lexend', sans-serif;
+      --font-body:    'Source Sans 3', sans-serif;
+      /* Spacing (8dp rhythm) */
+      --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+      --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+      --sp-12: 48px; --sp-16: 64px; --sp-20: 80px; --sp-24: 96px;
+      /* Radius */
+      --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px; --radius-xl: 24px;
+      /* Shadow */
+      --shadow-sm:  0 1px 3px rgba(17,50,100,0.08), 0 1px 2px rgba(17,50,100,0.04);
+      --shadow-md:  0 4px 12px rgba(17,50,100,0.10), 0 2px 6px rgba(17,50,100,0.06);
+      --shadow-lg:  0 8px 24px rgba(17,50,100,0.12), 0 4px 8px rgba(17,50,100,0.06);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      background: var(--color-bg);
+      color: var(--color-navy);
+    }
+    h1, h2, h3, h4, h5 { font-family: var(--font-heading); line-height: 1.25; }
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; }
+
+    /* ===== UTILITIES ===== */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 var(--sp-6); }
+    .badge {
+      display: inline-flex; align-items: center; gap: var(--sp-2);
+      background: var(--color-blue-10); color: var(--color-blue);
+      font-family: var(--font-heading); font-size: 12px; font-weight: 600;
+      padding: var(--sp-1) var(--sp-3); border-radius: 999px;
+      letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .badge-navy {
+      background: var(--color-navy-10); color: var(--color-navy);
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: var(--sp-2);
+      font-family: var(--font-heading); font-weight: 600; font-size: 15px;
+      padding: 12px var(--sp-6); border-radius: var(--radius-md);
+      cursor: pointer; transition: all 200ms ease; border: none;
+    }
+    .btn-primary {
+      background: var(--color-blue); color: #fff;
+      box-shadow: 0 4px 12px rgba(0,144,255,0.30);
+    }
+    .btn-primary:hover { background: var(--color-blue-hover); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,144,255,0.36); }
+    .btn-secondary {
+      background: var(--color-surface); color: var(--color-navy);
+      border: 1.5px solid var(--color-border);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-secondary:hover { border-color: var(--color-blue); color: var(--color-blue); }
+    .btn-navy {
+      background: var(--color-navy); color: #fff;
+      box-shadow: 0 4px 12px rgba(17,50,100,0.25);
+    }
+    .btn-navy:hover { background: var(--color-navy-90); transform: translateY(-1px); }
+    .btn-lg { padding: 16px 36px; font-size: 16px; }
+    .section-label {
+      font-family: var(--font-heading); font-size: 12px; font-weight: 600;
+      color: var(--color-blue); letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: var(--sp-3);
+    }
+    .section-title {
+      font-size: clamp(24px, 4vw, 40px); font-weight: 700; color: var(--color-navy);
+      margin-bottom: var(--sp-4);
+    }
+    .section-body {
+      font-size: 17px; color: var(--color-muted-fg); line-height: 1.7; max-width: 560px;
+    }
+    .divider { height: 1px; background: var(--color-border); margin: 0; }
+
+    /* ===== WIREFRAME BANNER ===== */
+    .wf-banner {
+      background: var(--color-navy); color: #fff;
+      text-align: center; padding: var(--sp-2) var(--sp-6);
+      font-family: var(--font-heading); font-size: 12px; font-weight: 500; letter-spacing: 0.05em;
+    }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(244,250,255,0.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .navbar-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 68px;
+    }
+    .navbar-logo {
+      display: flex; align-items: center; gap: var(--sp-3);
+    }
+    .logo-icon {
+      width: 40px; height: 40px; background: var(--color-navy);
+      border-radius: var(--radius-sm); display: flex; align-items: center;
+      justify-content: center;
+    }
+    .logo-icon svg { width: 22px; height: 22px; fill: #fff; }
+    .logo-text { font-family: var(--font-heading); font-weight: 700; font-size: 20px; color: var(--color-navy); }
+    .logo-text span { color: var(--color-blue); }
+    .navbar-nav { display: flex; gap: var(--sp-8); list-style: none; }
+    .navbar-nav a { font-family: var(--font-heading); font-weight: 500; font-size: 15px; color: var(--color-navy); transition: color 150ms; }
+    .navbar-nav a:hover, .navbar-nav a.active { color: var(--color-blue); }
+    .navbar-actions { display: flex; align-items: center; gap: var(--sp-3); }
+
+    /* ===== HERO ===== */
+    .hero {
+      background: linear-gradient(135deg, var(--color-navy) 0%, #1a4282 100%);
+      padding: var(--sp-24) 0 var(--sp-20);
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .hero-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-16); align-items: center;
+      position: relative;
+    }
+    .hero-content {}
+    .hero-badge { margin-bottom: var(--sp-5); }
+    .hero-badge span {
+      background: rgba(0,144,255,0.20); color: #7EC8FF;
+      font-family: var(--font-heading); font-size: 12px; font-weight: 600;
+      padding: 6px 14px; border-radius: 999px; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .hero-title {
+      font-size: clamp(32px, 5vw, 52px); font-weight: 700; color: #fff;
+      line-height: 1.15; margin-bottom: var(--sp-5);
+    }
+    .hero-title span { color: var(--color-blue); }
+    .hero-desc { font-size: 18px; color: rgba(255,255,255,0.72); line-height: 1.7; margin-bottom: var(--sp-8); max-width: 480px; }
+    .hero-actions { display: flex; gap: var(--sp-4); flex-wrap: wrap; margin-bottom: var(--sp-10); }
+    .hero-stats { display: flex; gap: var(--sp-8); }
+    .hero-stat {}
+    .hero-stat-num { font-family: var(--font-heading); font-size: 28px; font-weight: 700; color: #fff; }
+    .hero-stat-num span { color: var(--color-blue); }
+    .hero-stat-lbl { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+
+    /* Hero Visual Card */
+    .hero-visual { display: flex; justify-content: center; }
+    .queue-display-card {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-xl); padding: var(--sp-6); width: 100%; max-width: 380px;
+      backdrop-filter: blur(12px);
+    }
+    .qd-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-5);
+    }
+    .qd-label { font-family: var(--font-heading); font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.5); letter-spacing: 0.08em; text-transform: uppercase; }
+    .qd-status-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; display: inline-block; margin-right: 6px; box-shadow: 0 0 0 3px rgba(34,197,94,0.25); }
+    .qd-live { font-size: 12px; color: rgba(255,255,255,0.6); font-family: var(--font-heading); font-weight: 500; }
+    .qd-now-serving {
+      background: linear-gradient(135deg, #0090FF, #0068BB);
+      border-radius: var(--radius-md); padding: var(--sp-5) var(--sp-6); margin-bottom: var(--sp-4); text-align: center;
+    }
+    .qd-serving-lbl { font-size: 12px; color: rgba(255,255,255,0.7); letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--font-heading); font-weight: 600; }
+    .qd-queue-num { font-family: var(--font-heading); font-size: 56px; font-weight: 700; color: #fff; line-height: 1; }
+    .qd-service { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: var(--sp-1); }
+    .qd-waiting-row { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+    .qd-wait-chip {
+      flex: 1; background: rgba(255,255,255,0.08); border-radius: var(--radius-sm);
+      padding: var(--sp-3); text-align: center;
+    }
+    .qd-wait-chip-num { font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: #fff; }
+    .qd-wait-chip-lbl { font-size: 11px; color: rgba(255,255,255,0.5); font-family: var(--font-heading); }
+    .qd-list { display: flex; flex-direction: column; gap: var(--sp-2); }
+    .qd-list-item {
+      display: flex; align-items: center; gap: var(--sp-3);
+      background: rgba(255,255,255,0.06); border-radius: var(--radius-sm); padding: var(--sp-2) var(--sp-3);
+    }
+    .qd-li-num { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: rgba(255,255,255,0.85); width: 48px; }
+    .qd-li-svc { font-size: 13px; color: rgba(255,255,255,0.55); flex: 1; }
+    .qd-li-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+    .badge-waiting { background: rgba(234,179,8,0.18); color: #FDE68A; }
+    .badge-calling { background: rgba(0,144,255,0.2); color: #7EC8FF; }
+
+    /* ===== CHECK STATUS SECTION ===== */
+    .check-status {
+      background: var(--color-surface);
+      padding: var(--sp-16) 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .status-inner {
+      display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-16); align-items: start;
+    }
+    .status-form-card {
+      background: var(--color-bg); border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl); padding: var(--sp-8);
+      box-shadow: var(--shadow-md);
+    }
+    .form-row { display: flex; gap: var(--sp-3); }
+    .form-group { display: flex; flex-direction: column; gap: var(--sp-2); flex: 1; }
+    .form-label { font-family: var(--font-heading); font-size: 13px; font-weight: 600; color: var(--color-navy); }
+    .form-input {
+      padding: 12px var(--sp-4); border-radius: var(--radius-md);
+      border: 1.5px solid var(--color-border); background: var(--color-surface);
+      font-family: var(--font-body); font-size: 15px; color: var(--color-navy);
+      transition: border-color 150ms;
+    }
+    .form-input:focus { outline: none; border-color: var(--color-blue); box-shadow: 0 0 0 3px var(--color-blue-10); }
+    .form-input::placeholder { color: #94A3B8; }
+
+    /* Status Result Card */
+    .status-result {
+      background: var(--color-surface); border: 1.5px solid var(--color-blue);
+      border-radius: var(--radius-lg); padding: var(--sp-6); margin-top: var(--sp-5);
+      box-shadow: 0 0 0 4px var(--color-blue-10);
+    }
+    .sr-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--sp-4); }
+    .sr-name { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: var(--color-navy); }
+    .sr-ref { font-size: 13px; color: var(--color-muted-fg); margin-top: var(--sp-1); }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-heading);
+      font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 999px; white-space: nowrap;
+    }
+    .status-pill.waiting { background: rgba(234,179,8,0.12); color: #B45309; }
+    .status-pill.calling { background: rgba(0,144,255,0.12); color: var(--color-blue); }
+    .status-pill.in-progress { background: rgba(22,163,74,0.12); color: #15803D; }
+    .status-pill.completed { background: rgba(22,163,74,0.08); color: #15803D; }
+    .status-pill.void { background: rgba(220,38,38,0.10); color: var(--color-danger); }
+    .status-pill.scheduled { background: rgba(100,116,139,0.10); color: #475569; }
+    .sr-details { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+    .sr-detail { }
+    .sr-detail-lbl { font-size: 12px; color: var(--color-muted-fg); font-family: var(--font-heading); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+    .sr-detail-val { font-family: var(--font-heading); font-size: 15px; font-weight: 600; color: var(--color-navy); margin-top: 2px; }
+    .sr-queue-num { font-size: 44px; font-weight: 700; color: var(--color-blue); line-height: 1; }
+
+    /* ===== SERVICES SECTION ===== */
+    .services {
+      padding: var(--sp-20) 0;
+      background: var(--color-bg);
+    }
+    .services-header { text-align: center; margin-bottom: var(--sp-12); }
+    .services-header .section-body { margin: 0 auto; }
+    .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-5); }
+    .service-card {
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); padding: var(--sp-6); transition: all 200ms ease;
+      box-shadow: var(--shadow-sm);
+    }
+    .service-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--color-blue); }
+    .svc-icon {
+      width: 52px; height: 52px; border-radius: var(--radius-md);
+      background: var(--color-navy-10); display: flex; align-items: center; justify-content: center;
+      margin-bottom: var(--sp-4);
+    }
+    .svc-icon svg { width: 26px; height: 26px; stroke: var(--color-navy); fill: none; stroke-width: 1.8; }
+    .svc-name { font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: var(--sp-2); }
+    .svc-desc { font-size: 14px; color: var(--color-muted-fg); line-height: 1.6; }
+    .svc-est { font-family: var(--font-heading); font-size: 12px; font-weight: 600; color: var(--color-blue); margin-top: var(--sp-4); }
+
+    /* ===== HOW IT WORKS ===== */
+    .how-it-works {
+      background: var(--color-navy);
+      padding: var(--sp-20) 0;
+    }
+    .hiw-header { text-align: center; margin-bottom: var(--sp-12); }
+    .hiw-title { color: #fff; }
+    .hiw-body { color: rgba(255,255,255,0.60); margin: 0 auto; }
+    .hiw-tabs { display: flex; gap: var(--sp-3); justify-content: center; margin-bottom: var(--sp-10); flex-wrap: wrap; }
+    .hiw-tab {
+      font-family: var(--font-heading); font-size: 14px; font-weight: 600;
+      padding: 10px 24px; border-radius: 999px; cursor: pointer;
+      border: 1.5px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.6);
+      background: transparent; transition: all 200ms;
+    }
+    .hiw-tab.active {
+      background: var(--color-blue); border-color: var(--color-blue); color: #fff;
+      box-shadow: 0 4px 12px rgba(0,144,255,0.35);
+    }
+    .hiw-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-5); }
+    .hiw-step {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+      border-radius: var(--radius-lg); padding: var(--sp-6); text-align: center;
+      transition: all 200ms;
+    }
+    .hiw-step:hover { background: rgba(0,144,255,0.12); border-color: rgba(0,144,255,0.35); }
+    .hiw-step-num {
+      width: 44px; height: 44px; border-radius: 50%; background: var(--color-blue);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto var(--sp-4);
+      font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #fff;
+    }
+    .hiw-step-title { font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: #fff; margin-bottom: var(--sp-2); }
+    .hiw-step-desc { font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.6; }
+    .hiw-connector { display: flex; align-items: center; color: rgba(255,255,255,0.2); }
+
+    /* ===== ABOUT / FEATURES ===== */
+    .features {
+      padding: var(--sp-20) 0;
+      background: var(--color-surface);
+    }
+    .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-16); align-items: center; }
+    .features-list { display: flex; flex-direction: column; gap: var(--sp-5); margin-top: var(--sp-8); }
+    .feature-item { display: flex; gap: var(--sp-4); }
+    .feature-icon-wrap {
+      width: 44px; height: 44px; min-width: 44px; border-radius: var(--radius-md);
+      background: var(--color-blue-10); display: flex; align-items: center; justify-content: center;
+    }
+    .feature-icon-wrap svg { width: 22px; height: 22px; stroke: var(--color-blue); fill: none; stroke-width: 2; }
+    .feature-text {}
+    .feature-title { font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: var(--sp-1); }
+    .feature-desc { font-size: 14px; color: var(--color-muted-fg); line-height: 1.6; }
+
+    /* Feature Visual */
+    .feature-visual {
+      background: var(--color-muted-bg); border-radius: var(--radius-xl);
+      padding: var(--sp-8); border: 1px solid var(--color-border); box-shadow: var(--shadow-md);
+    }
+    .ml-card {
+      background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--sp-5);
+      border: 1px solid var(--color-border); margin-bottom: var(--sp-4);
+    }
+    .ml-card-title { font-family: var(--font-heading); font-size: 13px; font-weight: 600; color: var(--color-muted-fg); margin-bottom: var(--sp-3); text-transform: uppercase; letter-spacing: 0.06em; }
+    .ml-prediction {
+      display: flex; align-items: baseline; gap: var(--sp-2);
+    }
+    .ml-time { font-family: var(--font-heading); font-size: 48px; font-weight: 700; color: var(--color-navy); line-height: 1; }
+    .ml-unit { font-size: 18px; color: var(--color-muted-fg); }
+    .ml-subtitle { font-size: 13px; color: var(--color-muted-fg); margin-top: var(--sp-1); }
+    .ml-bar-wrap { margin-top: var(--sp-4); }
+    .ml-bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--color-muted-fg); margin-bottom: var(--sp-2); font-family: var(--font-heading); font-weight: 500; }
+    .ml-bar-track { height: 8px; background: var(--color-muted-bg); border-radius: 99px; overflow: hidden; margin-bottom: var(--sp-3); }
+    .ml-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--color-blue), #0068BB); }
+    .ml-metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--sp-3); margin-top: var(--sp-4); }
+    .ml-metric { background: var(--color-muted-bg); border-radius: var(--radius-sm); padding: var(--sp-3); text-align: center; }
+    .ml-metric-val { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: var(--color-navy); }
+    .ml-metric-lbl { font-size: 11px; color: var(--color-muted-fg); margin-top: 2px; }
+
+    /* ===== JOIN QUEUE CTA ===== */
+    .join-queue {
+      padding: var(--sp-20) 0;
+      background: var(--color-bg);
+    }
+    .join-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-8); }
+    .queue-option-card {
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl); padding: var(--sp-8); text-align: center;
+      box-shadow: var(--shadow-sm); transition: all 200ms;
+    }
+    .queue-option-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .queue-option-card.featured {
+      background: var(--color-navy); border-color: var(--color-navy);
+    }
+    .qo-icon {
+      width: 72px; height: 72px; border-radius: var(--radius-lg);
+      background: var(--color-blue-10); display: flex; align-items: center;
+      justify-content: center; margin: 0 auto var(--sp-5);
+    }
+    .queue-option-card.featured .qo-icon { background: rgba(0,144,255,0.20); }
+    .qo-icon svg { width: 36px; height: 36px; stroke: var(--color-blue); fill: none; stroke-width: 1.8; }
+    .qo-title { font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--color-navy); margin-bottom: var(--sp-3); }
+    .queue-option-card.featured .qo-title { color: #fff; }
+    .qo-desc { font-size: 15px; color: var(--color-muted-fg); line-height: 1.6; margin-bottom: var(--sp-6); }
+    .queue-option-card.featured .qo-desc { color: rgba(255,255,255,0.65); }
+    .qo-features { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-6); text-align: left; }
+    .qo-feature { display: flex; align-items: center; gap: var(--sp-2); font-size: 14px; color: var(--color-navy); }
+    .queue-option-card.featured .qo-feature { color: rgba(255,255,255,0.80); }
+    .qo-check { width: 18px; height: 18px; min-width: 18px; }
+    .qo-check-icon { color: var(--color-blue); }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      background: var(--color-navy);
+      padding: var(--sp-16) 0 var(--sp-8);
+    }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: var(--sp-10); margin-bottom: var(--sp-10); }
+    .footer-brand {}
+    .footer-logo { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+    .footer-logo-icon { width: 36px; height: 36px; background: var(--color-blue); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
+    .footer-logo-icon svg { width: 20px; height: 20px; fill: #fff; }
+    .footer-logo-text { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #fff; }
+    .footer-tagline { font-size: 14px; color: rgba(255,255,255,0.50); line-height: 1.65; max-width: 280px; }
+    .footer-col-title { font-family: var(--font-heading); font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.90); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: var(--sp-5); }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .footer-links a { font-size: 14px; color: rgba(255,255,255,0.50); transition: color 150ms; }
+    .footer-links a:hover { color: #fff; }
+    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.10); padding-top: var(--sp-6); display: flex; justify-content: space-between; align-items: center; }
+    .footer-copy { font-size: 13px; color: rgba(255,255,255,0.40); }
+    .footer-credits { display: flex; gap: var(--sp-5); }
+    .footer-credits a { font-size: 13px; color: rgba(255,255,255,0.40); transition: color 150ms; }
+    .footer-credits a:hover { color: rgba(255,255,255,0.75); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1024px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .status-inner, .features-grid, .join-grid { grid-template-columns: 1fr; }
+      .services-grid { grid-template-columns: repeat(2,1fr); }
+      .hiw-steps { grid-template-columns: repeat(2,1fr); }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .navbar-nav { display: none; }
+      .services-grid { grid-template-columns: 1fr; }
+      .hero-stats { flex-direction: column; gap: var(--sp-4); }
+      .hiw-steps { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Wireframe Banner -->
+  <div class="wf-banner">📐 WIREFRAME · SmartQMS · 01 — Landing Page · 60/30/10 Color Rule Applied</div>
+
+  <!-- ===== NAVIGATION ===== -->
+  <nav class="navbar">
+    <div class="container navbar-inner">
+      <div class="navbar-logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm14 3a3 3 0 100-6 3 3 0 000 6z"/></svg>
+        </div>
+        <div class="logo-text">Smart<span>QMS</span></div>
+      </div>
+
+      <ul class="navbar-nav">
+        <li><a href="#" class="active">Home</a></li>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#check-status">Check Status</a></li>
+        <li><a href="#">About</a></li>
+      </ul>
+
+      <div class="navbar-actions">
+        <button class="btn btn-secondary" style="padding:10px 20px;font-size:14px;">Check My Status</button>
+        <button class="btn btn-primary" style="padding:10px 20px;font-size:14px;">Join Queue</button>
+        <a href="../02-login-page.html" class="btn btn-navy" style="padding:10px 20px;font-size:14px;">Staff Login</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <div class="hero-badge"><span>🏥 Barangay Health Center · Makabago</span></div>
+          <h1 class="hero-title">
+            Smart Queue<br/>Management<br/><span>Made Simple</span>
+          </h1>
+          <p class="hero-desc">
+            Skip the long wait. Book your spot online or check-in at the center. 
+            AI-powered predictions keep you informed about your waiting time.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-lg">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              Join Live Queue
+            </button>
+            <button class="btn btn-secondary btn-lg" style="background:rgba(255,255,255,0.10);border-color:rgba(255,255,255,0.25);color:#fff;">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Check My Status
+            </button>
+          </div>
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <div class="hero-stat-num">2,400<span>+</span></div>
+              <div class="hero-stat-lbl">Patients Served Monthly</div>
+            </div>
+            <div class="hero-stat">
+              <div class="hero-stat-num">~<span>12</span>min</div>
+              <div class="hero-stat-lbl">Avg. Wait Time Reduction</div>
+            </div>
+            <div class="hero-stat">
+              <div class="hero-stat-num">8</div>
+              <div class="hero-stat-lbl">Health Services Available</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Queue Display Card -->
+        <div class="hero-visual">
+          <div class="queue-display-card">
+            <div class="qd-header">
+              <div class="qd-label">Live Queue Display</div>
+              <div class="qd-live"><span class="qd-status-dot"></span>Live</div>
+            </div>
+            <div class="qd-now-serving">
+              <div class="qd-serving-lbl">Now Serving</div>
+              <div class="qd-queue-num">Q-047</div>
+              <div class="qd-service">General Consultation — Counter 1</div>
+            </div>
+            <div class="qd-waiting-row">
+              <div class="qd-wait-chip">
+                <div class="qd-wait-chip-num">14</div>
+                <div class="qd-wait-chip-lbl">Waiting</div>
+              </div>
+              <div class="qd-wait-chip">
+                <div class="qd-wait-chip-num">3</div>
+                <div class="qd-wait-chip-lbl">Counters</div>
+              </div>
+              <div class="qd-wait-chip">
+                <div class="qd-wait-chip-num">~18</div>
+                <div class="qd-wait-chip-lbl">Min Avg</div>
+              </div>
+            </div>
+            <div class="qd-list">
+              <div class="qd-list-item">
+                <div class="qd-li-num">Q-048</div>
+                <div class="qd-li-svc">Prenatal Care</div>
+                <div class="qd-li-badge badge-calling">Calling</div>
+              </div>
+              <div class="qd-list-item">
+                <div class="qd-li-num">Q-049</div>
+                <div class="qd-li-svc">Immunization</div>
+                <div class="qd-li-badge badge-waiting">Waiting</div>
+              </div>
+              <div class="qd-list-item">
+                <div class="qd-li-num">Q-050</div>
+                <div class="qd-li-svc">General Consultation</div>
+                <div class="qd-li-badge badge-waiting">Waiting</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CHECK STATUS ===== -->
+  <section class="check-status" id="check-status">
+    <div class="container">
+      <div class="status-inner">
+        <div>
+          <div class="section-label">Queue Status Lookup</div>
+          <h2 class="section-title">Check Your<br/>Queue Status</h2>
+          <p class="section-body">
+            Already joined the queue? Enter your reference number to see your current position 
+            and estimated waiting time in real-time.
+          </p>
+          <div style="margin-top:24px; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:#64748B;"></div>
+              <span style="font-size:14px;color:#64748B;"><strong style="color:#113264;">Scheduled</strong> — Ticket issued, not yet checked in</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:#D97706;"></div>
+              <span style="font-size:14px;color:#64748B;"><strong style="color:#113264;">Waiting</strong> — Checked in, in the queue</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:#0090FF;"></div>
+              <span style="font-size:14px;color:#64748B;"><strong style="color:#113264;">Calling</strong> — Your turn! Go to the counter</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:#16A34A;"></div>
+              <span style="font-size:14px;color:#64748B;"><strong style="color:#113264;">In-Progress</strong> — Currently being served</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:#22c55e;"></div>
+              <span style="font-size:14px;color:#64748B;"><strong style="color:#113264;">Completed</strong> — Service done</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:#DC2626;"></div>
+              <span style="font-size:14px;color:#64748B;"><strong style="color:#113264;">Void</strong> — Ticket expired or missed</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="status-form-card">
+            <h3 style="font-family:var(--font-heading);font-size:18px;font-weight:700;color:var(--color-navy);margin-bottom:var(--sp-5);">Enter Reference Number</h3>
+            <div class="form-group" style="margin-bottom:var(--sp-4);">
+              <label class="form-label" for="refnum">Reference Number</label>
+              <input class="form-input" id="refnum" type="text" placeholder="e.g. QMS-2024-001234" autocomplete="off" />
+            </div>
+            <button class="btn btn-primary" style="width:100%;justify-content:center;">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Check Status
+            </button>
+
+            <!-- Status Result (Sample) -->
+            <div class="status-result">
+              <div class="sr-header">
+                <div>
+                  <div class="sr-name">Maria Santos</div>
+                  <div class="sr-ref">Ref: QMS-2024-001234</div>
+                </div>
+                <div class="status-pill calling">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.41 12a19.79 19.79 0 01-3-8.5A2 2 0 013.34 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.91 9.91a16 16 0 006.16 6.16l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                  Calling — Your Turn!
+                </div>
+              </div>
+              <div class="sr-details">
+                <div class="sr-detail">
+                  <div class="sr-detail-lbl">Queue Number</div>
+                  <div class="sr-detail-val sr-queue-num">Q-048</div>
+                </div>
+                <div class="sr-detail">
+                  <div class="sr-detail-lbl">Counter</div>
+                  <div class="sr-detail-val">Counter 2 — Prenatal</div>
+                </div>
+                <div class="sr-detail">
+                  <div class="sr-detail-lbl">Service</div>
+                  <div class="sr-detail-val">Prenatal Care</div>
+                </div>
+                <div class="sr-detail">
+                  <div class="sr-detail-lbl">Grace Period</div>
+                  <div class="sr-detail-val" style="color:var(--color-danger);font-weight:700;">2:45 remaining</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SERVICES ===== -->
+  <section class="services" id="services">
+    <div class="container">
+      <div class="services-header">
+        <div class="section-label">Available Health Services</div>
+        <h2 class="section-title">What We Offer</h2>
+        <p class="section-body">
+          Our Barangay Health Center provides essential health services for the community. 
+          Book your slot online or walk-in during operating hours.
+        </p>
+      </div>
+      <div class="services-grid">
+        <!-- Service 1 -->
+        <div class="service-card">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="svc-name">General Consultation</div>
+          <div class="svc-desc">Primary health assessment and medical advice for common conditions.</div>
+          <div class="svc-est">⏱ Est. 15–20 mins per visit</div>
+        </div>
+        <!-- Service 2 -->
+        <div class="service-card">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </div>
+          <div class="svc-name">Prenatal Care</div>
+          <div class="svc-desc">Comprehensive maternal and prenatal health monitoring and support.</div>
+          <div class="svc-est">⏱ Est. 20–30 mins per visit</div>
+        </div>
+        <!-- Service 3 -->
+        <div class="service-card">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div class="svc-name">Immunization</div>
+          <div class="svc-desc">Vaccines for children and adults as per the national immunization program.</div>
+          <div class="svc-est">⏱ Est. 10–15 mins per visit</div>
+        </div>
+        <!-- Service 4 -->
+        <div class="service-card">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="svc-name">Blood Pressure Monitoring</div>
+          <div class="svc-desc">Regular BP check and hypertension management for at-risk patients.</div>
+          <div class="svc-est">⏱ Est. 10 mins per visit</div>
+        </div>
+        <!-- Service 5 -->
+        <div class="service-card">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <div class="svc-name">Family Planning</div>
+          <div class="svc-desc">Counseling and services for family planning and reproductive health.</div>
+          <div class="svc-est">⏱ Est. 20 mins per visit</div>
+        </div>
+        <!-- Service 6 -->
+        <div class="service-card">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="svc-name">Medical Certification</div>
+          <div class="svc-desc">Issuance of barangay medical certificates and health clearances.</div>
+          <div class="svc-est">⏱ Est. 10–15 mins per visit</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="hiw-header">
+        <div class="badge" style="margin-bottom:16px;background:rgba(0,144,255,0.20);color:#7EC8FF;">How It Works</div>
+        <h2 class="section-title hiw-title">Simple Steps to Join the Queue</h2>
+        <p class="section-body hiw-body">Two ways to use the system — online or walk-in. Both are quick and hassle-free.</p>
+      </div>
+
+      <div class="hiw-tabs">
+        <button class="hiw-tab active">Online Booking</button>
+        <button class="hiw-tab">Walk-in</button>
+      </div>
+
+      <div class="hiw-steps">
+        <div class="hiw-step">
+          <div class="hiw-step-num">1</div>
+          <div class="hiw-step-title">Fill Out Information</div>
+          <div class="hiw-step-desc">Enter your first name, last name, phone number, and select your health service. No account required.</div>
+        </div>
+        <div class="hiw-step">
+          <div class="hiw-step-num">2</div>
+          <div class="hiw-step-title">Get Your Ticket</div>
+          <div class="hiw-step-desc">Receive a QR code ticket with your reference number and appointment details. Print or save it.</div>
+        </div>
+        <div class="hiw-step">
+          <div class="hiw-step-num">3</div>
+          <div class="hiw-step-title">Arrive & Check-In</div>
+          <div class="hiw-step-desc">Show your QR code at the health center. Staff will scan it to activate your queue ticket.</div>
+        </div>
+        <div class="hiw-step">
+          <div class="hiw-step-num">4</div>
+          <div class="hiw-step-title">Track & Be Called</div>
+          <div class="hiw-step-desc">Monitor your position using your reference number. You'll be called when it's your turn.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ML FEATURES ===== -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="features-grid">
+        <div>
+          <div class="section-label">AI-Powered Intelligence</div>
+          <h2 class="section-title">Smarter Queuing with Machine Learning</h2>
+          <p class="section-body">Our system uses a Random Forest model trained on historical visit data to predict waiting times and optimize service flow.</p>
+          <div class="features-list">
+            <div class="feature-item">
+              <div class="feature-icon-wrap">
+                <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </div>
+              <div class="feature-text">
+                <div class="feature-title">Real-Time Wait Prediction</div>
+                <div class="feature-desc">ML model predicts your estimated wait time based on queue depth, service type, and historical patterns.</div>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon-wrap">
+                <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div class="feature-text">
+                <div class="feature-title">FIFO Queue Algorithm</div>
+                <div class="feature-desc">First-In, First-Out ensures fair and transparent queue management for all patients.</div>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon-wrap">
+                <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              </div>
+              <div class="feature-text">
+                <div class="feature-title">Grace Period Management</div>
+                <div class="feature-desc">Auto-void missed calling tickets after a configurable grace period (3–5 mins), freeing up counters efficiently.</div>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon-wrap">
+                <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div class="feature-text">
+                <div class="feature-title">Public Queue Display</div>
+                <div class="feature-desc">Real-time display board for waiting room showing current serving numbers and next in queue.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ML Visual -->
+        <div class="feature-visual">
+          <div class="ml-card-title" style="font-family:var(--font-heading);font-size:13px;font-weight:700;color:var(--color-muted-fg);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:16px;">ML Wait Time Prediction</div>
+          <div class="ml-card">
+            <div class="ml-card-title">Your Estimated Wait</div>
+            <div class="ml-prediction">
+              <div class="ml-time">18</div>
+              <div class="ml-unit">min</div>
+            </div>
+            <div class="ml-subtitle">Based on current queue depth & service history</div>
+            <div class="ml-bar-wrap">
+              <div class="ml-bar-label"><span>Confidence</span><span>91%</span></div>
+              <div class="ml-bar-track"><div class="ml-bar-fill" style="width:91%"></div></div>
+            </div>
+          </div>
+          <div class="ml-metrics">
+            <div class="ml-metric">
+              <div class="ml-metric-val">14</div>
+              <div class="ml-metric-lbl">Ahead in Queue</div>
+            </div>
+            <div class="ml-metric">
+              <div class="ml-metric-val">3</div>
+              <div class="ml-metric-lbl">Active Counters</div>
+            </div>
+            <div class="ml-metric">
+              <div class="ml-metric-val">15m</div>
+              <div class="ml-metric-lbl">Avg Service</div>
+            </div>
+          </div>
+          <div style="margin-top:20px;background:var(--color-surface);border-radius:var(--radius-md);padding:16px;border:1px solid var(--color-border);">
+            <div style="font-family:var(--font-heading);font-size:12px;font-weight:700;color:var(--color-muted-fg);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">Today's Queue Activity</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:13px;color:var(--color-muted-fg);">Completed</span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="width:80px;height:6px;background:var(--color-muted-bg);border-radius:99px;overflow:hidden;"><div style="width:72%;height:100%;background:#16A34A;border-radius:99px;"></div></div>
+                  <span style="font-family:var(--font-heading);font-size:13px;font-weight:600;color:#16A34A;width:28px;text-align:right;">72</span>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:13px;color:var(--color-muted-fg);">Waiting</span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="width:80px;height:6px;background:var(--color-muted-bg);border-radius:99px;overflow:hidden;"><div style="width:14%;height:100%;background:#D97706;border-radius:99px;"></div></div>
+                  <span style="font-family:var(--font-heading);font-size:13px;font-weight:600;color:#D97706;width:28px;text-align:right;">14</span>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:13px;color:var(--color-muted-fg);">Voided</span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="width:80px;height:6px;background:var(--color-muted-bg);border-radius:99px;overflow:hidden;"><div style="width:8%;height:100%;background:#DC2626;border-radius:99px;"></div></div>
+                  <span style="font-family:var(--font-heading);font-size:13px;font-weight:600;color:#DC2626;width:28px;text-align:right;">8</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== JOIN QUEUE OPTIONS ===== -->
+  <section class="join-queue">
+    <div class="container">
+      <div style="text-align:center;margin-bottom:var(--sp-12);">
+        <div class="section-label">Get Started</div>
+        <h2 class="section-title">Choose How to Join</h2>
+        <p class="section-body" style="margin:0 auto;">No account needed. Two simple ways to get into the queue.</p>
+      </div>
+      <div class="join-grid">
+        <div class="queue-option-card">
+          <div class="qo-icon">
+            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="qo-title">Online Booking</div>
+          <div class="qo-desc">Reserve your spot before going to the health center. Get a QR code ticket sent instantly.</div>
+          <div class="qo-features">
+            <div class="qo-feature">
+              <svg class="qo-check" viewBox="0 0 24 24" fill="none" stroke="#0090FF" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              No account needed — fill out a short form
+            </div>
+            <div class="qo-feature">
+              <svg class="qo-check" viewBox="0 0 24 24" fill="none" stroke="#0090FF" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              QR code ticket generated instantly
+            </div>
+            <div class="qo-feature">
+              <svg class="qo-check" viewBox="0 0 24 24" fill="none" stroke="#0090FF" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Check-in on arrival by scanning QR
+            </div>
+            <div class="qo-feature">
+              <svg class="qo-check" viewBox="0 0 24 24" fill="none" stroke="#0090FF" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Track status anytime with reference number
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            Book Online Now
+          </button>
+        </div>
+
+        <div class="queue-option-card featured">
+          <div class="qo-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="qo-title">Walk-in at Center</div>
+          <div class="qo-desc">Simply arrive at the health center. Staff will register you directly and print your queue ticket.</div>
+          <div class="qo-features">
+            <div class="qo-feature">
+              <svg class="qo-check" viewBox="0 0 24 24" fill="none" stroke="#0090FF" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Staff registers you on-site
+            </div>
+            <div class="qo-feature">
+              <svg class="qo-check" viewBox="0 0 24 24" fill="none" stroke="#0090FF" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Instantly joins the queue (Waiting status)
+            </div>
+            <div class="qo-feature">
+              <svg class="qo-check" viewBox="0 0 24 24" fill="none" stroke="#0090FF" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Printed queue number ticket provided
+            </div>
+            <div class="qo-feature">
+              <svg class="qo-check" viewBox="0 0 24 24" fill="none" stroke="#0090FF" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              No phone or internet required
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            Go to Health Center
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <div class="footer-logo-icon">
+              <svg viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm14 3a3 3 0 100-6 3 3 0 000 6z"/></svg>
+            </div>
+            <div class="footer-logo-text">SmartQMS</div>
+          </div>
+          <div class="footer-tagline">
+            Smart Queue Management System for Barangay Health Centers. AI-powered, community-focused.
+          </div>
+        </div>
+        <div>
+          <div class="footer-col-title">Services</div>
+          <ul class="footer-links">
+            <li><a href="#">General Consultation</a></li>
+            <li><a href="#">Prenatal Care</a></li>
+            <li><a href="#">Immunization</a></li>
+            <li><a href="#">Blood Pressure</a></li>
+            <li><a href="#">Family Planning</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Quick Links</div>
+          <ul class="footer-links">
+            <li><a href="#">Join Queue</a></li>
+            <li><a href="#">Check Status</a></li>
+            <li><a href="#">How It Works</a></li>
+            <li><a href="#">About the Center</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Hours</div>
+          <ul class="footer-links">
+            <li><a href="#">Mon–Fri: 8:00 AM – 5:00 PM</a></li>
+            <li><a href="#">Saturday: 8:00 AM – 12:00 PM</a></li>
+            <li><a href="#">Sunday: Closed</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="footer-copy">© 2024 SmartQMS · Barangay Health Center. All rights reserved.</div>
+        <div class="footer-credits">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Use</a>
+          <a href="02-login-page.html">Staff Login</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

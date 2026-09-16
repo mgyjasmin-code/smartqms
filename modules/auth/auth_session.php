@@ -14,18 +14,14 @@ function startRegistrationOtpSession(int $userId): void {
     setOtpSession('register', $userId);
 }
 
-function startLoginOtpSession(int $userId): void {
-    $_SESSION['pending_login_user_id'] = $userId;
-    setOtpSession('login', $userId);
-}
-
 function startPasswordResetOtpSession(int $userId): void {
     $_SESSION['reset_user_id'] = $userId;
     setOtpSession('reset', $userId);
 }
 
-function markPasswordResetOtpVerified(int $userId): void {
-    $_SESSION['reset_verified_user_id'] = $userId;
+function markPasswordResetOtpVerified(mysqli $conn, int $userId): void {
+    $_SESSION['reset_capability'] = createPasswordResetCapability($conn, $userId);
+    unset($_SESSION['reset_user_id']);
 }
 
 function markOtpSent(): void {
@@ -41,17 +37,22 @@ function clearOtpSession(): void {
         $_SESSION['pending_login_user_id'],
         $_SESSION['otp_last_sent_at'],
         $_SESSION['reset_user_id'],
-        $_SESSION['reset_verified_user_id']
+        $_SESSION['reset_capability']
     );
 }
 
 function completeLogin(mysqli $conn, array $user): void {
     session_regenerate_id(true);
+    $now = time();
     $_SESSION['user_id'] = (int) $user['user_id'];
     $_SESSION['role'] = $user['role'];
     $_SESSION['name'] = trim($user['first_name'] . ' ' . $user['last_name']);
     $_SESSION['phone'] = $user['phone_number'] ?? '';
     $_SESSION['email'] = $user['email'] ?? '';
+    $_SESSION['session_version'] = max(1, (int) ($user['session_version'] ?? 1));
+    $_SESSION['auth_created_at'] = $now;
+    $_SESSION['auth_last_activity_at'] = $now;
+    $_SESSION['auth_rotated_at'] = $now;
 
     if ($user['role'] === ROLE_STAFF) {
         $staffId = authStaffIdByUserId($conn, $_SESSION['user_id']);
@@ -65,6 +66,5 @@ function completeLogin(mysqli $conn, array $user): void {
 }
 
 function destroyAuthenticatedSession(): void {
-    session_unset();
-    session_destroy();
+    destroyLocalSessionState();
 }

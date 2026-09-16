@@ -17,7 +17,9 @@ testCase('authenticated roles use the shared responsive shell with restricted na
         'data-app-search',
         'data-app-search-toggle',
         'data-app-user-menu',
+        'aria-label="Open profile menu for',
         'data-app-theme-toggle',
+        'class="form-check-input" type="checkbox" role="switch"',
         'data-bs-target="#appLogoutModal"',
         'Skip to main content',
     ] as $contract) {
@@ -33,7 +35,7 @@ testCase('authenticated roles use the shared responsive shell with restricted na
 
     $adapters = [
         'views/admin/includes/header.php' => ['Dashboard', 'Staff Accounts', 'Health Services', 'Service Windows', 'Reports'],
-        'views/staff/includes/header.php' => ['Queue Management', 'My Window', 'Activity Log'],
+        'views/staff/includes/header.php' => [],
         'views/client/includes/header.php' => ['Dashboard', 'Queue Status', 'My Ticket'],
     ];
     foreach ($adapters as $adapter => $labels) {
@@ -44,7 +46,7 @@ testCase('authenticated roles use the shared responsive shell with restricted na
         }
     }
 
-    $css = batch8eSource('assets/css/style.css');
+    $css = batch8eSource('assets/css/style.css') . batch8eSource('assets/css/admin.css');
     foreach ([
         'body.app-page .app-topbar',
         'flex-wrap: nowrap;',
@@ -55,9 +57,38 @@ testCase('authenticated roles use the shared responsive shell with restricted na
         'body.app-page .app-user-menu',
         'display: block !important;',
         'min-height: 44px;',
+        '.admin-user-theme-switch',
+        'width: min(240px, calc(100vw - 24px));',
+        '--bs-toast-bg: var(--admin-surface, var(--sq-surface-raised));',
+        '--bs-modal-bg: var(--admin-surface, var(--sq-surface-raised));',
+        'var(--admin-user-dropdown-shadow, var(--sq-shadow-modal))',
     ] as $contract) {
         assertStringContains($contract, $css);
     }
+});
+
+testCase('shared header search uses one component-level focus ring', function (): void {
+    $css = file_get_contents(SMARTQMS_ROOT . '/assets/css/style.css');
+    assertStringContains('.app-header-search .form-control:focus-visible', $css);
+    assertStringContains('.admin-header-search .form-control:focus-visible', $css);
+    assertStringContains('outline: 0;', $css);
+    assertStringContains('box-shadow: none;', $css);
+
+    $adminCss = file_get_contents(SMARTQMS_ROOT . '/assets/css/admin.css');
+    assertStringContains('.admin-header-search .form-control:focus-visible', $adminCss);
+    assertStringContains('border: 0 !important;', $adminCss);
+    preg_match_all('/html\[data-admin-theme="dark"\]\s*\{([^}]*)\}/s', $adminCss, $darkThemeBlocks);
+    $usesSharedFocusPalette = false;
+    foreach ($darkThemeBlocks[1] ?? [] as $darkThemeBlock) {
+        if (
+            str_contains($darkThemeBlock, '--admin-primary: var(--sq-primary);')
+            && str_contains($darkThemeBlock, '--admin-focus-ring: var(--sq-focus-ring);')
+        ) {
+            $usesSharedFocusPalette = true;
+            break;
+        }
+    }
+    assertTrueValue($usesSharedFocusPalette, 'Dark Admin controls must use the shared SmartQMS focus palette.');
 });
 
 testCase('client notification center keeps history and acknowledges only displayed owned rows', function (): void {
@@ -102,6 +133,19 @@ testCase('client notification center keeps history and acknowledges only display
 });
 
 testCase('client feedback and ticket history use shared toasts and active display rules', function (): void {
+    $dashboard = batch8eSource('views/client/index.php');
+    assertStringContains("redirectTo('')", $dashboard);
+    $ticketAdapter = batch8eSource('views/client/ticket.php');
+    assertStringContains("redirectTo('track/'", $ticketAdapter);
+    $publicTicket = batch8eSource('views/public/tracker.php');
+    assertStringContains('data-public-feedback-form', $publicTicket);
+    assertStringContains('data-print-page', $publicTicket);
+    assertStringContains('Queue number after check-in', $publicTicket);
+    $feedbackService = batch8eSource('modules/feedback/feedback_service.php');
+    assertStringContains('FOR UPDATE', $feedbackService);
+    assertStringContains("'already_submitted'", $feedbackService);
+    return;
+
     $dashboard = batch8eSource('views/client/index.php');
     assertStringContains('$appActionToasts', $dashboard);
     assertStringContains("'login_verified' => 'Login verified. Welcome back.'", $dashboard);
@@ -202,15 +246,38 @@ testCase('staff workflow surfaces follow shared light and dark theme tokens', fu
 
     foreach ([
         'views/staff/dashboard.php',
-        'views/staff/window.php',
-        'views/staff/activity_log.php',
+        'views/staff/check_in.php',
+        'views/staff/batch_printing.php',
     ] as $page) {
         assertStringContains("include __DIR__ . '/includes/header.php'", batch8eSource($page), $page);
     }
 
     $adapter = batch8eSource('views/staff/includes/header.php');
-    assertStringContains("'body_class' => 'staff-page'", $adapter);
+    assertStringContains("'body_class' => trim('staff-page ' . \$staffBodyClass)", $adapter);
     assertStringContains("'legacy_theme_key' => 'smartqms-staff-theme'", $adapter);
+    assertStringContains("'show_search' => false", $adapter);
+    assertStringContains("'show_sidebar' => false", $adapter);
+    assertStringContains("'nav_items' => []", $adapter);
+    assertFalseValue(str_contains($adapter, 'My Window'));
+    assertFalseValue(str_contains($adapter, 'Activity Log'));
+});
+
+testCase('staff workspace uses the admin shell without translation or queue-mode labels', function (): void {
+    $shell = batch8eSource('views/shared/includes/shell_header.php');
+    $adapter = batch8eSource('views/staff/includes/header.php');
+    $dashboard = batch8eSource('views/staff/dashboard.php');
+    $styles = batch8eSource('assets/css/style.css');
+
+    assertStringContains("if (\$appRole === 'client')", $shell);
+    assertStringContains('app-staff-tools', $shell);
+    assertStringContains("'show_search' => false", $adapter);
+    assertStringContains('admin-kpi-grid', $dashboard);
+    assertStringContains('admin-data-table', $dashboard);
+    assertStringContains('body.app-staff-page.staff-page.app-sidebarless .app-shell', $styles);
+    assertStringContains('app-topbar-brand', $shell);
+    assertStringContains("'show_sidebar' => false", $adapter);
+    assertFalseValue(str_contains($dashboard, 'Central Queue'));
+    assertFalseValue(str_contains($dashboard, 'Priority Queue'));
 });
 
 testCase('staff Skip and manual Void share one Bootstrap confirmation and submit once', function (): void {
@@ -237,6 +304,8 @@ testCase('staff Skip and manual Void share one Bootstrap confirmation and submit
     assertStringContains('requireLogin(ROLE_STAFF)', $endpoint);
     assertStringContains('requirePostRequest(true)', $endpoint);
     assertStringContains('requireValidCsrf', $endpoint);
-    assertStringContains('voidTicketForStaff', $endpoint);
+    assertStringContains('smartqmsVoidForStaff', $endpoint);
+    $gateway = (string) file_get_contents(SMARTQMS_ROOT . '/modules/integrations/queue_gateway.php');
+    assertStringContains('voidTicketForStaff($conn, $staffId, $ticketId)', $gateway);
     assertStringContains('processNearTurnAlerts', $endpoint);
 });

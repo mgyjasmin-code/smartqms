@@ -10,14 +10,13 @@ function normalizeQueueClientType(string $clientType): string {
 }
 
 function queuePriorityLevelForClientType(string $clientType): int {
-    return in_array(normalizeQueueClientType($clientType), ['senior', 'pwd'], true)
-        ? 1
-        : 0;
+    // Batch 8J keeps the historical classification value but removes it from
+    // every live ordering decision.
+    return 0;
 }
 
 function queueServiceAllowsClientType(array $service, string $clientType): bool {
-    return (int) ($service['priority_only'] ?? 0) !== 1
-        || queuePriorityLevelForClientType($clientType) === 1;
+    return true;
 }
 
 function ticketIssuanceLockName(int $year): string {
@@ -48,11 +47,15 @@ function lockQueueClient(mysqli $conn, int $userId): bool {
 }
 
 function getActiveTicketForLockedClient(mysqli $conn, int $userId): ?array {
+    $hasLifecycle = smartqmsTableHasColumn($conn, 'queue_tickets', 'lifecycle_status');
+    $activePredicate = $hasLifecycle
+        ? "lifecycle_status IN ('scheduled','waiting','calling','in-progress')"
+        : "status IN ('waiting','serving')";
     $stmt = $conn->prepare("
-        SELECT ticket_id, user_id, service_id, reference_number, ticket_number,
-               client_type, priority_level, status, issued_at
+        SELECT ticket_id, user_id, service_id, queue_mode, reference_number, ticket_number,
+               client_type, priority_level, status, lifecycle_status, issued_at, checked_in_at
         FROM queue_tickets
-        WHERE user_id = ? AND status IN ('waiting','serving')
+        WHERE user_id = ? AND {$activePredicate}
         ORDER BY issued_at DESC
         LIMIT 1
     ");
@@ -91,13 +94,17 @@ function generateDailyTicketNumber(mysqli $conn): string {
 }
 
 function getActiveTicket(mysqli $conn, int $userId): ?array {
+    $hasLifecycle = smartqmsTableHasColumn($conn, 'queue_tickets', 'lifecycle_status');
+    $activePredicate = $hasLifecycle
+        ? "qt.lifecycle_status IN ('scheduled','waiting','calling','in-progress')"
+        : "qt.status IN ('waiting','serving')";
     $stmt = $conn->prepare("
         SELECT qt.*, hs.service_name, hs.service_encoded, sw.window_name, wl.predicted_wait_min
         FROM queue_tickets qt
         JOIN health_services hs ON hs.service_id = qt.service_id
         LEFT JOIN service_windows sw ON sw.window_id = qt.window_id
         LEFT JOIN wait_time_logs wl ON wl.ticket_id = qt.ticket_id
-        WHERE qt.user_id = ? AND qt.status IN ('waiting','serving')
+        WHERE qt.user_id = ? AND {$activePredicate}
         ORDER BY qt.issued_at DESC
         LIMIT 1
     ");
@@ -129,20 +136,45 @@ function getCompletedTicketAwaitingFeedback(mysqli $conn, int $userId): ?array {
 }
 
 function peopleAhead(mysqli $conn, array $ticket): int {
-    $stmt = $conn->prepare("
-        SELECT COUNT(*) AS cnt
-        FROM queue_tickets
-        WHERE status = 'waiting'
-          AND service_id = ?
-          AND (
-            priority_level > ?
-            OR (priority_level = ? AND issued_at < ?)
-          )
-    ");
-    $serviceId = (int) $ticket['service_id'];
-    $priority = (int) $ticket['priority_level'];
-    $issuedAt = $ticket['issued_at'];
-    $stmt->bind_param('iiis', $serviceId, $priority, $priority, $issuedAt);
+    $queueMode = normalizeQueueMode((string) ($ticket['queue_mode'] ?? 'central'));
+    $checkedInAt = (string) ($ticket['checked_in_at'] ?? $ticket['issued_at'] ?? '');
+    $ticketId = (int) ($ticket['ticket_id'] ?? PHP_INT_MAX);
+
+    if ($checkedInAt === '' || ($ticket['lifecycle_status'] ?? 'waiting') !== 'waiting') {
+        return 0;
+    }
+
+    if ($queueMode === QUEUE_MODE_SPECIALIZED) {
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) AS cnt
+            FROM queue_tickets
+            WHERE status = 'waiting'
+              AND lifecycle_status = 'waiting'
+              AND checked_in_at IS NOT NULL
+              AND queue_mode = 'specialized'
+              AND service_id = ?
+              AND (
+                checked_in_at < ?
+                OR (checked_in_at = ? AND ticket_id < ?)
+              )
+        ");
+        $serviceId = (int) $ticket['service_id'];
+        $stmt->bind_param('issi', $serviceId, $checkedInAt, $checkedInAt, $ticketId);
+    } else {
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) AS cnt
+            FROM queue_tickets
+            WHERE status = 'waiting'
+              AND lifecycle_status = 'waiting'
+              AND checked_in_at IS NOT NULL
+              AND queue_mode = 'central'
+              AND (
+                checked_in_at < ?
+                OR (checked_in_at = ? AND ticket_id < ?)
+              )
+        ");
+        $stmt->bind_param('ssi', $checkedInAt, $checkedInAt, $ticketId);
+    }
     $stmt->execute();
     return (int) ($stmt->get_result()->fetch_assoc()['cnt'] ?? 0);
 }

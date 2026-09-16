@@ -21,9 +21,8 @@ requireValidCsrf('', '', [], 'Security check failed. Please refresh the page and
 $action = $_POST['action'] ?? '';
 
 if ($action === 'add') {
-    $code = trim((string) ($_POST['service_code'] ?? ''));
     $name = trim((string) ($_POST['service_name'] ?? ''));
-    $encoded = (int) ($_POST['service_encoded'] ?? 0);
+    $encoded = 0;
     $fieldErrors = validateServiceJsonAdd($_POST);
     if ($fieldErrors) {
         jsonResponse(false, [
@@ -34,8 +33,21 @@ if ($action === 'add') {
     $priority = (int) ($_POST['priority_only'] ?? 0);
     $order = (int) ($_POST['display_order'] ?? 0);
     $description = trim($_POST['description'] ?? '');
-    $serviceId = createHealthService($conn, $code, $name, $encoded, $description, $priority, $order, (int) $_SESSION['user_id']);
-    logActivity($conn, 'service_added', $name);
+    $queueMode = normalizeQueueMode((string) ($_POST['queue_mode'] ?? 'central'));
+    $serviceId = createHealthService(
+        $conn,
+        '',
+        $name,
+        $encoded,
+        $description,
+        $priority,
+        $order,
+        (int) $_SESSION['user_id'],
+        1,
+        $queueMode
+    );
+    logActivity($conn, 'service_created', $name);
+    recordSecurityEvent($conn, 'health_service_created', 'success', 'health_service', (string) $serviceId);
     jsonResponse(true, ['data' => ['service_id' => $serviceId]]);
 }
 
@@ -50,6 +62,7 @@ if ($action === 'edit') {
     }
     updateHealthServiceFromJson($conn, $_POST);
     logActivity($conn, 'service_updated', $name);
+    recordSecurityEvent($conn, 'health_service_updated', 'success', 'health_service', (string) ((int) $_POST['service_id']));
     jsonResponse(true);
 }
 
@@ -60,8 +73,20 @@ if ($action === 'toggle') {
     }
     $active = (int) ($_POST['is_active'] ?? 0);
     setHealthServiceActive($conn, $id, $active);
-    logActivity($conn, 'service_toggled', 'service_id=' . $id);
+    logActivity($conn, 'service_availability_changed', 'service_id=' . $id . ', enabled=' . $active);
+    recordSecurityEvent($conn, 'health_service_status_changed', 'success', 'health_service', (string) $id, [
+        'reason' => $active === 1 ? 'activated' : 'deactivated',
+    ]);
     jsonResponse(true);
+}
+
+if ($action === 'reorder') {
+    $id = (int) ($_POST['service_id'] ?? 0);
+    $direction = (string) ($_POST['direction'] ?? '');
+    if (!isPositiveIdentifier($id) || !in_array($direction, ['up', 'down'], true)) {
+        jsonResponse(false, ['error' => 'Choose a valid service ordering action.'], 422);
+    }
+    jsonResponse(true, ['moved' => moveHealthService($conn, $id, $direction)]);
 }
 
 if ($action === 'delete') {
@@ -76,6 +101,9 @@ if ($action === 'delete') {
     }
 
     logActivity($conn, 'service_deleted', (string) $result['service']['service_name']);
+    recordSecurityEvent($conn, 'health_service_removed', 'success', 'health_service', (string) $id, [
+        'reason' => $result['soft_deleted'] ? 'deactivated' : 'deleted',
+    ]);
     jsonResponse(true, ['soft_deleted' => $result['soft_deleted']]);
 }
 

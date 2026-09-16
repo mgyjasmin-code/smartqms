@@ -56,15 +56,6 @@ ON DUPLICATE KEY UPDATE
   label = VALUES(label),
   section = VALUES(section);
 
-UPDATE users
-SET password_hash = '$2y$10$0dVVbYM0md/nlp53WdgET./DnO2eae3DZLJaMdU6OZeU29mXR7rHK',
-    is_verified = 1,
-    is_active = 1,
-    otp_code = NULL,
-    otp_hash = NULL,
-    otp_expires_at = NULL
-WHERE email = 'admin@smartqms.local' AND role = 'admin';
-
 CREATE OR REPLACE VIEW v_today_queue AS
   SELECT
     qt.ticket_id,

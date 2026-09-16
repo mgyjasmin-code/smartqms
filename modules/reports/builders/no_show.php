@@ -8,14 +8,14 @@ function buildNoShowReport(mysqli $conn, array $range): array {
         SELECT DATE(COALESCE(qt.voided_at, qt.issued_at)) AS report_date,
                CONCAT(LPAD(HOUR(COALESCE(qt.voided_at, qt.issued_at)), 2, '0'), ':00') AS hour_label,
                hs.service_name,
-               qt.status,
+               qt.lifecycle_status AS status,
                COALESCE(qt.voided_reason, 'No reason recorded') AS reason,
                COUNT(*) AS total
         FROM queue_tickets qt
         JOIN health_services hs ON hs.service_id = qt.service_id
-        WHERE qt.status IN ('voided', 'skipped')
+        WHERE qt.lifecycle_status = 'void'
           AND DATE(COALESCE(qt.voided_at, qt.issued_at)) BETWEEN ? AND ?
-        GROUP BY report_date, hour_label, hs.service_name, qt.status, reason
+        GROUP BY report_date, hour_label, hs.service_name, qt.lifecycle_status, reason
         ORDER BY report_date DESC, hour_label, hs.service_name
     ", 'ss', [$range['from'], $range['to']]);
 

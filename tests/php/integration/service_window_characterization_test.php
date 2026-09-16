@@ -2,15 +2,12 @@
 
 require_once SMARTQMS_ROOT . '/modules/service_window/ticket_actions.php';
 
-testCase('Dashboard and My Window retain one shared SQL-free context adapter', function (): void {
+testCase('Staff dashboard retains the shared SQL-free context adapter', function (): void {
     $dashboard = file_get_contents(SMARTQMS_ROOT . '/views/staff/dashboard.php');
-    $window = file_get_contents(SMARTQMS_ROOT . '/views/staff/window.php');
     $context = file_get_contents(SMARTQMS_ROOT . '/views/staff/includes/context.php');
 
     assertStringContains("require_once __DIR__ . '/includes/context.php'", $dashboard);
-    assertStringContains("require_once __DIR__ . '/includes/context.php'", $window);
-    assertStringContains('getStaffWindowCurrentTicket', $context);
-    assertStringContains('getStaffWindowWaitingTickets', $context);
+    assertStringContains('smartqmsStaffWorkspaceContext', $context);
     assertFalseValue((bool) preg_match('/\\b(SELECT|UPDATE|INSERT|DELETE)\\b/i', $context));
 });
 
@@ -70,12 +67,13 @@ function characterizationServiceWindowFixtures(
     $windowId = 0;
     if ($createWindow) {
         $windowName = 'Characterization Window';
+        $counterNumber = testNextCounterNumber($conn);
         $assignedServiceId = $assignService ? $serviceId : null;
         $stmt = $conn->prepare("
-            INSERT INTO service_windows (window_name, service_id, staff_id, status)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO service_windows (counter_number, window_name, service_id, staff_id, status)
+            VALUES (?, ?, ?, ?, ?)
         ");
-        $stmt->bind_param('siis', $windowName, $assignedServiceId, $staffId, $windowStatus);
+        $stmt->bind_param('isiis', $counterNumber, $windowName, $assignedServiceId, $staffId, $windowStatus);
         $stmt->execute();
         $windowId = (int) $conn->insert_id;
     }
@@ -103,14 +101,23 @@ function characterizationWindowTicket(
     $reference = 'BHC-2098-' . $suffix;
     $ticketNumber = 'W-' . $suffix;
     $nullableWindowId = $windowId > 0 ? $windowId : null;
+    $lifecycle = match ($status) {
+        'serving' => 'calling',
+        'completed' => 'completed',
+        'voided', 'skipped' => 'void',
+        default => 'waiting',
+    };
+    $checkedInAt = in_array($status, ['waiting', 'serving', 'completed', 'skipped'], true)
+        ? $issuedAt
+        : null;
     $stmt = $conn->prepare("
         INSERT INTO queue_tickets
           (user_id, window_id, service_id, reference_number, ticket_number,
-           client_type, priority_level, status, issued_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+           client_type, priority_level, status, lifecycle_status, issued_at, checked_in_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->bind_param(
-        'iiisssiss',
+        'iiisssissss',
         $userId,
         $nullableWindowId,
         $serviceId,
@@ -119,7 +126,9 @@ function characterizationWindowTicket(
         $clientType,
         $priority,
         $status,
-        $issuedAt
+        $lifecycle,
+        $issuedAt,
+        $checkedInAt
     );
     $stmt->execute();
     return (int) $conn->insert_id;
@@ -187,6 +196,7 @@ testCase('Call Next retains no-window closed unassigned and empty-queue outcomes
 
     withTestTransaction(function (mysqli $conn): void {
         $fixtures = characterizationServiceWindowFixtures($conn, 'open', true, false);
+        $conn->query("UPDATE service_windows SET window_type='specialized', service_id=NULL WHERE window_id=" . (int) $fixtures['window_id']);
         $result = withCharacterizationStaffSession(
             $fixtures,
             static fn(): array => callNextTicketForStaff($conn, (int) $fixtures['staff_id'])
@@ -206,7 +216,7 @@ testCase('Call Next retains no-window closed unassigned and empty-queue outcomes
     });
 });
 
-testCase('Call Next retains priority FIFO and prevents duplicate serving tickets', function (): void {
+testCase('Call Next uses strict check-in FIFO, enters calling state, and prevents duplicate serving tickets', function (): void {
     withTestTransaction(function (mysqli $conn): void {
         $fixtures = characterizationServiceWindowFixtures($conn);
         characterizationWindowTicket(
@@ -220,7 +230,7 @@ testCase('Call Next retains priority FIFO and prevents duplicate serving tickets
             0,
             '2038-01-01 08:00:00'
         );
-        $seniorId = characterizationWindowTicket(
+        characterizationWindowTicket(
             $conn,
             $fixtures['users']['senior'],
             $fixtures['service_id'],
@@ -232,16 +242,18 @@ testCase('Call Next retains priority FIFO and prevents duplicate serving tickets
             '2038-01-01 09:00:00'
         );
 
-        withCharacterizationStaffSession($fixtures, function () use ($conn, $fixtures, $seniorId): void {
+        withCharacterizationStaffSession($fixtures, function () use ($conn, $fixtures): void {
             $called = callNextTicketForStaff($conn, (int) $fixtures['staff_id']);
             assertSameValue('success', $called['status']);
-            assertSameValue($seniorId, (int) $called['ticket']['ticket_id']);
+            $calledId = (int) $called['ticket']['ticket_id'];
+            assertSameValue('regular', (string) $called['ticket']['client_type']);
 
-            $ticket = $conn->query("SELECT * FROM queue_tickets WHERE ticket_id={$seniorId}")->fetch_assoc();
+            $ticket = $conn->query("SELECT * FROM queue_tickets WHERE ticket_id={$calledId}")->fetch_assoc();
             assertSameValue('serving', $ticket['status']);
             assertSameValue((int) $fixtures['window_id'], (int) $ticket['window_id']);
             assertTrueValue(!empty($ticket['called_at']));
-            assertTrueValue(!empty($ticket['served_at']));
+            assertSameValue('calling', $ticket['lifecycle_status']);
+            assertTrueValue(empty($ticket['served_at']), 'Service time starts only after Start Service.');
             assertSameValue('busy', getStaffWindow($conn, (int) $fixtures['staff_id'])['status']);
 
             $duplicate = callNextTicketForStaff($conn, (int) $fixtures['staff_id']);
@@ -256,11 +268,11 @@ testCase('Call Next retains priority FIFO and prevents duplicate serving tickets
             $activity = $conn->query("
                 SELECT action, details
                 FROM activity_logs
-                WHERE ticket_id={$seniorId}
+                WHERE ticket_id={$calledId}
                 LIMIT 1
             ")->fetch_assoc();
             assertSameValue('ticket_called', $activity['action']);
-            assertSameValue('Called ticket W-9702', $activity['details']);
+            assertSameValue('Called ticket W-9701', $activity['details']);
         });
     });
 });
@@ -441,15 +453,17 @@ testCase('Manual staff void is atomic, scoped to the serving window, and notifie
             );
 
             $foreignWindowName = 'Characterization Foreign Window';
+            $foreignCounterNumber = testNextCounterNumber($conn);
             $foreignStatus = 'busy';
             $foreignStaffId = null;
             $foreignServiceId = (int) $fixtures['service_id'];
             $foreignWindow = $conn->prepare("
-                INSERT INTO service_windows (window_name, service_id, staff_id, status)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO service_windows (counter_number, window_name, service_id, staff_id, status)
+                VALUES (?, ?, ?, ?, ?)
             ");
             $foreignWindow->bind_param(
-                'siis',
+                'isiis',
+                $foreignCounterNumber,
                 $foreignWindowName,
                 $foreignServiceId,
                 $foreignStaffId,
@@ -477,6 +491,46 @@ testCase('Manual staff void is atomic, scoped to the serving window, and notifie
             assertSameValue(
                 0,
                 (int) $conn->query("SELECT COUNT(*) AS total FROM notifications WHERE ticket_id={$foreignTicketId}")
+                    ->fetch_assoc()['total']
+            );
+        });
+    });
+});
+
+testCase('Manual staff void is rejected after service has started', function (): void {
+    withTestTransaction(function (mysqli $conn): void {
+        $fixtures = characterizationServiceWindowFixtures($conn);
+        $ticketId = characterizationWindowTicket(
+            $conn,
+            $fixtures['users']['regular'],
+            $fixtures['service_id'],
+            '9724',
+            'regular',
+            0
+        );
+
+        withCharacterizationStaffSession($fixtures, function () use ($conn, $fixtures, $ticketId): void {
+            assertSameValue('success', callNextTicketForStaff($conn, (int) $fixtures['staff_id'])['status']);
+            assertSameValue('success', startTicketServiceForStaff($conn, (int) $fixtures['staff_id'], $ticketId)['status']);
+
+            $result = voidTicketForStaff($conn, (int) $fixtures['staff_id'], $ticketId);
+            assertSameValue('invalid_state', $result['status']);
+
+            $ticket = $conn->query("SELECT status, lifecycle_status, voided_at, voided_reason FROM queue_tickets WHERE ticket_id={$ticketId}")
+                ->fetch_assoc();
+            assertSameValue('serving', $ticket['status']);
+            assertSameValue('in-progress', $ticket['lifecycle_status']);
+            assertSameValue(null, $ticket['voided_at']);
+            assertSameValue(null, $ticket['voided_reason']);
+            assertSameValue('busy', getStaffWindow($conn, (int) $fixtures['staff_id'])['status']);
+            assertSameValue(
+                0,
+                (int) $conn->query("SELECT COUNT(*) AS total FROM notifications WHERE ticket_id={$ticketId} AND type='turn_void'")
+                    ->fetch_assoc()['total']
+            );
+            assertSameValue(
+                0,
+                (int) $conn->query("SELECT COUNT(*) AS total FROM activity_logs WHERE ticket_id={$ticketId} AND action='ticket_voided'")
                     ->fetch_assoc()['total']
             );
         });
@@ -518,7 +572,55 @@ testCase('automatic void retains timeout notification activity and race protecti
     });
 });
 
-testCase('staff context queries retain twenty-ticket priority order labels and timeout math', function (): void {
+testCase('Call Next prunes an expired call but never activates a Scheduled online ticket', function (): void {
+    withTestTransaction(function (mysqli $conn): void {
+        $fixtures = characterizationServiceWindowFixtures($conn);
+        $expiredId = characterizationWindowTicket(
+            $conn,
+            $fixtures['users']['regular'],
+            $fixtures['service_id'],
+            '9732',
+            'regular',
+            0
+        );
+
+        withCharacterizationStaffSession($fixtures, function () use ($conn, $fixtures, $expiredId): void {
+            assertSameValue('success', callNextTicketForStaff($conn, (int) $fixtures['staff_id'])['status']);
+            $conn->query("UPDATE queue_tickets SET called_at=DATE_SUB(NOW(), INTERVAL 15 MINUTE) WHERE ticket_id={$expiredId}");
+
+            $scheduledId = characterizationWindowTicket(
+                $conn,
+                $fixtures['users']['senior'],
+                $fixtures['service_id'],
+                '9733',
+                'senior',
+                1
+            );
+            $conn->query("
+                UPDATE queue_tickets
+                SET entry_type='online', lifecycle_status='scheduled', checked_in_at=NULL
+                WHERE ticket_id={$scheduledId}
+            ");
+
+            $result = callNextTicketForStaff($conn, (int) $fixtures['staff_id']);
+            assertSameValue('empty_queue', $result['status']);
+            assertSameValue(
+                'voided',
+                $conn->query("SELECT status FROM queue_tickets WHERE ticket_id={$expiredId}")
+                    ->fetch_assoc()['status']
+            );
+            $scheduled = $conn->query("
+                SELECT status, lifecycle_status
+                FROM queue_tickets
+                WHERE ticket_id={$scheduledId}
+            ")->fetch_assoc();
+            assertSameValue('waiting', $scheduled['status']);
+            assertSameValue('scheduled', $scheduled['lifecycle_status']);
+        });
+    });
+});
+
+testCase('staff context queries retain twenty-ticket FIFO order labels and timeout math', function (): void {
     withTestTransaction(function (mysqli $conn): void {
         $fixtures = characterizationServiceWindowFixtures($conn);
         for ($index = 1; $index <= 21; $index++) {
@@ -538,7 +640,7 @@ testCase('staff context queries retain twenty-ticket priority order labels and t
 
         $waiting = getStaffWindowWaitingTickets($conn, (int) $fixtures['service_id'], 50);
         assertSameValue(20, count($waiting));
-        assertSameValue('senior', $waiting[0]['client_type']);
+        assertSameValue('regular', $waiting[0]['client_type']);
         assertSameValue('Senior Citizen', staffClientTypeLabel('senior'));
         assertSameValue('PWD', staffClientTypeLabel('pwd'));
         assertSameValue('Regular', staffClientTypeLabel('regular'));

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="review-only">  <title>Staff Dashboard -- SmartQMS</title>
+  <script nonce="t6Eh3OGR91UwIwlrGfYFzkz+">
+    (function () {
+      try {
+        var sharedKey = 'smartqms-theme';
+        var legacyKey = "smartqms-staff-theme";
+        var savedTheme = window.localStorage.getItem(sharedKey);
+        if (savedTheme !== 'dark' && savedTheme !== 'light' && legacyKey) {
+          savedTheme = window.localStorage.getItem(legacyKey);
+        }
+        var theme = savedTheme === 'dark' || savedTheme === 'light'
+          ? savedTheme
+          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-app-theme', theme);
+        document.documentElement.setAttribute('data-admin-theme', theme);
+        document.documentElement.setAttribute('data-staff-theme', theme);
+      } catch (error) {
+        document.documentElement.setAttribute('data-app-theme', 'light');
+        document.documentElement.setAttribute('data-admin-theme', 'light');
+        document.documentElement.setAttribute('data-staff-theme', 'light');
+      }
+    })();
+  </script>
+  <link href="http://127.0.0.1:8766/before/assets/vendor/bootstrap/bootstrap.min.css?v=1624332556" rel="stylesheet">
+  <link rel="stylesheet" href="http://127.0.0.1:8766/before/assets/css/style.css?v=1788602830">
+  <link rel="stylesheet" href="http://127.0.0.1:8766/before/assets/css/admin.css?v=1788004672">
+    
+<link rel="stylesheet" href="../review.css"></head>
+<body
+  class="app-page admin-page app-staff-page app-sidebarless staff-page staff-dashboard-page"
+  data-app-root
+  data-app-role="staff"
+          data-queue-branch-id=""
+      data-staff-live-refresh="false"
+  ><div class="review-notice">Design review · Fictional sample data · Before</div>
+  <a class="app-skip-link admin-skip-link" href="#staff-main">Skip to main content</a>
+  <div class="app-shell admin-shell" data-staff-shell>
+    
+    <div class="app-panel admin-panel">
+      <header class="app-topbar admin-topbar">
+                  <a class="app-topbar-brand" href="http://127.0.0.1:8766/before/views/staff/dashboard.php" aria-label="Smart QMS Staff home">
+            <span class="app-topbar-brand-mark" aria-hidden="true"><img src="http://127.0.0.1:8766/before/assets/images/brand/smartqms-mark.svg?v=1787409080" alt="" width="32" height="32"></span>
+            <span>Smart QMS</span>
+          </a>
+        
+        
+        <div class="app-topbar-actions admin-topbar-actions">
+          
+          
+                      <div class="dropdown app-staff-tools">
+              <button class="btn btn-outline-primary staff-tools-trigger" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i data-lucide="wrench" aria-hidden="true"></i><span>Tools</span><i data-lucide="chevron-down" aria-hidden="true"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end staff-tools-menu">
+                <li><a class="dropdown-item" href="http://127.0.0.1:8766/before/staff/check-in/"><i data-lucide="scan-line" aria-hidden="true"></i>Arrival Check-In</a></li>
+                <li><a class="dropdown-item" href="http://127.0.0.1:8766/before/staff/batch-printing/"><i data-lucide="printer" aria-hidden="true"></i>Batch Printing</a></li>
+                <li><a class="dropdown-item" href="http://127.0.0.1:8766/before/public-display/" target="_blank" rel="noopener"><i data-lucide="presentation" aria-hidden="true"></i>Public Display</a></li>
+              </ul>
+            </div>
+          
+          <div class="app-user-menu admin-user-menu" data-app-user-menu>
+            <button class="app-user-button admin-user-button" type="button" data-app-user-menu-toggle aria-expanded="false"
+                    aria-controls="app-user-menu-panel" aria-label="Open profile menu for Demo Operator">
+              <span class="app-user-avatar admin-user-avatar" aria-hidden="true">D</span>
+              <span class="app-user-copy admin-user-copy"><strong>Demo Operator</strong><small>Staff</small></span>
+              <i data-lucide="chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="app-user-dropdown admin-user-dropdown" id="app-user-menu-panel" data-app-user-menu-panel hidden>
+              <div class="app-user-dropdown-head admin-user-dropdown-head">
+                <span class="app-user-avatar admin-user-avatar" aria-hidden="true">D</span>
+                <div><strong>Demo Operator</strong><small>Staff</small></div>
+              </div>
+              <div class="app-user-theme-switch admin-user-theme-switch form-check form-switch">
+                <label class="form-check-label" for="app-theme-switch">
+                  <i data-app-theme-icon data-lucide="moon" aria-hidden="true"></i>
+                  <span data-app-theme-label>Dark mode</span>
+                </label>
+                <input class="form-check-input" type="checkbox" role="switch" id="app-theme-switch"
+                       data-app-theme-toggle aria-label="Dark mode">
+              </div>
+                            <button class="app-user-menu-item admin-user-menu-item is-danger" type="button"
+                      data-bs-toggle="modal" data-bs-target="#appLogoutModal" aria-controls="appLogoutModal">
+                <i data-lucide="log-out" aria-hidden="true"></i><span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main id="staff-main" class="app-main admin-main staff-main" tabindex="-1">
+                  <section class="app-page-header admin-page-header">
+            <h1>Queue Management</h1>
+            <p>Manage your counter and the next client in line.</p>          </section>
+          <p class="staff-page-kicker">Staff Operations</p>
+
+  
+  <div class="staff-dashboard">
+    <section class="staff-counter-band admin-card" aria-label="Assigned service counter">
+      <details class="staff-counter-switcher">
+        <summary>
+          <span class="staff-counter-icon"><i data-lucide="building-2" aria-hidden="true"></i></span>
+          <span class="staff-counter-copy">
+            <strong>Counter 01</strong>
+            <span>Assigned service counter</span>
+          </span>
+          <i class="staff-counter-chevron" data-lucide="chevron-down" aria-hidden="true"></i>
+        </summary>
+        <div class="staff-counter-menu">
+          <p>Counter status</p>
+          <div class="staff-status-segment" role="group" aria-label="Window status">
+                          <button class="staff-status-option" type="button" data-review-action
+                      data-provider-action="setCounterStatus" data-status="open"
+                      data-action-url="http://127.0.0.1:8766/before/modules/service_window/window_status.php"
+                      data-action-success="Counter 01 is now open."
+                      data-loading-text="Updating..." aria-pressed="false">
+                <i data-lucide="circle" aria-hidden="true"></i><span>Open</span>
+              </button>
+                          <button class="staff-status-option is-active" type="button" data-review-action
+                      data-provider-action="setCounterStatus" data-status="busy"
+                      data-action-url="http://127.0.0.1:8766/before/modules/service_window/window_status.php"
+                      data-action-success="Counter 01 is now busy."
+                      data-loading-text="Updating..." aria-pressed="true">
+                <i data-lucide="circle" aria-hidden="true"></i><span>Busy</span>
+              </button>
+                          <button class="staff-status-option" type="button" data-review-action
+                      data-provider-action="setCounterStatus" data-status="closed"
+                      data-action-url="http://127.0.0.1:8766/before/modules/service_window/window_status.php"
+                      data-action-success="Counter 01 is now closed."
+                      data-loading-text="Updating..." aria-pressed="false">
+                <i data-lucide="circle" aria-hidden="true"></i><span>Closed</span>
+              </button>
+                      </div>
+          <a class="staff-change-counter" href="http://127.0.0.1:8766/before/staff/select-counter/?change=1">
+            <i data-lucide="arrow-left-right" aria-hidden="true"></i><span>Change counter</span>
+          </a>
+        </div>
+      </details>
+
+      <div class="staff-counter-state" data-state="busy">
+        <span aria-hidden="true"></span><strong>Busy / Serving</strong>
+      </div>
+    </section>
+
+    <section class="staff-kpi-grid admin-kpi-grid" aria-label="Queue summary">
+              <article class="staff-kpi-card admin-kpi-card" data-tone="neutral">
+          <div class="staff-kpi-copy">
+            <span>Completed Today</span>
+            <strong>18</strong>
+          </div>
+          <span class="staff-kpi-icon"><i data-lucide="circle-check-big" aria-hidden="true"></i></span>
+        </article>
+              <article class="staff-kpi-card admin-kpi-card" data-tone="live">
+          <div class="staff-kpi-copy">
+            <span>Currently Serving</span>
+            <strong>01</strong>
+          </div>
+          <span class="staff-kpi-icon"><i data-lucide="radio" aria-hidden="true"></i></span>
+        </article>
+              <article class="staff-kpi-card admin-kpi-card" data-tone="warning">
+          <div class="staff-kpi-copy">
+            <span>Waiting in Queue</span>
+            <strong>05</strong>
+          </div>
+          <span class="staff-kpi-icon"><i data-lucide="hourglass" aria-hidden="true"></i></span>
+        </article>
+              <article class="staff-kpi-card admin-kpi-card" data-tone="danger">
+          <div class="staff-kpi-copy">
+            <span>Voided / Skipped</span>
+            <strong>02</strong>
+          </div>
+          <span class="staff-kpi-icon"><i data-lucide="circle-slash-2" aria-hidden="true"></i></span>
+        </article>
+          </section>
+
+    <section class="staff-ops-panel staff-current-panel admin-card admin-table-card" aria-labelledby="currently-serving-title">
+      <header class="staff-ops-heading admin-card-header">
+        <div><i data-lucide="volume-2" aria-hidden="true"></i><h2 id="currently-serving-title">Now Serving / Calling</h2></div>
+      </header>
+
+      <div class="staff-table-wrap table-responsive" role="region" aria-label="Current ticket; scroll horizontally to view all columns" tabindex="0">
+          <table class="staff-upcoming-table staff-current-table admin-data-table">
+          <thead><tr><th>Queue #</th><th>Service</th><th>Type</th><th>Arrived</th><th>Called</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+          <tbody>
+                          <tr>
+                <td><strong class="staff-current-number">A-024</strong></td>
+                <td>General Consultation</td>
+                <td><span class="staff-booking-badge">Walk in</span></td>
+                <td>9:20 AM</td>
+                <td>9:32 AM</td>
+                <td>
+                  <span class="staff-current-status"><i data-lucide="refresh-cw" aria-hidden="true"></i>Calling</span>
+                                      <small class="staff-inline-timer" data-void-timer><strong data-void-countdown
+                      data-remaining-seconds="120"
+                      data-void-url="http://127.0.0.1:8766/before/modules/queue/void_checker.php">00:00</strong> remaining</small>
+                                  </td>
+                <td>
+                  <div class="staff-row-actions" aria-label="Actions for A-024">
+                                          <button class="staff-table-action" type="button" data-review-action
+                              data-action-url="http://127.0.0.1:8766/before/modules/service_window/recall_ticket.php" data-ticket-id="1"
+                              data-action-success="Ticket A-024 was recalled."
+                              data-loading-text="Recalling..." aria-label="Recall A-024" title="Recall ticket">
+                        <i data-lucide="refresh-cw" aria-hidden="true"></i>
+                      </button>
+                      <button class="staff-table-action is-primary" type="button" data-review-action
+                              data-action-url="http://127.0.0.1:8766/before/modules/service_window/start_service.php" data-ticket-id="1"
+                              data-action-success="Service started for ticket A-024."
+                              data-loading-text="Starting..." aria-label="Start service for A-024" title="Start service">
+                        <i data-lucide="play" aria-hidden="true"></i>
+                      </button>
+                      <button class="staff-table-action" type="button" data-review-action data-provider-action="skipTicket"
+                              data-action-url="http://127.0.0.1:8766/before/modules/service_window/skip_ticket.php" data-ticket-id="1"
+                              data-action-success="Ticket A-024 was skipped."
+                              data-staff-confirm data-staff-confirm-title="Skip ticket A-024?"
+                              data-staff-confirm-message="This records the client as a no-show and returns your service window to open."
+                              data-staff-confirm-label="Skip ticket" data-staff-confirm-tone="warning" data-loading-text="Skipping..."
+                              aria-label="Skip A-024" title="Skip ticket">
+                        <i data-lucide="skip-forward" aria-hidden="true"></i>
+                      </button>
+                      <button class="staff-table-action is-danger" type="button" data-review-action data-provider-action="voidTicket"
+                              data-action-url="http://127.0.0.1:8766/before/modules/service_window/void_ticket.php" data-ticket-id="1"
+                              data-action-success="Ticket A-024 was voided."
+                              data-staff-confirm data-staff-confirm-title="Void ticket A-024?"
+                              data-staff-confirm-message="The ticket will be voided immediately, the client will be notified, and your service window will return to open."
+                              data-staff-confirm-label="Void ticket" data-staff-confirm-tone="danger" data-loading-text="Voiding..."
+                              aria-label="Void A-024" title="Void ticket">
+                        <i data-lucide="ban" aria-hidden="true"></i>
+                      </button>
+                                      </div>
+                </td>
+              </tr>
+                      </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="staff-ops-panel staff-waiting-panel admin-card admin-table-card" aria-labelledby="upcoming-queue-title">
+      <header class="staff-ops-heading admin-card-header">
+        <div><i data-lucide="users-round" aria-hidden="true"></i><h2 id="upcoming-queue-title">Active Waiting Queue</h2></div>
+        <button class="btn btn-primary staff-call-next" id="call-next" type="button" data-review-action
+                data-provider-action="callNextTicket" data-action-url="http://127.0.0.1:8766/before/modules/service_window/call_next.php"
+                data-action-success="The next ticket was called successfully." data-loading-text="Calling next..."
+                disabled>
+          <i data-lucide="bell-ring" aria-hidden="true"></i>
+          Call Next (A-025)        </button>
+      </header>
+
+              <div class="staff-table-wrap table-responsive" role="region" aria-label="Strict FIFO queue; scroll horizontally to view all columns" tabindex="0">
+          <table class="staff-upcoming-table staff-fifo-table admin-data-table">
+            <thead><tr><th>Pos</th><th>Queue #</th><th>Service</th><th>Booking Type</th><th>Arrived Time</th><th class="text-end">Action</th></tr></thead>
+            <tbody>
+                                              <tr>
+                  <td><span class="staff-queue-position">1</span></td>
+                  <td><strong>A-025</strong></td>
+                  <td>General Consultation</td>
+                  <td><span class="staff-booking-badge is-online">Online</span></td>
+                  <td><time datetime="2026-09-07T09:20:00+08:00">9:20 AM</time></td>
+                  <td class="text-end">
+                                          <button class="btn btn-outline-secondary btn-sm staff-row-call" type="button" disabled
+                              title="The counter must be open and idle.">Call</button>
+                                      </td>
+                </tr>
+                                              <tr>
+                  <td><span class="staff-queue-position">2</span></td>
+                  <td><strong>A-026</strong></td>
+                  <td>General Consultation</td>
+                  <td><span class="staff-booking-badge">Walk in</span></td>
+                  <td><time datetime="2026-09-07T09:21:00+08:00">9:21 AM</time></td>
+                  <td class="text-end">
+                                          <button class="btn btn-outline-secondary btn-sm staff-row-call" type="button" disabled
+                              title="Strict FIFO: the previous ticket must be called first.">Call</button>
+                                      </td>
+                </tr>
+                                              <tr>
+                  <td><span class="staff-queue-position">3</span></td>
+                  <td><strong>A-027</strong></td>
+                  <td>General Consultation</td>
+                  <td><span class="staff-booking-badge is-online">Online</span></td>
+                  <td><time datetime="2026-09-07T09:22:00+08:00">9:22 AM</time></td>
+                  <td class="text-end">
+                                          <button class="btn btn-outline-secondary btn-sm staff-row-call" type="button" disabled
+                              title="Strict FIFO: the previous ticket must be called first.">Call</button>
+                                      </td>
+                </tr>
+                                              <tr>
+                  <td><span class="staff-queue-position">4</span></td>
+                  <td><strong>A-028</strong></td>
+                  <td>General Consultation</td>
+                  <td><span class="staff-booking-badge">Walk in</span></td>
+                  <td><time datetime="2026-09-07T09:23:00+08:00">9:23 AM</time></td>
+                  <td class="text-end">
+                                          <button class="btn btn-outline-secondary btn-sm staff-row-call" type="button" disabled
+                              title="Strict FIFO: the previous ticket must be called first.">Call</button>
+                                      </td>
+                </tr>
+                                              <tr>
+                  <td><span class="staff-queue-position">5</span></td>
+                  <td><strong>A-029</strong></td>
+                  <td>General Consultation</td>
+                  <td><span class="staff-booking-badge is-online">Online</span></td>
+                  <td><time datetime="2026-09-07T09:24:00+08:00">9:24 AM</time></td>
+                  <td class="text-end">
+                                          <button class="btn btn-outline-secondary btn-sm staff-row-call" type="button" disabled
+                              title="Strict FIFO: the previous ticket must be called first.">Call</button>
+                                      </td>
+                </tr>
+                          </tbody>
+          </table>
+        </div>
+        <footer class="staff-panel-footer">
+          <span><i data-lucide="info" aria-hidden="true"></i> Only the first eligible ticket can be called.</span>
+        </footer>
+          </section>
+  </div>
+
+      </main>
+    </div>
+  </div>
+  
+  <div class="toast-container app-toast-container position-fixed top-0 end-0 p-3" aria-live="polite" aria-atomic="true">
+              <div class="toast app-action-toast staff-action-toast is-info" role="status" aria-live="polite"
+           aria-atomic="true" data-staff-status-toast data-bs-autohide="true" data-bs-delay="5000">
+        <div class="toast-body">
+          <i data-lucide="info" data-staff-status-icon aria-hidden="true"></i>
+          <span data-staff-status-message></span>
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="toast"
+                  data-staff-status-clear aria-label="Dismiss notification"></button>
+        </div>
+      </div>
+      </div>
+
+  <div class="modal fade app-logout-modal admin-logout-bootstrap-modal" id="appLogoutModal" tabindex="-1"
+       aria-labelledby="app-logout-title" aria-describedby="app-logout-description" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content js-validated-form" action="http://127.0.0.1:8766/before/modules/auth/logout.php" method="POST">
+        <input type="hidden" name="csrf_token" value="review-only">        <div class="modal-header">
+          <h2 class="modal-title fs-5" id="app-logout-title">Log out of staff workspace?</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close logout confirmation"></button>
+        </div>
+        <div class="modal-body"><p id="app-logout-description">You will need to sign in again before managing your service window.</p></div>
+        <div class="modal-footer">
+          <button class="btn admin-action-button" type="button" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn admin-action-button is-danger" type="submit" data-loading-text="Logging out...">Log out</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+      <div class="modal fade app-confirm-modal" id="staffActionConfirmationModal" tabindex="-1"
+         aria-labelledby="staff-action-confirm-title" aria-describedby="staff-action-confirm-message"
+         aria-hidden="true" data-staff-confirm-modal>
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="staff-action-confirm-title" data-staff-confirm-modal-title>Confirm ticket action</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close confirmation"></button>
+          </div>
+          <div class="modal-body">
+            <p id="staff-action-confirm-message" data-staff-confirm-modal-message></p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn admin-action-button" type="button" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn admin-action-button is-danger" type="button" data-staff-confirm-modal-submit>
+              <span data-staff-confirm-modal-submit-label>Confirm</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+  
+  
+    
+  
+  
+  
+      
+      
+      
+      
+  <script src="assets/vendor/bootstrap/bootstrap.bundle.min.js"></script><script src="assets/vendor/lucide/lucide.min.js"></script><script src="assets/vendor/chart.js/chart.umd.min.js"></script><script src="assets/js/theme.js"></script><script src="assets/js/language.js"></script><script src="assets/js/main.js"></script><script src="assets/js/shell.js"></script><script src="assets/js/admin.js"></script><script src="../review.js"></script></body>
+</html>

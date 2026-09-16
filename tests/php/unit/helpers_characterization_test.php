@@ -1,5 +1,11 @@
 <?php
 
+testCase('queue transaction state helper is available from the normal application bootstrap', function (): void {
+    assertTrueValue(function_exists('queueConnectionHasActiveTransaction'));
+    $helpers = (string) file_get_contents(SMARTQMS_ROOT . '/config/helpers.php');
+    assertStringContains("modules/shared/database.php", $helpers);
+});
+
 testCase('phone normalization strips non-digits', function (): void {
     assertSameValue('6309171234567', normalizePhone('+63 (0) 917-123-4567'));
 });

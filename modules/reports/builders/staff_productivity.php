@@ -16,7 +16,10 @@ function buildStaffProductivityReport(mysqli $conn, array $range): array {
         LEFT JOIN service_windows sw ON sw.staff_id = s.staff_id
         LEFT JOIN wait_time_logs wl ON wl.staff_id = s.staff_id
         LEFT JOIN queue_tickets qt ON qt.ticket_id = wl.ticket_id
+             AND qt.status = 'completed'
+             AND qt.lifecycle_status = 'completed'
              AND qt.completed_at IS NOT NULL
+             AND wl.actual_wait_min IS NOT NULL
              AND DATE(qt.completed_at) BETWEEN ? AND ?
         GROUP BY s.staff_id, staff_name, window_name
         ORDER BY tickets_served DESC, staff_name

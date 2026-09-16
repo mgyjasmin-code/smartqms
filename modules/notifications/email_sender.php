@@ -11,18 +11,27 @@ if (is_file($autoload)) {
 }
 
 $localEmailConfig = __DIR__ . '/../../config/email.local.php';
-if (is_file($localEmailConfig)) {
+if (APP_ENV !== 'production' && is_file($localEmailConfig)) {
     require_once $localEmailConfig;
 }
 
-defined('EMAIL_DELIVERY_MODE') || define('EMAIL_DELIVERY_MODE', 'log');
-defined('EMAIL_SMTP_HOST') || define('EMAIL_SMTP_HOST', 'smtp.gmail.com');
-defined('EMAIL_SMTP_PORT') || define('EMAIL_SMTP_PORT', 587);
-defined('EMAIL_SMTP_SECURE') || define('EMAIL_SMTP_SECURE', 'tls');
-defined('EMAIL_SMTP_USERNAME') || define('EMAIL_SMTP_USERNAME', '');
-defined('EMAIL_SMTP_PASSWORD') || define('EMAIL_SMTP_PASSWORD', '');
-defined('EMAIL_FROM') || define('EMAIL_FROM', 'no-reply@smartqms.local');
-defined('EMAIL_FROM_NAME') || define('EMAIL_FROM_NAME', 'SmartQMS');
+function smartqmsEmailEnvironmentValue(string $key, string $fallback): string {
+    $value = getenv($key);
+    return $value === false ? $fallback : trim((string) $value);
+}
+
+defined('EMAIL_DELIVERY_MODE') || define('EMAIL_DELIVERY_MODE', smartqmsEmailEnvironmentValue('EMAIL_DELIVERY_MODE', 'log'));
+defined('EMAIL_SMTP_HOST') || define('EMAIL_SMTP_HOST', smartqmsEmailEnvironmentValue('EMAIL_SMTP_HOST', 'smtp.gmail.com'));
+defined('EMAIL_SMTP_PORT') || define('EMAIL_SMTP_PORT', (int) smartqmsEmailEnvironmentValue('EMAIL_SMTP_PORT', '587'));
+defined('EMAIL_SMTP_SECURE') || define('EMAIL_SMTP_SECURE', smartqmsEmailEnvironmentValue('EMAIL_SMTP_SECURE', 'tls'));
+defined('EMAIL_SMTP_USERNAME') || define('EMAIL_SMTP_USERNAME', smartqmsEmailEnvironmentValue('EMAIL_SMTP_USERNAME', ''));
+defined('EMAIL_SMTP_PASSWORD') || define('EMAIL_SMTP_PASSWORD', smartqmsEmailEnvironmentValue('EMAIL_SMTP_PASSWORD', ''));
+defined('EMAIL_FROM') || define('EMAIL_FROM', smartqmsEmailEnvironmentValue('EMAIL_FROM', 'no-reply@smartqms.local'));
+defined('EMAIL_FROM_NAME') || define('EMAIL_FROM_NAME', smartqmsEmailEnvironmentValue('EMAIL_FROM_NAME', 'SmartQMS'));
+
+if (APP_ENV === 'production' && EMAIL_DELIVERY_MODE !== 'smtp') {
+    throw new RuntimeException('Production requires EMAIL_DELIVERY_MODE=smtp.');
+}
 
 function emailOutboxPath(): string {
     $dir = defined('LOG_DIR') ? LOG_DIR : __DIR__ . '/../../storage/logs';

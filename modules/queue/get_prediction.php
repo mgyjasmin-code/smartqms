@@ -13,13 +13,16 @@ if (!isLoggedIn()) {
 }
 
 $features = [];
+$metadataSelect = smartqmsTableHasColumn($conn, 'wait_time_logs', 'prediction_confidence')
+    ? ', wl.prediction_confidence, wl.model_version'
+    : ", NULL AS prediction_confidence, NULL AS model_version";
 
 $ticketId = (int) requestValue('ticket_id', 0);
 if ($ticketId > 0) {
     $stmt = $conn->prepare("
         SELECT wl.queue_length, wl.hour_of_day, wl.day_of_week, wl.service_type_encoded,
                wl.client_type_encoded, wl.active_windows, wl.avg_service_time,
-               wl.predicted_wait_min, qt.user_id, qt.window_id
+               wl.predicted_wait_min{$metadataSelect}, qt.user_id, qt.window_id
         FROM wait_time_logs wl
         JOIN queue_tickets qt ON qt.ticket_id = wl.ticket_id
         WHERE wl.ticket_id=?
@@ -49,7 +52,12 @@ if ($ticketId > 0) {
     }
 
     if ($row && $row['predicted_wait_min'] !== null) {
-        jsonResponse(true, ['predicted_wait_minutes' => (float) $row['predicted_wait_min']]);
+        jsonResponse(true, [
+            'estimated_wait_minutes' => (float) $row['predicted_wait_min'],
+            'predicted_wait_minutes' => (float) $row['predicted_wait_min'],
+            'confidence' => $row['prediction_confidence'] !== null ? (float) $row['prediction_confidence'] : null,
+            'model_version' => $row['model_version'] ?: 'legacy-unversioned',
+        ]);
     }
     if ($row) {
         $features = $row;
@@ -69,14 +77,17 @@ if ($serviceId > 0) {
     $prediction = $fallback;
     $source = 'fallback';
 
-    $mlPrediction = requestMlWaitEstimate($features);
-    if ($mlPrediction !== null) {
-        $prediction = $mlPrediction;
+    $mlResult = requestMlPrediction($features);
+    if ($mlResult !== null) {
+        $prediction = (float) $mlResult['estimated_wait_minutes'];
         $source = 'ml';
     }
 
     jsonResponse(true, [
         'predicted_wait_minutes' => $prediction,
+        'estimated_wait_minutes' => $prediction,
+        'confidence' => $mlResult['confidence'] ?? null,
+        'model_version' => $mlResult['model_version'] ?? 'fallback-v1',
         'queue_length' => (int) $snapshot['queue_length'],
         'active_windows' => (int) $snapshot['active_windows'],
         'avg_service_time' => (float) $snapshot['avg_service_time'],
@@ -95,10 +106,22 @@ $activeWindows = (int) ($features['active_windows'] ?? 1);
 $avgServiceTime = (float) ($features['avg_service_time'] ?? 5);
 $fallback = fallbackWaitEstimate($queueLength, $activeWindows, $avgServiceTime);
 
-$mlPrediction = requestMlWaitEstimate($features);
-if ($mlPrediction !== null) {
-    jsonResponse(true, ['predicted_wait_minutes' => $mlPrediction, 'source' => 'ml']);
+$mlResult = requestMlPrediction($features);
+if ($mlResult !== null) {
+    jsonResponse(true, [
+        'predicted_wait_minutes' => (float) $mlResult['estimated_wait_minutes'],
+        'estimated_wait_minutes' => (float) $mlResult['estimated_wait_minutes'],
+        'confidence' => (float) $mlResult['confidence'],
+        'model_version' => (string) $mlResult['model_version'],
+        'source' => 'ml',
+    ]);
 }
 
-jsonResponse(true, ['predicted_wait_minutes' => $fallback, 'source' => 'fallback']);
+jsonResponse(true, [
+    'predicted_wait_minutes' => $fallback,
+    'estimated_wait_minutes' => $fallback,
+    'confidence' => null,
+    'model_version' => 'fallback-v1',
+    'source' => 'fallback',
+]);
 ?>

@@ -79,6 +79,14 @@ function runConcurrentIssuance(array $requests): array {
             foreach ($processes as $worker) {
                 if (!is_file($worker['ready'])) {
                     $allReady = false;
+                    $status = proc_get_status($worker['process']);
+                    if (!$status['running']) {
+                        $stderr = trim(stream_get_contents($worker['stderr']));
+                        throw new RuntimeException(
+                            'Concurrency worker exited before the barrier'
+                            . ($stderr !== '' ? ': ' . $stderr : '.')
+                        );
+                    }
                     break;
                 }
             }

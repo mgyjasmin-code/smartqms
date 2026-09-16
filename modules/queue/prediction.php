@@ -16,38 +16,36 @@ function queuePredictionSnapshot(mysqli $conn, int $serviceId, string $clientTyp
 
     $priorityLevel = queuePriorityLevelForClientType($clientType);
 
-    $countStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM queue_tickets WHERE status = 'waiting' AND service_id = ?");
-    $countStmt->bind_param('i', $serviceId);
-    $countStmt->execute();
-    $queueLength = (int) ($countStmt->get_result()->fetch_assoc()['cnt'] ?? 0);
+    $queueLength = queueLengthForService($conn, $service);
+    $activeWindows = countApplicableActiveWindows($conn, $service);
 
-    $winStmt = $conn->prepare("
-        SELECT COUNT(*) AS cnt
-        FROM service_windows
-        WHERE is_active = 1
-          AND status IN ('open','busy')
-          AND (service_id = ? OR service_id IS NULL)
-    ");
-    $winStmt->bind_param('i', $serviceId);
-    $winStmt->execute();
-    $activeWindows = max(1, (int) ($winStmt->get_result()->fetch_assoc()['cnt'] ?? 1));
-
-    $avgStmt = $conn->prepare("
+    $queueMode = normalizeQueueMode((string) ($service['queue_mode'] ?? 'central'));
+    $avgSql = "
         SELECT AVG(recent.actual_service_dur) / 60 AS avg_min
         FROM (
             SELECT wl.actual_service_dur
             FROM wait_time_logs wl
             JOIN queue_tickets qt ON qt.ticket_id = wl.ticket_id
-            WHERE qt.service_id = ? AND wl.actual_service_dur IS NOT NULL
+            WHERE qt.queue_mode = ?
+              AND (? = 'central' OR qt.service_id = ?)
+              AND wl.actual_service_dur IS NOT NULL
             ORDER BY wl.logged_at DESC
             LIMIT 20
         ) recent
-    ");
-    $avgStmt->bind_param('i', $serviceId);
+    ";
+    $avgStmt = $conn->prepare($avgSql);
+    $avgStmt->bind_param('ssi', $queueMode, $queueMode, $serviceId);
     $avgStmt->execute();
-    $avgServiceTime = (float) ($avgStmt->get_result()->fetch_assoc()['avg_min'] ?? 5);
+    // Buffer the prepared result before issuing the schema-compatibility query
+    // on the same mysqli connection. This is required by unbuffered drivers and
+    // avoids "Commands out of sync" during concurrent ticket issuance.
+    $avgRow = $avgStmt->get_result()->fetch_assoc();
+    $defaultServiceMinutes = smartqmsTableHasColumn($conn, 'health_services', 'fallback_duration_mins')
+        ? max(1.0, (float) ($service['fallback_duration_mins'] ?? 15))
+        : 5.0;
+    $avgServiceTime = (float) ($avgRow['avg_min'] ?? $defaultServiceMinutes);
     if ($avgServiceTime <= 0) {
-        $avgServiceTime = 5.0;
+        $avgServiceTime = $defaultServiceMinutes;
     }
 
     $features = [
@@ -62,6 +60,7 @@ function queuePredictionSnapshot(mysqli $conn, int $serviceId, string $clientTyp
 
     return [
         'service' => $service,
+        'availability' => serviceJoinAvailability($conn, $service),
         'features' => $features,
         'queue_length' => $queueLength,
         'active_windows' => $activeWindows,
@@ -93,7 +92,7 @@ function fallbackWaitEstimate(int $queueLength, int $activeWindows, float $avgSe
  * depend on that optional process. Any malformed or unreasonable response is
  * treated exactly like an unavailable service.
  */
-function requestMlWaitEstimate(array $features, int $timeoutSeconds = 2): ?float {
+function requestMlPrediction(array $features, int $timeoutSeconds = 2): ?array {
     if (!function_exists('curl_init')) {
         return null;
     }
@@ -103,29 +102,42 @@ function requestMlWaitEstimate(array $features, int $timeoutSeconds = 2): ?float
         return null;
     }
 
-    $ch = curl_init(ML_API_URL);
+    $config = function_exists('smartqmsMlConfig') ? smartqmsMlConfig() : [];
+    $url = (string) ($config['predict_url'] ?? (defined('ML_API_URL') ? ML_API_URL : ''));
+    if ($url === '') {
+        return null;
+    }
+    $headers = ['Content-Type: application/json'];
+    $token = trim((string) ($config['token'] ?? ''));
+    if ($token !== '') {
+        $headers[] = 'Authorization: Bearer ' . $token;
+    }
+
+    $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_POST => true,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_CONNECTTIMEOUT => 1,
-        CURLOPT_TIMEOUT => max(1, min(2, $timeoutSeconds)),
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_TIMEOUT => max(1, min(5, $timeoutSeconds)),
+        CURLOPT_HTTPHEADER => $headers,
         CURLOPT_POSTFIELDS => $payload,
     ]);
     $response = curl_exec($ch);
     $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    return parseMlWaitEstimate($response, $httpCode);
+    return parseMlPrediction($response, $httpCode);
 }
 
-function parseMlWaitEstimate(mixed $response, int $httpCode): ?float {
+function parseMlPrediction(mixed $response, int $httpCode): ?array {
     if (!is_string($response) || $httpCode !== 200) {
         return null;
     }
 
     $decoded = json_decode($response, true);
-    $prediction = $decoded['predicted_wait_minutes'] ?? null;
+    $prediction = $decoded['estimated_wait_minutes']
+        ?? $decoded['predicted_wait_minutes']
+        ?? null;
     if (!is_numeric($prediction)) {
         return null;
     }
@@ -135,5 +147,43 @@ function parseMlWaitEstimate(mixed $response, int $httpCode): ?float {
         return null;
     }
 
-    return round($minutes, 2);
+    $confidence = $decoded['confidence'] ?? null;
+    if (!is_numeric($confidence) || !is_finite((float) $confidence)) {
+        return null;
+    }
+    $confidence = (float) $confidence;
+    if ($confidence < 0 || $confidence > 1) {
+        return null;
+    }
+
+    $modelVersion = trim((string) ($decoded['model_version'] ?? ''));
+    if ($modelVersion === '' || strlen($modelVersion) > 100) {
+        return null;
+    }
+
+    return [
+        'estimated_wait_minutes' => round($minutes, 2),
+        'confidence' => round($confidence, 5),
+        'model_version' => $modelVersion,
+    ];
+}
+
+function requestMlWaitEstimate(array $features, int $timeoutSeconds = 2): ?float {
+    $prediction = requestMlPrediction($features, $timeoutSeconds);
+    return $prediction === null ? null : (float) $prediction['estimated_wait_minutes'];
+}
+
+function parseMlWaitEstimate(mixed $response, int $httpCode): ?float {
+    if (!is_string($response) || $httpCode !== 200) {
+        return null;
+    }
+    $decoded = json_decode($response, true);
+    $value = $decoded['predicted_wait_minutes'] ?? null;
+    if (!is_numeric($value)) {
+        return null;
+    }
+    $minutes = (float) $value;
+    return is_finite($minutes) && $minutes >= 0 && $minutes <= 480
+        ? round($minutes, 2)
+        : null;
 }

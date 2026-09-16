@@ -1,0 +1,314 @@
+[
+  {
+    "path": "assets\\css\\admin.css",
+    "sha256": "445A73E16C07E7F137850DA2CE04ED957F189FEDA167DA1707CC3100AF4D5A67"
+  },
+  {
+    "path": "assets\\css\\display.css",
+    "sha256": "45E8224E8029E02BB6B25E0F4295C62B78DC43C04F22F9F80C8880F7C0F1BCDD"
+  },
+  {
+    "path": "assets\\css\\style.css",
+    "sha256": "21B96FE168B6D9CA949B95DF62C77089EEACF6B8C19025C5BDAACC0971DA574E"
+  },
+  {
+    "path": "assets\\js\\admin.js",
+    "sha256": "DC0AF47190450E54E1CB991CF5ACABBA05854EBF051F5155CF9F7407CF813D97"
+  },
+  {
+    "path": "assets\\js\\client.js",
+    "sha256": "BCF084CD9EA2600B6ED248E80B8D7BE37D4C895A5B12791F730CC6C95717E9A0"
+  },
+  {
+    "path": "assets\\js\\display.js",
+    "sha256": "0FE2B45C1857A69B887DAEED36DA1B47D1ADD6DFC23E9FBC55101CCD9641002C"
+  },
+  {
+    "path": "assets\\js\\language.js",
+    "sha256": "04390159769A970774A08E8EE57EAF613095DF95C7F81B578D93F2E47724D282"
+  },
+  {
+    "path": "assets\\js\\main.js",
+    "sha256": "B744AA52DBCC7F824B0ABB7F0ADC2612E354D2DD82FB68AB346C48EE04B3A28F"
+  },
+  {
+    "path": "assets\\js\\public_booking.js",
+    "sha256": "1226EB77B8C069A62954971F50F2A25664411DF987F3E97C32F22E5570DC8B19"
+  },
+  {
+    "path": "assets\\js\\public_datepicker.js",
+    "sha256": "D3F65DA77AD6EDCC131E89E66372ED88AA6780B4276505E11AE7E79F4DCACEC3"
+  },
+  {
+    "path": "assets\\js\\public_display.js",
+    "sha256": "5B7E53BC8C781627E089837CA211B2FC11A68ADB141062694F94EF5FE4C97A34"
+  },
+  {
+    "path": "assets\\js\\public_queue.js",
+    "sha256": "DD2D974B0E6B275833A97DE7AF087CF7C2D92D366E201811519F54B3096F0319"
+  },
+  {
+    "path": "assets\\js\\shell.js",
+    "sha256": "FC6DB008F317BA65C29B4B63CC65C1297F8DECA0E2F60EA346763B1BCBD5E7B2"
+  },
+  {
+    "path": "assets\\js\\staff_arrival_scanner.js",
+    "sha256": "64FED8A433183B06C066D7D49BC92534F56AAA49F79750945A3E6176BB244DD8"
+  },
+  {
+    "path": "assets\\js\\staff.js",
+    "sha256": "AA9CB0F4B8A78195348A8081CEFFB6A40512772D26F048E386F1647CAC957F57"
+  },
+  {
+    "path": "assets\\js\\theme.js",
+    "sha256": "3DF9214E95CE92A470621F1A98EAFFD01A9E3972E4C32947A8D41E2C96095ACE"
+  },
+  {
+    "path": "assets\\js\\client\\services\\auth.js",
+    "sha256": "9B67A9BA46BE40C51172B874E5ADED2CA2A90FAC08EA635416AE01B331CFB4B3"
+  },
+  {
+    "path": "assets\\js\\client\\services\\branches.js",
+    "sha256": "D646F4BE98284C63E20D5A88D29D3AF5D041CD65AC5E14241115D6A7F78BB481"
+  },
+  {
+    "path": "assets\\js\\client\\services\\permissions.js",
+    "sha256": "F9303D7DB6703DC829C655A0F5B157A1BBBA8A4E439BBEB1C079C9C8877B6E3E"
+  },
+  {
+    "path": "assets\\js\\client\\services\\queue.js",
+    "sha256": "8ED983BAEF015D27146D4B86D121F54E8AF947A9D69269732C89C1A98066F4CA"
+  },
+  {
+    "path": "assets\\js\\client\\services\\realtime.js",
+    "sha256": "52867F425AECA960436FE06197805294FF5446A2C1EFA082EA896BD3DE461DBC"
+  },
+  {
+    "path": "assets\\js\\client\\services\\services.js",
+    "sha256": "CA78E10117DF99EF45F19CA6130580115F3084851CA939841AF5D789761E49F0"
+  },
+  {
+    "path": "views\\admin\\add_staff.php",
+    "sha256": "0920A168BA44B1660882A89E51DDB91BC0AAC1AFC8CEB6411E9F0AAE36012AFB"
+  },
+  {
+    "path": "views\\admin\\dashboard.php",
+    "sha256": "833EC8E1640220225B8DD1FBFA57F607879846D12D3D682BFBCB1B0824801831"
+  },
+  {
+    "path": "views\\admin\\ml_logs.php",
+    "sha256": "0A6A2DCC2ED99AAA867F2DBFD88ECD76A2961872B29F6BE1150E73BF1B331B14"
+  },
+  {
+    "path": "views\\admin\\reports.php",
+    "sha256": "AB9A2C391E66D6B9E23D6DADA2DD0D6AFE67CB44DFF94511D65D8BAA6D8EDE70"
+  },
+  {
+    "path": "views\\admin\\services.php",
+    "sha256": "F6505EEBEA08B44CCDE37A6377901D5328A0ADB2AADBE16D7F1F907595E5A06D"
+  },
+  {
+    "path": "views\\admin\\users.php",
+    "sha256": "507018D1771EC05AA4D079D5172CB18F7988FE4333F4004E1C555B15CF3E4745"
+  },
+  {
+    "path": "views\\admin\\windows.php",
+    "sha256": "1E6442FA1878CB9D697BD7E25500E62346304DEE040D08B47A7B4C3CFAC9213F"
+  },
+  {
+    "path": "views\\admin\\includes\\action_toasts.php",
+    "sha256": "2AB5A0D9DE09084A7832F8ADA1742B985875C9CA5A5437AFCCEE739A765FEFC9"
+  },
+  {
+    "path": "views\\admin\\includes\\footer.php",
+    "sha256": "AC3132250E2577BA65769D0AFBCC79CBD0B7C268966600B2C53BB6B998C4D770"
+  },
+  {
+    "path": "views\\admin\\includes\\header.php",
+    "sha256": "43B863D6B54D0B757DFEEE8EF939C2A1BBF013993BA019BE694CCCD40B258B82"
+  },
+  {
+    "path": "views\\admin\\includes\\management_confirmation_modal.php",
+    "sha256": "7D641814A2D9F3930C13E3169DB170FFEC28F1265A8949E6B76E1C4F4A1EF2EC"
+  },
+  {
+    "path": "views\\admin\\includes\\sidebar.php",
+    "sha256": "070009CA13E4443948FDEFBDB3E38A1A7170715E49FD7D18D54212C88CA89E32"
+  },
+  {
+    "path": "views\\client\\feedback.php",
+    "sha256": "82FFFD29A734BCF9466A7E9DC4BBA7563A2CD32A43BDE06CE78D42F97F2B98B8"
+  },
+  {
+    "path": "views\\client\\forgot_password.php",
+    "sha256": "BB1E92B99F90738EF292526DA2F9BB7E13DD61D912C1A200689948FA5FD45F15"
+  },
+  {
+    "path": "views\\client\\index.php",
+    "sha256": "17ECB59FE47D0F8C7BD94C5BCE66609248208CB8EE804C6E73AD0C1B15DE43EA"
+  },
+  {
+    "path": "views\\client\\queue_status.php",
+    "sha256": "17ECB59FE47D0F8C7BD94C5BCE66609248208CB8EE804C6E73AD0C1B15DE43EA"
+  },
+  {
+    "path": "views\\client\\register.php",
+    "sha256": "28DEE9C196BCFBA02F7312CFE8C16334DD5CAD73382452AEABE6A876391D4D9B"
+  },
+  {
+    "path": "views\\client\\ticket_lookup.php",
+    "sha256": "7875031A204A211336A0F29CE2346E8657B7AD2EEABB8173A7ED87EA69F634DA"
+  },
+  {
+    "path": "views\\client\\ticket.php",
+    "sha256": "6F2CBE33E2017E501D7EA0186381697CB82647AD78E4108E4EC17D1819A52FF7"
+  },
+  {
+    "path": "views\\client\\verify_otp.php",
+    "sha256": "17ECB59FE47D0F8C7BD94C5BCE66609248208CB8EE804C6E73AD0C1B15DE43EA"
+  },
+  {
+    "path": "views\\client\\includes\\footer.php",
+    "sha256": "4CD18A5D3B2F2BD956FFD897A357523377FD9B352253338780E43562A0F7AEE5"
+  },
+  {
+    "path": "views\\client\\includes\\header.php",
+    "sha256": "F938049341BD6B65E41A3AE0E9A49470177CB2590B0939452B69F9808CDBE939"
+  },
+  {
+    "path": "views\\display\\board.php",
+    "sha256": "25941A8286112A6B46973FACBC72CFF1C8E63983AAF2A017F4C3DFD078D221AC"
+  },
+  {
+    "path": "views\\public\\tracker.php",
+    "sha256": "A3E10E68934C8FFE209E6E2D7F24ACB207378C8972EC2012652DADD3496784B2"
+  },
+  {
+    "path": "views\\shared\\includes\\language_control.php",
+    "sha256": "941FAD0EFA62D4D1888B46E5CE4EA52FE19AA31EFAD65D181C71DA1D059F7693"
+  },
+  {
+    "path": "views\\shared\\includes\\public_footer.php",
+    "sha256": "0B50DBDFFC78F47C13A9DC21D5FD73E3733EB17B18A1A5D62CCB85EE3204FE60"
+  },
+  {
+    "path": "views\\shared\\includes\\public_header.php",
+    "sha256": "639C60A62B4F66A48909BE5110A6E1B674B47393EC6347C819DB95CF9CCF3431"
+  },
+  {
+    "path": "views\\shared\\includes\\public_theme_toggle.php",
+    "sha256": "CD38755A44267C3CD5BED3E7794525126CA9ABC892F829A04AA500090E4097CE"
+  },
+  {
+    "path": "views\\shared\\includes\\shell_footer.php",
+    "sha256": "45C2ED68B591995F068198CFB0AEEE2F1E06AD56D09216E528794BA01245DCF5"
+  },
+  {
+    "path": "views\\shared\\includes\\shell_header.php",
+    "sha256": "F578265006F0FA42A0BFBE1C4529AA13DDA74FE3282ADD621BCB437AD957A979"
+  },
+  {
+    "path": "views\\shared\\includes\\theme_boot.php",
+    "sha256": "EB9DAB7D2F70B0A5068489B4D6A9D95E7A13B94117067204137780A5EFD439E4"
+  },
+  {
+    "path": "views\\staff\\batch_printing.php",
+    "sha256": "464077B6FAC78EF22184823FA4BBFB88F9E2D2EDAD832BA7D814E7E9E2B4AE1F"
+  },
+  {
+    "path": "views\\staff\\check_in.php",
+    "sha256": "BFEC94FFEDF68A1092D57DC038119FB1B45812DF28DE67559E7C2FEA14ABFA91"
+  },
+  {
+    "path": "views\\staff\\dashboard.php",
+    "sha256": "281E350269375AB282C33309FD06B7CDCFF32E49157B3D7238FD3880CC9AFE18"
+  },
+  {
+    "path": "views\\staff\\select_counter.php",
+    "sha256": "E9CF6BC1F04BBAE3A3250BAFD9822E7C26D565658125D54B45BDCE70C4B3A390"
+  },
+  {
+    "path": "views\\staff\\includes\\context.php",
+    "sha256": "8FDD4C93522B0C8D3F1508EB50240D55FD4158D08D59D8B1BD0382117040A082"
+  },
+  {
+    "path": "views\\staff\\includes\\footer.php",
+    "sha256": "4CD18A5D3B2F2BD956FFD897A357523377FD9B352253338780E43562A0F7AEE5"
+  },
+  {
+    "path": "views\\staff\\includes\\header.php",
+    "sha256": "3E2242449BD81DBF1657EE844AA36CD5AF0E5D2BD46710C940B2D9FE2DAF2CFF"
+  },
+  {
+    "path": "queue\\join\\index.php",
+    "sha256": "02CA2B06C017DF64609A2103FEC4A3C398522D61C6C40F3A80D0B8924FB8DBC9"
+  },
+  {
+    "path": "queue\\ticket\\index.php",
+    "sha256": "CFEDC0FB2968238901566F1A7A82C8F6893250E762C12A5859A0859D45E75F4D"
+  },
+  {
+    "path": "track\\index.php",
+    "sha256": "7217B3CC5593A245C0AC3A2BF0D99970DBA063771120F01450D4E1144AC0E13A"
+  },
+  {
+    "path": "manage-reservation\\index.php",
+    "sha256": "1AF4CF5D58DE6C4EBC4D6C29414BDC2AED54EE5D8746531993CAED3036CF1F40"
+  },
+  {
+    "path": "login\\index.php",
+    "sha256": "8872F6FFB31170E5FEE01F2F8768FE19CD2FCAF2A95C7E0DFD124B7F53253268"
+  },
+  {
+    "path": "forgot-password\\index.php",
+    "sha256": "521724A6DE11F28B78716DD9A0D420990A15AF346583C6C5006C2258663F8A8D"
+  },
+  {
+    "path": "verify-login\\index.php",
+    "sha256": "660985EFF2CD7B792C290EEAD950A31CDA27DFE7BED5E5C353CD80E47C5A2331"
+  },
+  {
+    "path": "change-password\\index.php",
+    "sha256": "0729077E9165E0599BDAE38BB65E62886D2D3936FF00A9F0220C88752CF6E0E3"
+  },
+  {
+    "path": "public-display\\index.php",
+    "sha256": "2235DBF14ACD004602E7933CC4954064E1FC6D4B3F8017DC704F6A2E7BFEFBA4"
+  },
+  {
+    "path": "staff\\batch-printing\\index.php",
+    "sha256": "7A9BD2144D53AE4DB7C8F016EFDABA3DB1F55400E4FB3CE0A5721D335D2466F7"
+  },
+  {
+    "path": "staff\\check-in\\index.php",
+    "sha256": "FBDDB167BA84E4B2DFCD68BB18C892C2E795665E053F0EFB553E4AB37C406E9C"
+  },
+  {
+    "path": "staff\\select-counter\\index.php",
+    "sha256": "684949B08D31A8F994F3501A2B553F00B2F70E6B72CC243FC969188E7CB8712F"
+  },
+  {
+    "path": "design-system\\smartqms\\MASTER.md",
+    "sha256": "2D5CF75314B4D6CBE911ED4113EA3AB400706D08A0E09FDF1ABC5E93877C3A05"
+  },
+  {
+    "path": "design-system\\smartqms\\pages\\admin.md",
+    "sha256": "77F67F0957FB3DA4D2F3867D3BC0745B28694C431A09EA5DCF8D48B44A67C9F0"
+  },
+  {
+    "path": "design-system\\smartqms\\pages\\public.md",
+    "sha256": "6C39E497B911B552B7124941510D44BBAD96B8BDAB6911ABB345A5247BE0C955"
+  },
+  {
+    "path": "design-system\\smartqms\\pages\\staff.md",
+    "sha256": "4E904ED1B0B411393399C4E18EC3D8F2BA67347D69DD85A031643F40CF2B860B"
+  },
+  {
+    "path": "index.php",
+    "sha256": "F4FF9B9F22B43039830E090D6C423A562EB049CB00EB1597143B1134B74FE017"
+  },
+  {
+    "path": "display.php",
+    "sha256": "71E41D2DFB00D55C966F4C08F809025D4FEC398DE5277DE00BB47DF8F3CD6842"
+  }
+]

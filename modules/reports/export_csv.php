@@ -20,6 +20,7 @@ try {
 
 $safeReport = preg_replace('/[^a-z0-9_]+/', '_', $report['key']);
 $filename = 'smartqms_' . $safeReport . '_' . $range['from'] . '_' . $range['to'] . '.csv';
+recordSecurityEvent($conn, 'report_exported', 'success', 'report', $reportKey, ['report' => $reportKey, 'method' => 'csv']);
 
 header('Content-Type: text/csv; charset=utf-8');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
