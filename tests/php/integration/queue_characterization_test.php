@@ -208,7 +208,7 @@ testCase('ML prediction parsing rejects unavailable malformed and unreasonable v
     assertSameValue(12.35, parseMlWaitEstimate('{"predicted_wait_minutes":12.345}', 200));
 });
 
-testCase('reference allocation uses the maximum yearly suffix and daily numbering remains sequential', function (): void {
+testCase('reference allocation uses booking date and daily sequence while daily queue numbering remains sequential', function (): void {
     withTestTransaction(function (mysqli $connection): void {
         $fixtures = characterizationQueueFixtures($connection);
         $owner = $fixtures['users']['owner'];
@@ -231,10 +231,18 @@ testCase('reference allocation uses the maximum yearly suffix and daily numberin
             $stmt->execute();
         }
 
-        assertSameValue(
-            REF_PREFIX . '-' . $year . '-0008',
-            generateRefNumber($connection, $year)
-        );
+        $newReference = sprintf('%04d%06d', $year, 13);
+        $stmt = $connection->prepare("INSERT INTO queue_tickets (user_id, service_id, reference_number, ticket_number, status, issued_at) VALUES (?, ?, ?, 'Z-013', 'completed', ?)");
+        $stmt->bind_param('iiss', $owner, $serviceId, $newReference, $issuedAt);
+        $stmt->execute();
+
+        $datedReference = '2037010200000045';
+        $datedIssuedAt = '2037-01-02 08:00:00';
+        $dated = $connection->prepare("INSERT INTO queue_tickets (user_id, service_id, reference_number, ticket_number, status, issued_at) VALUES (?, ?, ?, 'Z-045', 'completed', ?)");
+        $dated->bind_param('iiss', $owner, $serviceId, $datedReference, $datedIssuedAt);
+        $dated->execute();
+        assertSameValue('2037010200000046', generateRefNumber($connection, '20370102'));
+        assertSameValue('2037010300000001', generateRefNumber($connection, '20370103'));
 
         $dailyCount = (int) $connection->query("SELECT COUNT(*) AS cnt FROM queue_tickets WHERE DATE(issued_at) = CURDATE()")->fetch_assoc()['cnt'];
         assertSameValue(
@@ -267,7 +275,7 @@ testCase('ticket issuance stores QR prediction and activity inside the caller tr
             );
 
             assertTrueValue($result['created']);
-            assertTrueValue((bool) preg_match('/^' . preg_quote(REF_PREFIX, '/') . '-' . date('Y') . '-\d{4,}$/', $result['reference_number']));
+            assertTrueValue((bool) preg_match('/^' . date('Ymd') . '[0-9]{8}$/', $result['reference_number']));
             assertTrueValue((bool) preg_match('/^A-\d{3,}$/', $result['ticket_number']));
             assertSameValue('ml', $result['prediction_source']);
             assertSameValue(12.34, $result['predicted_wait_minutes']);

@@ -49,7 +49,7 @@ function createQueueTicket(
         }
         $issuanceLockAcquired = true;
 
-        $referenceNumber = generateRefNumber($conn, $year);
+        $referenceNumber = generateRefNumber($conn);
         $ticketNumber = generateDailyTicketNumber($conn);
 
         $queueMode = normalizeQueueMode((string) ($snapshot['service']['queue_mode'] ?? 'central'));

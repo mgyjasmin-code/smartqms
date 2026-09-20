@@ -1,6 +1,49 @@
 <?php
 
 require_once SMARTQMS_ROOT . '/modules/notifications/sms_provider.php';
+require_once SMARTQMS_ROOT . '/modules/notifications/ticket_sms.php';
+
+testCase('SMS dotenv parser reads only SMS keys while test runs ignore the live file', function (): void {
+    $path = tempnam(sys_get_temp_dir(), 'smartqms_sms_');
+    if ($path === false) {
+        throw new RuntimeException('Could not create the temporary SMS config fixture.');
+    }
+    try {
+        file_put_contents($path, "# local config\nSMARTQMS_SMS_ENABLED=1\nSMARTQMS_SMS_PROVIDER=winro\nSMARTQMS_SMS_API_KEY='fixture-key'\nOTHER_SECRET=ignored\n");
+        assertSameValue([
+            'SMARTQMS_SMS_ENABLED' => '1',
+            'SMARTQMS_SMS_PROVIDER' => 'winro',
+            'SMARTQMS_SMS_API_KEY' => 'fixture-key',
+        ], smsDotEnvValues($path));
+        assertSameValue([], smsDotEnvValues());
+    } finally {
+        unlink($path);
+    }
+});
+
+testCase('booking SMS contains the reference and visit date without promising a queue number', function (): void {
+    $message = bookingConfirmationSms('2026092100000045', '2026-09-25');
+    assertStringContains('2026092100000045', $message);
+    assertStringContains('Sep 25, 2026', $message);
+    assertStringContains('Queue number issued on arrival', $message);
+    assertTrueValue(strlen($message) <= 160);
+    assertThrowsException(fn() => bookingConfirmationSms('2026092100000045', 'wrong'), InvalidArgumentException::class);
+});
+
+testCase('Winro request uses the bearer token and normalized recipient', function (): void {
+    $request = winroRequest(['api_key' => 'test-token'], '09171234567', 'Your turn is near');
+    assertSameValue(SMARTQMS_WINRO_ENDPOINT, $request['url']);
+    assertContainsValue('Authorization: Bearer test-token', $request['headers']);
+    assertSameValue(
+        ['recipient' => '+639171234567', 'message' => 'Your turn is near'],
+        json_decode($request['body'], true, 512, JSON_THROW_ON_ERROR)
+    );
+    assertThrowsException(
+        fn() => winroRequest([], '09171234567', 'Message'),
+        RuntimeException::class,
+        'bearer token'
+    );
+});
 
 testCase('SMS configuration ignores database secrets and gives environment highest precedence', function (): void {
     $configuration = resolveSmsConfiguration(

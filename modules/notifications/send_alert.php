@@ -3,7 +3,7 @@
  * SmartQMS near-turn alert generator.
  */
 require_once __DIR__ . '/../../config/config.php';
-require_once __DIR__ . '/sms_sender.php';
+require_once __DIR__ . '/ticket_sms.php';
 
 function insertQueueNotification(
     mysqli $conn,
@@ -25,30 +25,38 @@ function insertQueueNotification(
 
 function nearTurnAlertCandidates(mysqli $conn, ?int $serviceId = null): array {
     $sql = "
-        SELECT qt.*, u.phone_number, hs.service_name,
+        SELECT qt.ticket_id, qt.user_id, qt.ticket_number, qt.service_id,
+               COALESCE(NULLIF(qt.phone_number, ''), u.phone_number) AS phone_number,
+               hs.service_name,
                (
                    SELECT COUNT(*)
                    FROM queue_tickets ahead
                    WHERE ahead.status = 'waiting'
                      AND ahead.service_id = qt.service_id
                      AND (
-                         ahead.priority_level > qt.priority_level
-                         OR (
-                             ahead.priority_level = qt.priority_level
-                             AND ahead.issued_at < qt.issued_at
-                         )
+                         COALESCE(ahead.checked_in_at, ahead.issued_at) < COALESCE(qt.checked_in_at, qt.issued_at)
+                         OR (COALESCE(ahead.checked_in_at, ahead.issued_at) = COALESCE(qt.checked_in_at, qt.issued_at)
+                             AND ahead.ticket_id < qt.ticket_id)
                      )
+                     AND ahead.lifecycle_status = 'waiting'
+                     AND (ahead.user_id IS NOT NULL OR ahead.checked_in_at IS NOT NULL)
                ) AS people_ahead,
                EXISTS (
                    SELECT 1
                    FROM notifications existing
                    WHERE existing.ticket_id = qt.ticket_id
                      AND existing.type = 'turn_alert'
-               ) AS alert_already_sent
+               ) AS browser_alert_sent,
+               EXISTS (
+                   SELECT 1 FROM ticket_sms_events sent
+                   WHERE sent.ticket_id = qt.ticket_id AND sent.event_type = 'near_turn'
+               ) AS sms_alert_sent
         FROM queue_tickets qt
-        JOIN users u ON u.user_id = qt.user_id
+        LEFT JOIN users u ON u.user_id = qt.user_id
         JOIN health_services hs ON hs.service_id = qt.service_id
-        WHERE qt.status = 'waiting'
+        WHERE qt.status = 'waiting' AND qt.lifecycle_status = 'waiting'
+          AND qt.ticket_number IS NOT NULL
+          AND (qt.user_id IS NOT NULL OR qt.checked_in_at IS NOT NULL)
     ";
     $types = '';
     $params = [];
@@ -58,8 +66,10 @@ function nearTurnAlertCandidates(mysqli $conn, ?int $serviceId = null): array {
         $params[] = $serviceId;
     }
     $sql .= "
-        HAVING people_ahead <= 2 AND alert_already_sent = 0
-        ORDER BY qt.service_id, qt.priority_level DESC, qt.issued_at ASC
+        HAVING people_ahead <= 2
+           AND ((user_id IS NOT NULL AND browser_alert_sent = 0)
+                OR (user_id IS NULL AND sms_alert_sent = 0))
+        ORDER BY qt.service_id, qt.checked_in_at, qt.ticket_id
     ";
 
     $stmt = $conn->prepare($sql);
@@ -83,14 +93,21 @@ function processNearTurnAlerts(mysqli $conn, ?int $serviceId = null): int {
             : 'Your SmartQMS ticket ' . $ticket['ticket_number'] . ' is almost next. Only ' . $peopleAhead . ' ticket' . ($peopleAhead === 1 ? '' : 's') . ' ahead.';
 
         $phone = trim((string) ($ticket['phone_number'] ?? ''));
+        $userId = (int) ($ticket['user_id'] ?? 0);
+        if ($userId === 0) {
+            if ($phone !== '' && sendTicketSmsOnce($conn, $ticketId, 'near_turn', $phone, $message)) {
+                $created++;
+            }
+            continue;
+        }
         $channel = $phone !== '' ? 'both' : 'browser';
-        $smsOk = $phone !== '' ? sendSMS($conn, $phone, $message, 'notification', (int) $ticket['user_id']) : true;
+        $smsOk = $phone !== '' ? sendTicketSmsOnce($conn, $ticketId, 'near_turn', $phone, $message, $userId) : true;
         $deliveryStatus = $smsOk ? 'sent' : 'failed';
 
         insertQueueNotification(
             $conn,
             $ticketId,
-            (int) $ticket['user_id'],
+            $userId,
             $message,
             'turn_alert',
             $channel,

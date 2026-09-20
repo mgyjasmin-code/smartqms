@@ -721,6 +721,7 @@ async function runArrivalScannerContracts() {
   assert.equal(typeof adapter.create, 'function', 'arrival scanner exposes its adapter');
   assert.equal(adapter.parseValue('A'.repeat(64)).lookup_type, 'token');
   assert.equal(adapter.parseValue('BHC-2026-0042').lookup_value, 'BHC-2026-0042');
+  assert.equal(adapter.parseValue('2026092100000045').lookup_value, '2026092100000045');
   assert.equal(
     adapter.parseValue(`https://qms.test/smartqms/track/?token=${'b'.repeat(64)}`).lookup_value,
     'b'.repeat(64),

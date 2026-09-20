@@ -45,39 +45,54 @@ testCase('customer booking requires service location identity and a Philippine m
 
 testCase('public no-account booking collects the guided reservation fields', function (): void {
     $source = customerBookingSource('queue/join/index.php');
-    foreach (['Choose a service', 'Appointment details', 'Review and confirm', 'Confirm Appointment'] as $stage) {
+    foreach (['Choose a service', 'Appointment details', 'Review your information', 'Confirm Appointment'] as $stage) {
         assertStringContains($stage, $source);
     }
     assertSameValue(3, substr_count($source, 'data-booking-step="'));
     assertStringContains('aria-valuemax="3"', $source);
     assertFalseValue(str_contains($source, 'Step <?= $initialStep ?> of 5'));
     assertFalseValue(str_contains($source, 'data-booking-step="4"'));
-    foreach (['service_id', 'visit_date', 'first_name', 'last_name', 'phone_number', 'consent'] as $field) {
+    foreach (['service_id', 'visit_date', 'first_name', 'last_name', 'phone_number'] as $field) {
         assertStringContains('name="' . $field . '"', $source);
     }
     $detailsStart = strpos($source, 'data-booking-step="2"');
     $reviewStart = strpos($source, 'data-booking-step="3"');
     assertTrueValue($detailsStart !== false && $reviewStart !== false && $reviewStart > $detailsStart);
     $details = substr($source, $detailsStart, $reviewStart - $detailsStart);
-    foreach (['visit_date', 'first_name', 'last_name', 'phone_number', 'consent'] as $field) {
+    foreach (['first_name', 'last_name', 'phone_number', 'visit_date'] as $field) {
         assertStringContains('name="' . $field . '"', $details);
+    }
+    $fieldPositions = array_map(static fn (string $field): int|false => strpos($details, 'name="' . $field . '"'), ['first_name', 'last_name', 'phone_number', 'visit_date']);
+    assertFalseValue(in_array(false, $fieldPositions, true));
+    for ($index = 1; $index < count($fieldPositions); $index++) {
+        assertTrueValue($fieldPositions[$index - 1] < $fieldPositions[$index]);
     }
     assertStringContains('pattern="09[0-9]{9}"', $source);
     assertFalseValue(str_contains($source, 'name="classification"'));
     assertFalseValue(str_contains($source, 'name="client_type"'));
     assertStringContains("'online'", $source);
     assertStringContains('data-booking-service-input', $source);
-    assertStringContains('data-public-datepicker', $source);
+    assertStringContains('type="date"', $source);
+    assertStringContains('form-control booking-native-control', $source);
+    assertStringContains('btn btn-primary booking-native-button', $source);
+    assertFalseValue(str_contains($source, 'name="consent"'));
+    assertFalseValue(str_contains($source, 'public-visit-date-help'));
+    assertFalseValue(str_contains($source, 'data-public-datepicker'));
+    assertFalseValue(str_contains($source, 'public-booking-date'));
+    assertFalseValue(str_contains($source, 'public-booking-privacy-card'));
     assertStringContains('data-booking-error-summary', $source);
     assertStringContains('data-booking-processing', $source);
     assertStringContains('container-xl public-form-container', $source);
     assertStringContains('row-cols-1 row-cols-md-2 row-cols-xl-3', $source);
+    assertStringContains('public-service-option', $source);
+    assertFalseValue(str_contains($source, 'fallback_duration_mins'));
     assertStringContains('row g-4 public-booking-details-grid', $source);
     assertStringContains('col-12 col-md-6', $source);
-    assertStringContains('col-12 col-lg-6', $source);
-    assertStringContains('col-12 col-lg-8', $source);
-    assertStringContains('col-12 col-lg-4', $source);
     assertStringContains('list-group public-booking-review-list', $source);
+    assertFalseValue(str_contains($source, 'public-booking-review-note'));
+    assertStringContains('data-booking-home', $source);
+    assertStringContains('Return to Home</a>', $source);
+    assertStringContains('homeLink.hidden = currentStep !== 1', customerBookingSource('assets/js/public_booking.js'));
     assertStringContains("'created' => '1'", $source);
 });
 
@@ -128,9 +143,9 @@ testCase('queue creation retains the existing endpoint and updates verified cust
     );
 });
 
-testCase('scheduled confirmation displays appointment details beside a private QR and prints cleanly', function (): void {
+testCase('scheduled confirmation shows reference, private QR, details, then check-in note', function (): void {
     $source = customerBookingSource('views/public/tracker.php');
-    foreach (['Appointment confirmed', 'Appointment reference', 'Full name', 'Chosen service', 'Appointment date', 'Check-in period', 'queue number is assigned after arrival', 'Print Appointment', 'Return to Home', 'Manage or reschedule this appointment'] as $label) {
+    foreach (['Appointment confirmed', 'Appointment reference', 'Full name', 'Chosen service', 'Appointment date', 'Check-in period', 'assign your queue number after you arrive', '> Print</a>', 'Return home', 'Cancel this appointment'] as $label) {
         assertStringContains($label, $source);
     }
     assertStringContains("\$_GET['created']", $source);
@@ -143,12 +158,24 @@ testCase('scheduled confirmation displays appointment details beside a private Q
     assertTrueValue($confirmationStart !== false && $trackerStart !== false);
     $confirmation = substr($source, $confirmationStart, $trackerStart - $confirmationStart);
     assertFalseValue(str_contains($confirmation, '<dt>Mobile'), 'The confirmation must not expose the mobile number.');
+    $referencePosition = strpos($confirmation, 'public-confirmation-reference-block');
+    $qrPosition = strpos($confirmation, 'public-confirmation-qr-panel');
+    $detailsPosition = strpos($confirmation, 'public-confirmation-details');
+    $notePosition = strpos($confirmation, 'alert alert-info public-confirmation-notice');
+    assertTrueValue($referencePosition !== false && $qrPosition !== false && $detailsPosition !== false && $notePosition !== false
+        && $referencePosition < $qrPosition && $qrPosition < $detailsPosition && $detailsPosition < $notePosition,
+        'Confirmation content must appear in reference, QR, details, note order.');
     assertStringContains('qr_code_path', $source);
 
     $css = customerBookingSource('assets/css/style.css');
     foreach (['@page', 'size: A4 portrait', '.public-confirmation-print-brand', '.public-confirmation-layout', 'width: 50mm'] as $contract) {
         assertStringContains($contract, $css);
     }
+    $pdf = customerBookingSource('modules/queue/confirmation_pdf.php');
+    assertTrueValue(strpos($pdf, '<div class="ref-box">') < strpos($pdf, '<div class="qr-section">')
+        && strpos($pdf, '<div class="qr-section">') < strpos($pdf, '<table class="details">')
+        && strpos($pdf, '<table class="details">') < strpos($pdf, '<div class="notice">'),
+        'The downloadable confirmation must follow the same content order.');
 });
 
 testCase('customer booking styling is theme-token driven and responsive', function (): void {

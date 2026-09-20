@@ -24,7 +24,7 @@ if ($sessionExpiresAt < time()) {
     $sessionTicketId = 0;
 }
 $action = (string) ($_POST['action'] ?? 'lookup');
-$error = $incomingToken !== '' ? 'This reservation-management link is invalid, expired, or revoked.' : '';
+$error = $incomingToken !== '' ? 'This cancellation link is invalid, expired, or revoked.' : '';
 $success = '';
 $reservation = $sessionTicketId > 0 ? reservationManagementProjection(publicManagedReservationBySession($conn, $sessionTicketId) ?? []) : null;
 if ($reservation && $reservation['reference_number'] === '') {
@@ -38,10 +38,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $error = 'Open the private management link from your reservation confirmation.';
     } else {
         try {
-            if ($action === 'reschedule') {
-                $reservation = rescheduleSessionReservation($conn, $sessionTicketId, (string) ($_POST['visit_date'] ?? ''));
-                $success = 'Your visit date was updated.';
-            } elseif ($action === 'cancel') {
+            if ($action === 'cancel') {
                 $reservation = cancelSessionReservation($conn, $sessionTicketId);
                 unset($_SESSION['reservation_manage_ticket_id'], $_SESSION['reservation_manage_expires_at']);
                 $success = 'Your reservation was cancelled.';
@@ -49,9 +46,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 throw new DomainException('Unsupported reservation action.');
             }
         } catch (DomainException $exception) {
-            $error = $action === 'reschedule' && str_contains($exception->getMessage(), 'visit date')
-                ? $exception->getMessage()
-                : 'The reservation could not be verified or can no longer be changed.';
+            $error = 'The reservation could not be verified or can no longer be changed.';
         } catch (Throwable $exception) {
             error_log('Public reservation management failed: ' . $exception->getMessage());
             $error = 'The reservation could not be changed right now. Please try again.';
@@ -59,8 +54,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 }
 
-$minimumVisitDate = date('Y-m-d');
-$maximumVisitDate = date('Y-m-d', strtotime('+30 days'));
 $publicActivePage = 'manage';
 ?>
 <!doctype html>
@@ -68,10 +61,9 @@ $publicActivePage = 'manage';
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Manage Reservation — SmartQMS</title>
+  <title>Cancel Reservation — SmartQMS</title>
   <?php require __DIR__ . '/../views/shared/includes/theme_boot.php'; ?>
   <link rel="stylesheet" href="<?= assetUrl('vendor/twbs/bootstrap/dist/css/bootstrap.min.css') ?>">
-  <link rel="stylesheet" href="<?= assetUrl('assets/vendor/vanillajs-datepicker/datepicker-bs5.min.css') ?>">
   <link rel="stylesheet" href="<?= assetUrl('assets/css/style.css') ?>">
 </head>
 <body class="public-journey-page public-queue-page d-flex flex-column min-vh-100">
@@ -79,14 +71,14 @@ $publicActivePage = 'manage';
   <?php require __DIR__ . '/../views/shared/includes/public_header.php'; ?>
   <main id="main-content" class="public-workflow-main flex-grow-1" tabindex="-1">
     <div class="container public-form-container">
-    <header class="public-workflow-heading"><p class="public-kicker">Private reservation tools</p><h1 id="manage-title">Manage your reservation</h1><p>Open the private management link provided when the reservation was created.</p></header>
+    <header class="public-workflow-heading"><p class="public-kicker">Private reservation tools</p><h1 id="manage-title">Cancel your reservation</h1><p>Open the private link provided when the reservation was created.</p></header>
     <section class="public-queue-card card mx-auto" aria-labelledby="manage-title">
       <header class="public-queue-card-header">
         <span class="public-queue-mark" aria-hidden="true"><img src="<?= assetUrl('assets/images/brand/smartqms-mark.svg') ?>" alt="" width="34" height="34"></span>
         <div>
           <p>Private reservation tools</p>
-          <h2 class="h4">Verify and update your visit</h2>
-          <span>Your private link grants a short, time-limited management session.</span>
+          <h2 class="h4">Verify your visit</h2>
+          <span>Your private link grants a short, time-limited cancellation session.</span>
         </div>
       </header>
       <div class="card-body p-4 p-md-5">
@@ -111,16 +103,7 @@ $publicActivePage = 'manage';
             </dl>
 
             <?php if ($reservation['can_manage']): ?>
-              <form method="post" class="js-validated-form">
-                <?= csrfInput() ?>
-                <input type="hidden" name="action" value="reschedule">
-                <label class="form-label" for="manage-visit-date">New visit date</label>
-                <div class="public-manage-actions">
-                  <input class="form-control" id="manage-visit-date" name="visit_date" type="date" min="<?= $minimumVisitDate ?>" max="<?= $maximumVisitDate ?>" value="<?= htmlspecialchars($reservation['visit_date'], ENT_QUOTES) ?>" required data-public-datepicker>
-                  <button class="btn btn-primary" type="submit" data-loading-text="Saving...">Reschedule</button>
-                  <button class="btn btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#cancelReservationModal">Cancel Reservation</button>
-                </div>
-              </form>
+              <button class="btn btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#cancelReservationModal">Cancel Reservation</button>
             <?php else: ?>
               <p class="mb-0 text-body-secondary">This reservation is no longer active and cannot be changed.</p>
             <?php endif; ?>
@@ -148,10 +131,8 @@ $publicActivePage = 'manage';
   <?php require __DIR__ . '/../views/shared/includes/public_footer.php'; ?>
   <script src="<?= assetUrl('vendor/twbs/bootstrap/dist/js/bootstrap.bundle.min.js') ?>"></script>
   <script src="<?= assetUrl('assets/vendor/lucide/lucide.min.js') ?>"></script>
-  <script src="<?= assetUrl('assets/vendor/vanillajs-datepicker/datepicker-full.min.js') ?>"></script>
   <script src="<?= assetUrl('assets/js/theme.js') ?>"></script>
   <script src="<?= assetUrl('assets/js/language.js') ?>"></script>
   <script src="<?= assetUrl('assets/js/main.js') ?>"></script>
-  <script src="<?= assetUrl('assets/js/public_datepicker.js') ?>"></script>
 </body>
 </html>

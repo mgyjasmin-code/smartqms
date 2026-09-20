@@ -2,9 +2,8 @@
 /**
  * SmartQMS SMS delivery boundary for OTP and notifications.
  *
- * FREE TIER: Sign up at semaphore.co to get free SMS credits.
- * If sms_enabled = 0 in system_settings -> log as 'simulated'
- *   (show sms_logs table to panel as proof feature is built)
+ * Provider is selected through the SMS configuration. Disabled delivery is
+ * logged as simulated so local queue flows can be exercised without credits.
  *
  * Usage:
  *   require_once 'sms_sender.php';
@@ -13,7 +12,7 @@
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/sms_provider.php';
 
-function sendSMS(mysqli $conn, string $phone, string $message, string $type = 'notification', int $userId = 0): bool {
+function sendSMS(mysqli $conn, string $phone, string $message, string $type = 'notification', int $userId = 0, ?string &$deliveryStatus = null): bool {
     // Read SMS settings from system_settings table
     $result  = $conn->query("SELECT setting_key, setting_val FROM system_settings
                               WHERE section = 'sms'");
@@ -46,6 +45,8 @@ function sendSMS(mysqli $conn, string $phone, string $message, string $type = 'n
         (user_id, phone, message, type, status, error_msg) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->bind_param('isssss', $nullableUserId, $phone, $message, $type, $status, $errorMessage);
     $stmt->execute();
+
+    $deliveryStatus = $status;
 
     return $status === 'sent' || $status === 'simulated';
 }

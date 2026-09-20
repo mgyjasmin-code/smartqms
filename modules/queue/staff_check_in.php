@@ -4,6 +4,7 @@
  */
 require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once __DIR__ . '/../notifications/send_alert.php';
 requireLogin(ROLE_STAFF);
 requirePostRequest(true);
 requireValidCsrf('', '', [], 'Security check failed. Refresh the page and try again.', true);
@@ -27,6 +28,13 @@ try {
     if (!in_array(($result['status'] ?? ''), ['checked_in', 'already_checked_in'], true)) {
         jsonResponse(false, ['error' => 'The appointment cannot be checked in.'], 409);
     }
+    if ($result['status'] === 'checked_in') {
+        try {
+            processNearTurnAlerts($conn, (int) ($result['service_id'] ?? 0));
+        } catch (Throwable $alertError) {
+            error_log('SmartQMS check-in near-turn alerts failed.');
+        }
+    }
     jsonResponse(true, ['data' => $result]);
 } catch (DomainException $error) {
     jsonResponse(false, ['error' => $error->getMessage()], 409);
@@ -36,4 +44,3 @@ try {
     error_log('Staff arrival confirmation failed: ' . $error->getMessage());
     jsonResponse(false, ['error' => 'The appointment could not be checked in.'], 500);
 }
-

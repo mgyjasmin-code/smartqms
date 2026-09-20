@@ -48,32 +48,31 @@ $hasWaitEstimate = is_numeric($waitValue) && is_finite((float) $waitValue) && (f
           </div>
           <span class="public-success-icon"><i data-lucide="check" aria-hidden="true"></i></span>
           <h1 id="confirmation-title" class="mt-3">Appointment confirmed</h1>
-          <p class="public-confirmation-lead">Save this appointment and present its QR code or reference when you arrive.</p>
-          <div class="card public-confirmation-card text-start mt-4">
+          <p class="public-confirmation-lead">Save this confirmation and show your reference or QR code at check-in.</p>
+          <div class="card public-confirmation-card mt-4">
             <div class="card-body public-confirmation-card-body">
               <div class="public-confirmation-layout">
-                <div class="public-confirmation-summary">
-                  <p class="public-kicker mb-2">Appointment reference</p>
+                <div class="public-confirmation-reference-block text-center">
+                  <p class="public-kicker mb-2 justify-content-center">Appointment reference</p>
                   <div class="public-confirmation-reference"><?= htmlspecialchars($projection['reference_number']) ?></div>
-                  <dl class="public-confirmation-details mt-4">
-                    <div><dt>Full name</dt><dd><?= htmlspecialchars($projection['client_name']) ?></dd></div>
-                    <div><dt>Chosen service</dt><dd><?= htmlspecialchars($projection['service_name']) ?></dd></div>
-                    <div><dt>Appointment date</dt><dd><?= htmlspecialchars(date('F j, Y', strtotime((string) $projection['visit_date']))) ?></dd></div>
-                    <div><dt>Check-in period</dt><dd>8:00 AM–3:30 PM</dd></div>
-                  </dl>
-                  <p class="public-confirmation-print-instructions">Arrive on the appointment date during check-in hours. Your queue number and FIFO position are assigned only after Staff confirms your arrival.</p>
                 </div>
                 <aside class="public-confirmation-qr-panel text-center" aria-label="Appointment QR code">
                   <?php if (!empty($ticket['qr_code_path'])): ?><img class="public-confirmation-qr" src="<?= APP_URL ?>/<?= htmlspecialchars($ticket['qr_code_path'], ENT_QUOTES) ?>" alt="QR code for this appointment's private tracker" width="240" height="240"><?php endif; ?>
-                  <strong>Scan or present at check-in</strong>
-                  <small>This QR contains your private appointment link.</small>
+                  <strong>Present this QR code at check-in</strong>
+                  <small>It opens your private appointment link.</small>
                 </aside>
+                <dl class="public-confirmation-details text-start mb-0">
+                  <div><dt>Full name</dt><dd><?= htmlspecialchars($projection['client_name']) ?></dd></div>
+                  <div><dt>Chosen service</dt><dd><?= htmlspecialchars($projection['service_name']) ?></dd></div>
+                  <div><dt>Appointment date</dt><dd><?= htmlspecialchars(date('F j, Y', strtotime((string) $projection['visit_date']))) ?></dd></div>
+                  <div><dt>Check-in period</dt><dd>8:00 AM–3:30 PM</dd></div>
+                </dl>
+                <div class="alert alert-info public-confirmation-notice mb-0" role="note"><i data-lucide="info" aria-hidden="true"></i><span><strong>Check in during the period shown above.</strong> Staff will assign your queue number after you arrive.</span></div>
               </div>
             </div>
           </div>
-          <div class="alert alert-info public-confirmation-notice mt-4" role="note"><i data-lucide="info" aria-hidden="true"></i><span><strong>Your queue number is assigned after arrival.</strong> Booking a date does not place you ahead in the live queue.</span></div>
-          <div class="public-confirmation-actions d-flex flex-column flex-sm-row justify-content-center gap-3 mt-4"><button class="btn btn-primary btn-lg" type="button" data-print-page><i data-lucide="printer" aria-hidden="true"></i> Print Appointment</button><a class="btn btn-outline-primary btn-lg" href="<?= APP_URL ?>/"><i data-lucide="house" aria-hidden="true"></i> Return to Home</a></div>
-          <?php if ($managementUrl !== ''): ?><p class="public-confirmation-manage mt-3 mb-0"><a href="<?= htmlspecialchars($managementUrl, ENT_QUOTES) ?>"><i data-lucide="calendar-cog" aria-hidden="true"></i> Manage or reschedule this appointment</a></p><?php endif; ?>
+          <div class="public-confirmation-actions d-flex flex-column flex-sm-row justify-content-center gap-3 mt-4"><a class="btn btn-outline-primary btn-lg" href="<?= APP_URL ?>/"><i data-lucide="house" aria-hidden="true"></i> Return home</a><a class="btn btn-primary btn-lg" href="<?= APP_URL ?>/modules/queue/confirmation_pdf.php?token=<?= rawurlencode($token) ?>"><i data-lucide="download" aria-hidden="true"></i> Print</a></div>
+          <?php if ($managementUrl !== ''): ?><p class="public-confirmation-manage mt-3 mb-0"><a href="<?= htmlspecialchars($managementUrl, ENT_QUOTES) ?>"><i data-lucide="calendar-x" aria-hidden="true"></i> Cancel this appointment</a></p><?php endif; ?>
         </section>
       <?php else: ?>
         <section class="public-tracker" data-public-ticket-tracker data-token="<?= htmlspecialchars($token, ENT_QUOTES) ?>" data-status-url="<?= APP_URL ?>/modules/queue/public_ticket_status.php" data-feedback-url="<?= APP_URL ?>/modules/feedback/public_submit.php">

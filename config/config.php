@@ -115,7 +115,7 @@ define('ML_HEALTH', (string) $smartqmsMlConfig['health_url']);
 define('QR_DIR', __DIR__ . '/../assets/qr/');
 define('QR_URL', APP_URL . '/assets/qr/');
 
-// Ticket reference format: BHC-YYYY-NNNN.
+// REF_PREFIX is retained for lookup of older BHC references.
 define('REF_PREFIX', 'BHC');
 
 date_default_timezone_set('Asia/Manila');

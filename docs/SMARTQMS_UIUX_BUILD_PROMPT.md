@@ -16,8 +16,6 @@ Confirmed reservation → checked in / Waiting → Calling → In Service → Co
                      └→ Expired
 ```
 
-Rescheduled is history on a Confirmed reservation, not a separate active state.
-
 ## Global design rules
 
 - Use the existing SmartQMS civic-healthcare tokens: calm light canvas, white surfaces, navy structure, blue primary action, and semantic success/warning/danger states.
@@ -50,19 +48,19 @@ The successful confirmation screen shows:
 - selected service and visit date;
 - check-in period, e.g. `Check in from 8:00 AM to 3:30 PM`;
 - note that queue number is assigned on physical arrival;
-- `Track reservation` and `Manage reservation` actions.
+- `Track reservation` and `Cancel reservation` actions.
 
-## Client: status, cancellation, and rescheduling
+## Client: status and cancellation
 
 Reference-only lookup is allowed for safe status messages only. Do not show name, mobile, medical details, or staff name.
 
-For cancel or reschedule, require:
+For cancellation, require:
 
-- booking reference;
+- the private management link issued with the reservation;
 
 Use one neutral failure message: `We could not verify this reservation.` Rate-limit repeated failed attempts.
 
-On reschedule, present only valid future dates with capacity. On cancellation, use a confirmation dialog that names the visit date and service, then show a clear success state.
+On cancellation, use a confirmation dialog that names the visit date and service, then show a clear success state.
 
 ## Client: QR ticket tracker and feedback
 

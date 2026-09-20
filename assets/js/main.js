@@ -249,6 +249,55 @@
     });
   }
 
+  function initLandingNavigation() {
+    const nav = document.querySelector('.public-landing-page .public-nav-list');
+    if (!nav) return;
+
+    const homeLink = nav.querySelector('a[href]:not([href^="#"])');
+    const sectionLinks = Array.from(nav.querySelectorAll('a[href^="#"]'))
+      .map(link => ({ link, section: document.getElementById(link.getAttribute('href').slice(1)) }))
+      .filter(item => item.section);
+    if (!homeLink || !sectionLinks.length) return;
+
+    const setActive = activeLink => {
+      [homeLink, ...sectionLinks.map(item => item.link)].forEach(link => {
+        const active = link === activeLink;
+        link.classList.toggle('active', active);
+        if (active) link.setAttribute('aria-current', link === homeLink ? 'page' : 'location');
+        else link.removeAttribute('aria-current');
+      });
+    };
+
+    let updateQueued = false;
+    const updateActive = () => {
+      updateQueued = false;
+      const headerHeight = document.querySelector('.public-navbar')?.getBoundingClientRect().height || 0;
+      const threshold = headerHeight + Math.min(window.innerHeight * 0.2, 160);
+      let activeLink = homeLink;
+      sectionLinks.forEach(({ link, section }) => {
+        if (section.getBoundingClientRect().top <= threshold) activeLink = link;
+      });
+      setActive(activeLink);
+    };
+    const queueUpdate = () => {
+      if (updateQueued) return;
+      updateQueued = true;
+      window.requestAnimationFrame(updateActive);
+    };
+
+    sectionLinks.forEach(({ link }) => link.addEventListener('click', () => {
+      setActive(link);
+      const offcanvas = nav.closest('.public-nav-offcanvas');
+      if (offcanvas?.classList.contains('show')) {
+        window.bootstrap?.Offcanvas?.getInstance(offcanvas)?.hide();
+      }
+    }));
+    window.addEventListener('scroll', queueUpdate, { passive: true });
+    window.addEventListener('resize', queueUpdate);
+    window.addEventListener('hashchange', queueUpdate);
+    queueUpdate();
+  }
+
   function resetSubmittingForms() {
     document.querySelectorAll('form[data-submitting="true"]').forEach(form => setSubmitBusy(form, false));
   }
@@ -273,6 +322,7 @@
     initEmailDispatch();
     initPasswordToggles();
     initPrintButtons();
+    initLandingNavigation();
   }
 
   window.SmartQms = Object.assign(window.SmartQms || {}, {

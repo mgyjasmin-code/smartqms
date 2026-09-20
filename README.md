@@ -13,7 +13,7 @@ SmartQMS lets clients register, join a queue, receive a QR ticket, track queue s
 | Database | MySQL/MariaDB through XAMPP |
 | ML API | Python 3.10+, Flask, scikit-learn |
 | Email | PHPMailer SMTP or local log mode |
-| SMS | Semaphore API or simulated log mode |
+| SMS | Winro, FMCSMS, Semaphore, or simulated log mode |
 | QR | `endroid/qr-code` via Composer |
 
 ## Quick Start
@@ -131,9 +131,17 @@ into a production artifact.
 SMS is controlled in Admin Settings.
 
 - `sms_enabled = 0`: SMS attempts are simulated and logged to `sms_logs`.
-- `sms_enabled = 1` with a Semaphore API key: SMS messages are sent through Semaphore and still logged.
+- Live SMS with provider credentials: messages are sent through the configured Winro, FMCSMS, or Semaphore provider and still logged.
 
 Near-turn alerts are generated when a waiting ticket has 2 or fewer tickets ahead. The system inserts a browser notification and sends/logs SMS when a phone number is available.
+
+Public appointments send an SMS with the booking reference and visit date after the reservation is saved. After staff check-in, public and account tickets receive one near-turn SMS when 2 or fewer tickets are ahead. Scheduled appointments never receive a queue-position alert before check-in. Apply `database/upgrade_ticket_sms_2026_09_20.sql` to an existing MySQL installation before enabling these messages.
+
+New appointment references use the booking date and an eight-digit daily sequence (`YYYYMMDDNNNNNNNN`, for example `2026092100000045`) without dashes. Staff and public lookups still accept previously issued 10-digit and `BHC-YYYY-NNNN` references.
+
+Appointment dates cannot be changed after booking. A private link on the confirmation page allows cancellation while the reservation is still Scheduled; cancellation requires token authorization and confirmation.
+
+For Winro, put `SMARTQMS_SMS_ENABLED=1`, `SMARTQMS_SMS_PROVIDER=winro`, and `SMARTQMS_SMS_API_KEY` in the ignored project `.env` file, or set them in the server environment. Server environment values take priority. Local development can also use ignored `config/sms.local.php` based on `config/sms.example.php`. Test runs ignore the project `.env` to prevent real SMS. Check `sms_logs` for simulated, sent, or failed attempts; `ticket_sms_events` prevents duplicate booking and near-turn sends for a ticket.
 
 ## Display Board
 

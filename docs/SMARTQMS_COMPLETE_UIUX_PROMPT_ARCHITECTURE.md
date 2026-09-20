@@ -42,7 +42,7 @@ Create a responsive queue-management experience that:
 - Staff operational tables expose queue number, service, source, and timestamps, not client names.
 - One QR code is generated after check-in. It opens a private tokenized tracker and later the feedback form.
 - A reference-only public lookup exposes a privacy-safe reservation or ticket status.
-- Cancellation or rescheduling requires the reference and last four mobile-number digits.
+- Cancellation requires the private management link issued with the reservation.
 - Feedback is available after completion, is one response per ticket, and is anonymized in reports.
 - Staff workspace remains a single operational page with no sidebar.
 - Admin workspace retains a responsive sidebar.
@@ -62,9 +62,9 @@ Create a responsive queue-management experience that:
           -> Save reference number
       -> Track Queue or Reservation
           -> Reference-only safe lookup
-      -> Manage Reservation
-          -> Reference + last four digits
-          -> Cancel or reschedule
+      -> Cancel Reservation
+          -> Private management link
+          -> Confirm cancellation
 
     Physical arrival
       -> Staff finds reservation or creates walk-in
@@ -134,7 +134,6 @@ The staff member can view a compact read-only indicator for activity at other co
 - Reference-status lookup
 - Manage reservation verification
 - Cancel reservation confirmation
-- Reschedule reservation
 - QR queue tracker
 - Completed-ticket feedback
 - Client-facing error, expired, unavailable, and offline states
@@ -538,7 +537,7 @@ Fields: first name, last name, mobile number, service, visit date, and consent. 
 
 ### 11.3 Reservation lookup and management
 
-Reference lookup is a short focused form. Safe result shows reservation status, visit date, service, and next instruction without identity. Manage flow adds last-four-digit verification, then exposes Reschedule and Cancel. Place Cancel as a danger action and confirm it in a modal.
+Reference lookup is a short focused form. Safe result shows reservation status, visit date, service, and next instruction without identity. The private management link exposes cancellation. Place Cancel as a danger action and confirm it in a modal.
 
 ### 11.4 QR tracker
 

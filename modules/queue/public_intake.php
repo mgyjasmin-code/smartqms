@@ -128,7 +128,7 @@ function createPublicQueueTicket(
         $managementToken = $entryType === 'online' ? bin2hex(random_bytes(32)) : null;
         $managementTokenHash = $managementToken !== null ? hash('sha256', $managementToken) : null;
         $managementTokenIssuedAt = $managementToken !== null ? date('Y-m-d H:i:s') : null;
-        $referenceNumber = generateRefNumber($conn, $year);
+        $referenceNumber = generateRefNumber($conn);
         $queueMode = normalizeQueueMode((string) ($service['queue_mode'] ?? 'central'));
         $scheduledDate = date('Y-m-d');
         if ($entryType === 'online' && $visitDate !== null) {
@@ -280,7 +280,7 @@ function publicQueueTicketByToken(mysqli $conn, string $token, bool $forUpdate =
 function publicQueueTicketByReference(mysqli $conn, string $reference): ?array {
     $reference = strtoupper(trim($reference));
     if (!smartqmsPublicQueueSchemaReady($conn)
-        || preg_match('/^' . preg_quote(REF_PREFIX, '/') . '-\d{4}-\d{4,}$/', $reference) !== 1) {
+        || preg_match('/^(?:\d{16}|\d{10}|' . preg_quote(REF_PREFIX, '/') . '-\d{4}-\d{4,})$/', $reference) !== 1) {
         return null;
     }
 

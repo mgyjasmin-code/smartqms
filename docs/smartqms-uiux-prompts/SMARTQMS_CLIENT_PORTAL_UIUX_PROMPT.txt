@@ -11,7 +11,7 @@ Design and implement the SmartQMS public and client experience as a clean, simpl
 - Online reservations and walk-ins share strict FIFO based on physical check-in.
 - One active reservation is permitted per phone number per visit date.
 - Reference-only lookup shows privacy-safe status.
-- Reschedule or cancellation requires reference plus the last four mobile-number digits.
+- Cancellation requires the private management link issued with the reservation.
 - One secure QR tracker is generated at check-in and later hosts feedback.
 
 ## Shared visual rules
@@ -54,7 +54,7 @@ Confirmation shows a copyable reference number, service, visit date, check-in wi
 
 Reference lookup uses one focused Bootstrap input-group and returns only safe status, service, visit date, and next instruction. Do not show name or full mobile number.
 
-Manage Reservation verifies reference plus last four digits. Reschedule shows only eligible dates with capacity. Cancellation uses a danger button and confirmation modal. Use one neutral verification error.
+Cancel Reservation requires the private management link. Cancellation uses a danger button and confirmation modal. Use one neutral verification error.
 
 ### QR queue tracker
 
@@ -86,4 +86,3 @@ Design loading, empty, no availability, invalid reference, duplicate booking, fu
 ## Definition of done
 
 The portal is bilingual, account-free, privacy-safe, responsive, accessible, and visually consistent in light and dark themes. Booking, reference tracking, reservation management, QR tracking, and feedback are fully represented without changing FIFO or backend security rules.
-

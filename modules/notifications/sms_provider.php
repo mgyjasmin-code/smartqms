@@ -2,12 +2,13 @@
 /**
  * Provider adapters and secret-safe SMS configuration.
  *
- * Secrets are loaded only from config/sms.local.php or SMARTQMS_SMS_*
- * environment variables. Database settings may control non-secret behavior.
+ * Secrets are loaded from process environment, the ignored project .env, or
+ * config/sms.local.php. Database settings may control non-secret behavior.
  */
 
 const SMARTQMS_FMCSMS_ENDPOINT = 'https://www.fortmed.org/web/FMCSMS/api/messages.php';
 const SMARTQMS_SEMAPHORE_ENDPOINT = 'https://api.semaphore.co/api/v4/messages';
+const SMARTQMS_WINRO_ENDPOINT = 'https://www.winrosms.xyz/api/winrosms/send';
 
 function smsBooleanValue(mixed $value): bool {
     if (is_bool($value)) {
@@ -38,6 +39,42 @@ function smsLocalConfiguration(): array {
     return $configuration;
 }
 
+function smsDotEnvValues(?string $path = null): array {
+    // Test processes must never pick up a developer's live SMS credential.
+    if ($path === null && (defined('SMARTQMS_TEST_ROOT') || (defined('APP_ENV') && APP_ENV === 'testing'))) {
+        return [];
+    }
+    $path ??= __DIR__ . '/../../.env';
+    if (!is_file($path) || !is_readable($path)) {
+        return [];
+    }
+    $values = [];
+    foreach (file($path, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+        if (str_starts_with($line, 'export ')) {
+            $line = trim(substr($line, 7));
+        }
+        $parts = explode('=', $line, 2);
+        if (count($parts) !== 2) {
+            continue;
+        }
+        $name = trim($parts[0]);
+        if (!str_starts_with($name, 'SMARTQMS_SMS_')) {
+            continue;
+        }
+        $value = trim($parts[1]);
+        if (strlen($value) >= 2 && (($value[0] === '"' && substr($value, -1) === '"')
+            || ($value[0] === "'" && substr($value, -1) === "'"))) {
+            $value = substr($value, 1, -1);
+        }
+        $values[$name] = $value;
+    }
+    return $values;
+}
+
 function smsEnvironmentConfiguration(): array {
     $mapping = [
         'enabled' => 'SMARTQMS_SMS_ENABLED',
@@ -48,8 +85,12 @@ function smsEnvironmentConfiguration(): array {
     ];
 
     $configuration = [];
+    $dotEnv = smsDotEnvValues();
     foreach ($mapping as $key => $name) {
         $value = getenv($name);
+        if ($value === false) {
+            $value = $dotEnv[$name] ?? false;
+        }
         if ($value !== false && trim((string) $value) !== '') {
             $configuration[$key] = trim((string) $value);
         }
@@ -168,6 +209,25 @@ function semaphoreRequest(array $configuration, string $phone, string $message):
     ];
 }
 
+function winroRequest(array $configuration, string $phone, string $message): array {
+    $apiKey = trim((string) ($configuration['api_key'] ?? ''));
+    if ($apiKey === '') {
+        throw new RuntimeException('Winro bearer token is not configured.');
+    }
+    return [
+        'url' => SMARTQMS_WINRO_ENDPOINT,
+        'headers' => [
+            'Content-Type: application/json',
+            'Accept: application/json',
+            'Authorization: Bearer ' . $apiKey,
+        ],
+        'body' => json_encode([
+            'recipient' => normalizeSmsNumber($phone),
+            'message' => validateSmsMessage($message),
+        ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES),
+    ];
+}
+
 function executeSmsRequest(array $request): array {
     if (!extension_loaded('curl')) {
         throw new RuntimeException('The PHP cURL extension is required for live SMS delivery.');
@@ -239,6 +299,7 @@ function sendSmsWithProvider(
     $request = match ($provider) {
         'fmcsms' => fmcsmsRequest($configuration, $phone, $message),
         'semaphore' => semaphoreRequest($configuration, $phone, $message),
+        'winro' => winroRequest($configuration, $phone, $message),
         default => throw new RuntimeException('Unsupported SMS provider configuration.'),
     };
 

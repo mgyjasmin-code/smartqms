@@ -19,7 +19,6 @@ Required concepts:
 
 - `reservation_id`, human-readable `reference_number`, first name, last name, mobile number, service ID, visit date, consent timestamp, status, created/updated timestamps;
 - reservation states: `confirmed`, `cancelled`, `expired`;
-- reschedule audit history: old date, new date, time, and action source;
 - a unique active-reservation rule for mobile number and visit date;
 - `queue_tickets.reservation_id` nullable foreign key for checked-in bookings;
 - random `tracking_token` or equivalent non-guessable ticket tracker credential;
@@ -91,7 +90,7 @@ Build the guest journey:
 3. Validate booking date, capacity, availability, and one-active-reservation rule.
 4. Save a Confirmed reservation and show the reference number.
 5. Public status lookup accepts reference only and returns only safe status text.
-6. Cancel/reschedule accepts reference plus last four digits of the booked mobile number; rate-limit failures and use a neutral error message.
+6. Cancellation requires the private management link and a token-authorized session; use a neutral verification error.
 7. Expire un-checked-in reservations after their visit date; do not send a required notification.
 
 No Client login, registration, password-reset, or account dashboard is part of this journey.
@@ -149,7 +148,7 @@ Required acceptance tests:
 
 - a mobile number cannot create two active reservations for the same date;
 - a future reservation cannot check in outside configured hours;
-- cancellation/reschedule rejects mismatched reference and last-four-digit pairs;
+- cancellation rejects invalid or expired private management links;
 - checked-in reservations and walk-ins follow one FIFO ordering;
 - two staff cannot claim the same counter or call the same ticket;
 - a counter only calls tickets for its configured services;
@@ -158,4 +157,3 @@ Required acceptance tests:
 - completed ticket feedback can be submitted once only;
 - deactivating a service/counter with future work gives a clear protected workflow;
 - keyboard, 200% zoom, 390px mobile, reduced motion, and screen-reader flows remain usable.
-

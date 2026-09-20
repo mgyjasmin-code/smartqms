@@ -1,13 +1,13 @@
 <?php
 /**
- * Copy this file to sms.local.php and enter the values from the approved
- * FMCSMS dashboard. sms.local.php is ignored by Git and must never be shared.
+ * Copy to sms.local.php for local development. Production reads SMARTQMS_SMS_*
+ * environment variables. Never commit a real token.
  */
 return [
     'enabled' => false,
-    'provider' => 'fmcsms',
+    'provider' => 'winro', // winro, fmcsms, or semaphore
     'api_key' => '',
     'sender_name' => 'SmartQMS',
-    'from_number' => '', // Philippine mobile number, e.g. +639171234567.
+    'from_number' => '', // Required only for FMCSMS.
     'test_to_number' => '', // Used only by scripts/test_sms_provider.php.
 ];

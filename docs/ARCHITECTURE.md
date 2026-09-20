@@ -150,8 +150,15 @@ Ticket creation:
 9. Write the activity log.
 10. Commit, or roll back and remove only a newly created QR file.
 
-The current reference format is `BHC-YYYY-NNNN`; the current daily display
-number format is `A-NNN`.
+New references contain the booking date and an eight-digit daily sequence:
+`YYYYMMDDNNNNNNNN` (for example, `2026092100000045`). The sequence continues
+after any earlier-format bookings issued on that date. Existing 10-digit and
+`BHC-YYYY-NNNN` references remain valid for lookups. The daily display number
+format is `A-NNN`.
+
+The public reservation management route supports cancellation only. A valid
+private management token opens a short session; the route has no date-change
+action, and cancellation is permitted only while the ticket is Scheduled.
 
 ## Priority behavior
 

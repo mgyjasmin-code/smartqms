@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS staff_service_capabilities (
 
 -- ── 5. QUEUE TICKETS ──────────────────────────────────────────
 --    Core entity. One active ticket per client at a time.
---    Reference number format: BHC-YYYY-NNNN (e.g. BHC-2025-0001)
+--    Reference number format: YYYYMMDD + 8-digit daily sequence.
 --    Legacy classification/priority columns remain for historical compatibility.
 --    Live ordering is strict FIFO by checked_in_at, then ticket_id.
 -- ──────────────────────────────────────────────────────────────
@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS queue_tickets (
   window_id        INT          DEFAULT NULL,
   service_id       INT          NOT NULL,
   queue_mode       ENUM('central','specialized') NOT NULL DEFAULT 'central',
-  reference_number VARCHAR(20)  NOT NULL UNIQUE,  -- BHC-2025-0001
+  reference_number VARCHAR(20)  NOT NULL UNIQUE,  -- 16 digits; legacy formats remain valid
   qr_code_path     VARCHAR(255) DEFAULT NULL,     -- path to QR image in /assets/qr/
   ticket_number    VARCHAR(10)  DEFAULT NULL,       -- assigned at physical arrival
   entry_type       ENUM('walk-in','online') NOT NULL DEFAULT 'online',
@@ -416,6 +416,16 @@ CREATE TABLE IF NOT EXISTS sms_logs (
   error_msg VARCHAR(255) DEFAULT NULL,              -- API error message if failed
   sent_at   TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS ticket_sms_events (
+  ticket_id INT NOT NULL,
+  event_type VARCHAR(32) NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  status ENUM('pending','sent','failed','simulated') NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (ticket_id, event_type),
+  FOREIGN KEY (ticket_id) REFERENCES queue_tickets(ticket_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS email_jobs (

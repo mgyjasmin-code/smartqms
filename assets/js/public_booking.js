@@ -7,6 +7,7 @@
 
   const steps = [...form.querySelectorAll('[data-booking-step]')];
   const nextButton = form.querySelector('[data-booking-next]');
+  const homeLink = form.querySelector('[data-booking-home]');
   const backButton = form.querySelector('[data-booking-back]');
   const submitButton = form.querySelector('[data-booking-submit]');
   const progress = document.querySelector('[role="progressbar"][aria-label="Booking progress"]');
@@ -14,11 +15,9 @@
   const progressLabel = document.querySelector('[data-booking-progress-label]');
   const progressName = document.querySelector('[data-booking-progress-name]');
   const errorSummary = document.querySelector('[data-booking-error-summary]');
-  const stepperItems = [...document.querySelectorAll('.public-booking-stepper li')];
   const processingStatus = form.querySelector('[data-booking-processing]');
   const submitSpinner = submitButton?.querySelector('[data-booking-spinner]');
   const submitLabel = submitButton?.querySelector('[data-booking-submit-label]');
-  const submitIcon = submitButton?.querySelector('[data-booking-submit-icon]');
   const stepNames = ['Choose Service', 'Appointment Details', 'Review'];
   let currentStep = Math.min(3, Math.max(1, Number.parseInt(form.dataset.initialStep || '1', 10)));
 
@@ -53,16 +52,12 @@
   const render = (focusHeading = false) => {
     form.classList.add('is-enhanced');
     steps.forEach((step) => { step.hidden = Number(step.dataset.bookingStep) !== currentStep; });
-    stepperItems.forEach((item, index) => {
-      if (index + 1 === currentStep) item.setAttribute('aria-current', 'step');
-      else item.removeAttribute('aria-current');
-      item.classList.toggle('is-complete', index + 1 < currentStep);
-    });
     if (progress) progress.setAttribute('aria-valuenow', String(currentStep));
     if (progressBar) progressBar.style.width = `${(currentStep / steps.length) * 100}%`;
     if (progressLabel) progressLabel.textContent = `Step ${currentStep} of ${steps.length}`;
     if (progressName) progressName.textContent = stepNames[currentStep - 1];
     if (backButton) backButton.hidden = currentStep === 1;
+    if (homeLink) homeLink.hidden = currentStep !== 1;
     if (nextButton) nextButton.hidden = currentStep === steps.length;
     if (submitButton) submitButton.hidden = currentStep !== steps.length;
     if (currentStep === steps.length) updateReview();
@@ -93,14 +88,6 @@
   backButton?.addEventListener('click', () => {
     currentStep = Math.max(1, currentStep - 1);
     render(true);
-  });
-
-  form.addEventListener('change', (event) => {
-    if (event.target.name === 'service_id') {
-      form.querySelectorAll('[data-booking-service-card]').forEach((card) => {
-        card.classList.toggle('is-selected', card.dataset.serviceId === event.target.value);
-      });
-    }
   });
 
   errorSummary?.addEventListener('click', (event) => {
@@ -147,7 +134,6 @@
       submitButton.setAttribute('aria-busy', 'true');
       if (submitSpinner) submitSpinner.hidden = false;
       if (submitLabel) submitLabel.textContent = submitButton.dataset.loadingText || 'Creating appointment…';
-      if (submitIcon) submitIcon.hidden = true;
     }
     if (processingStatus) processingStatus.hidden = false;
   });

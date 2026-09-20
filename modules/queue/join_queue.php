@@ -7,7 +7,7 @@
  *  - One active ticket per client at a time
  *    (status = waiting OR serving)
  *  - Legacy priority fields remain compatibility-only; live ordering is FIFO
- *  - Reference number format: BHC-YYYY-NNNN
+ *  - Reference number format: YYYYMMDD + 8-digit daily sequence
  *  - QR code generated and saved to /assets/qr/
  *  - ML API called for predicted wait time
  *  - Wait time log entry created immediately

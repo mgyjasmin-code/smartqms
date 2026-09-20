@@ -64,20 +64,31 @@ function getActiveTicketForLockedClient(mysqli $conn, int $userId): ?array {
     return $stmt->get_result()->fetch_assoc() ?: null;
 }
 
-function generateRefNumber(mysqli $conn, ?int $year = null): string {
-    $year = $year ?? (int) date('Y');
-    $referencePattern = '^' . preg_quote(REF_PREFIX, '/') . '-' . $year . '-[0-9]+$';
+function generateRefNumber(mysqli $conn, ?string $bookingDate = null): string {
+    $bookingDate ??= date('Ymd');
+    $parsedDate = DateTimeImmutable::createFromFormat('!Ymd', $bookingDate);
+    if (!$parsedDate || $parsedDate->format('Ymd') !== $bookingDate) {
+        throw new InvalidArgumentException('Reference booking date must use YYYYMMDD.');
+    }
+
+    $sqlDate = $parsedDate->format('Y-m-d');
+    $referencePattern = '^' . $bookingDate . '[0-9]{8}$';
     $stmt = $conn->prepare("
-        SELECT MAX(CAST(SUBSTRING_INDEX(reference_number, '-', -1) AS UNSIGNED)) AS max_suffix
+        SELECT COUNT(CASE WHEN DATE(issued_at) = ? THEN 1 END) AS issued_today,
+               MAX(CASE WHEN reference_number REGEXP ?
+                   THEN CAST(RIGHT(reference_number, 8) AS UNSIGNED) END) AS max_suffix
         FROM queue_tickets
-        WHERE reference_number REGEXP ?
+        WHERE DATE(issued_at) = ? OR reference_number REGEXP ?
         FOR UPDATE
     ");
-    $stmt->bind_param('s', $referencePattern);
+    $stmt->bind_param('ssss', $sqlDate, $referencePattern, $sqlDate, $referencePattern);
     $stmt->execute();
-    $nextSuffix = ((int) ($stmt->get_result()->fetch_assoc()['max_suffix'] ?? 0)) + 1;
-
-    return REF_PREFIX . '-' . $year . '-' . str_pad($nextSuffix, 4, '0', STR_PAD_LEFT);
+    $row = $stmt->get_result()->fetch_assoc() ?: [];
+    $nextSequence = max((int) ($row['issued_today'] ?? 0), (int) ($row['max_suffix'] ?? 0)) + 1;
+    if ($nextSequence > 99999999) {
+        throw new RuntimeException('The daily reference number range is full.');
+    }
+    return $bookingDate . str_pad((string) $nextSequence, 8, '0', STR_PAD_LEFT);
 }
 
 function generateDailyTicketNumber(mysqli $conn): string {

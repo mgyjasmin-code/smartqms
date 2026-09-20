@@ -84,13 +84,13 @@ include __DIR__ . '/includes/header.php';
         <input type="hidden" name="lookup_type" value="reference">
         <div>
           <h2>Find an appointment by reference</h2>
-          <p>Enter the exact reference printed below the client’s QR code.</p>
+          <p>Enter the 16-digit reference. Older BHC references are still accepted.</p>
         </div>
         <div class="row g-3 align-items-end">
           <div class="col-12 col-lg">
             <label class="form-label" for="arrival-reference-number">Reference Number</label>
             <input class="form-control text-uppercase" id="arrival-reference-number" name="lookup_value"
-                   maxlength="40" placeholder="BHC-2026-0001" autocomplete="off" required>
+                   inputmode="numeric" maxlength="40" placeholder="<?= date('Ymd') ?>00000001" autocomplete="off" required>
           </div>
           <div class="col-12 col-lg-auto">
             <button class="btn btn-primary w-100" type="submit" data-loading-text="Finding appointment...">

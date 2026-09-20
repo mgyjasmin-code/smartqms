@@ -38,9 +38,8 @@ There is no exact appointment time. The reservation is for a visit date only.
 ### Reservation access and changes
 
 - A reference alone may show a privacy-safe public status; it must not show name, mobile number, or medical detail.
-- A reference plus the last four digits of the mobile number is required to cancel or reschedule.
-- Self-service cancellation and rescheduling are available only while the reservation is Confirmed and before the configured check-in cutoff.
-- Rescheduling keeps the same reference, records an audit event, and applies the one-reservation-per-phone-per-date rule to the new date.
+- Cancellation requires the private management link issued with the reservation.
+- Self-service cancellation is available only while the reservation is Confirmed and before the configured check-in cutoff.
 - A reservation that is not checked in before its visit date ends becomes Expired quietly. It remains in history for reporting and audit.
 
 ## Check-in and ticket rules
@@ -77,8 +76,6 @@ Waiting ──> Calling ──> In Service ──> Completed
                     ├──> Skipped
                     └──> Voided
 ```
-
-Rescheduled is an audit event that returns the active reservation to Confirmed on its new visit date.
 
 ## QR tracking, notifications, and feedback
 
@@ -122,6 +119,6 @@ Admins configure physical service points; staff operate them.
 
 All reports distinguish reservation outcomes from ticket outcomes where relevant.
 
-- Reservations: confirmed, cancelled, expired, rescheduled history.
+- Reservations: confirmed, cancelled, expired.
 - Queue: waiting, calling, in service, completed, skipped, voided.
 - Satisfaction: response count, response rate, average rating, rating distribution, rating by health service, and anonymized comments.

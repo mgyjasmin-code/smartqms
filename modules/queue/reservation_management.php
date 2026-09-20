@@ -70,53 +70,6 @@ function reservationManagementProjection(array $reservation): array {
     ];
 }
 
-function validateReservationVisitDate(string $visitDate): string {
-    $visitDate = trim($visitDate);
-    $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $visitDate);
-    $today = new DateTimeImmutable('today');
-    if (!$parsed || $parsed->format('Y-m-d') !== $visitDate
-        || $parsed < $today || $parsed > $today->modify('+30 days')) {
-        throw new DomainException('Choose a visit date within the next 30 days.');
-    }
-    return $visitDate;
-}
-
-function rescheduleSessionReservation(mysqli $conn, int $ticketId, string $visitDate): array {
-    $visitDate = validateReservationVisitDate($visitDate);
-    $ownsTransaction = !queueConnectionHasActiveTransaction($conn);
-    if ($ownsTransaction) {
-        $conn->begin_transaction();
-    }
-    try {
-        $reservation = publicManagedReservationBySession($conn, $ticketId, true);
-        if (!$reservation || (string) $reservation['lifecycle_status'] !== 'scheduled') {
-            throw new DomainException('This reservation can no longer be changed.');
-        }
-        $expiresAt = $visitDate . ' 23:59:59';
-        $stmt = $conn->prepare("
-            UPDATE queue_tickets
-            SET scheduled_expires_at = ?, manage_token_expires_at = ?
-            WHERE ticket_id = ? AND lifecycle_status = 'scheduled'
-        ");
-        $stmt->bind_param('ssi', $expiresAt, $expiresAt, $ticketId);
-        $stmt->execute();
-        if ($stmt->affected_rows < 0) {
-            throw new RuntimeException('The reservation could not be rescheduled.');
-        }
-        logActivity($conn, 'reservation_rescheduled', 'Visit date rescheduled through token-authorized public management.', $ticketId);
-        if ($ownsTransaction) {
-            $conn->commit();
-        }
-        $reservation['scheduled_expires_at'] = $expiresAt;
-        return reservationManagementProjection($reservation);
-    } catch (Throwable $error) {
-        if ($ownsTransaction) {
-            $conn->rollback();
-        }
-        throw $error;
-    }
-}
-
 function cancelSessionReservation(mysqli $conn, int $ticketId): array {
     $ownsTransaction = !queueConnectionHasActiveTransaction($conn);
     if ($ownsTransaction) {
